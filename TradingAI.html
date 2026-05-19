@@ -552,8 +552,7 @@ canvas.sparkline{width:100%;display:block}
   <div id="notif-list"></div>
 </div>
 
-<!-- TradingView -->
-<script src="https://s3.tradingview.com/tv.js"></script>
+<!-- TradingView loaded via iframe — no blocking script -->
 
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -687,25 +686,34 @@ function renderPage(page){
 // ═══════════════════════════════════════════════════════════
 // TRADINGVIEW WIDGET
 // ═══════════════════════════════════════════════════════════
-let tvWidget = null;
+// TRADINGVIEW IFRAME — no TV.js dependency, async, non-blocking
 function loadChart(symbol, interval){
   el('tv-loading').style.display='flex';
-  const container = document.querySelector('.tradingview-widget-container');
-  container.innerHTML = '<div class="tradingview-widget-container__widget" style="height:100%"></div>';
-  try{
-    tvWidget = new TradingView.widget({
-      autosize:true, symbol:fmt.tv(symbol), interval, timezone:'Europe/Paris',
-      theme:'dark', style:'1', locale:'fr',
-      backgroundColor:'rgba(6,6,15,0)', gridColor:'rgba(255,255,255,0.03)',
-      hide_top_toolbar:false, hide_legend:false, allow_symbol_change:false,
-      save_image:false,
-      studies:['RSI@tv-basicstudies','MACD@tv-basicstudies','Volume@tv-basicstudies'],
-      container_id:'',
-      width:'100%', height:'100%',
-      container: container.querySelector('.tradingview-widget-container__widget'),
-    });
-    setTimeout(()=>el('tv-loading').style.display='none', 1800);
-  }catch(e){ el('tv-loading').style.display='none'; }
+  const widget = document.querySelector('.tradingview-widget-container__widget');
+  widget.innerHTML = '';
+
+  const tvSym = symbol.includes('USDT') ? 'BINANCE:'+symbol
+              : (symbol.length===6&&symbol.endsWith('USD')) ? 'FX:'+symbol
+              : 'NASDAQ:'+symbol;
+
+  const cfg = encodeURIComponent(JSON.stringify({
+    autosize:true, symbol:tvSym, interval:interval,
+    timezone:'Europe/Paris', theme:'dark', style:'1', locale:'fr',
+    hide_top_toolbar:false, allow_symbol_change:false, save_image:false,
+    studies:['RSI@tv-basicstudies','MACD@tv-basicstudies','Volume@tv-basicstudies'],
+    backgroundColor:'rgba(6,6,15,0)'
+  }));
+
+  const iframe = document.createElement('iframe');
+  iframe.src = 'https://s.tradingview.com/embed-widget/advanced-chart/?locale=fr#'+cfg;
+  iframe.style.cssText = 'width:100%;height:100%;border:none;display:block;background:transparent';
+  iframe.setAttribute('allowtransparency','true');
+  iframe.setAttribute('frameborder','0');
+  iframe.onload  = ()=>{ el('tv-loading').style.display='none'; };
+  iframe.onerror = ()=>{ el('tv-loading').style.display='none'; };
+  widget.appendChild(iframe);
+  // Fallback: hide spinner after 6s regardless
+  setTimeout(()=>{ el('tv-loading').style.display='none'; }, 6000);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1343,10 +1351,14 @@ let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>renderPage(S.currentPage),300);});
 
 // ═══════════════════════════════════════════════════════════
-// INIT
+// INIT — wrapped in DOMContentLoaded for reliability
 // ═══════════════════════════════════════════════════════════
-initDashboard();
-setInterval(updatePrices, 2000);
+function boot(){
+  initDashboard();
+  setInterval(updatePrices, 2000);
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot);
+else boot();
 setInterval(()=>{
   // Randomly show a new "notification" every 90s
   if(Math.random()<0.3){
