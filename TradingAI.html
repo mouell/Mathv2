@@ -316,6 +316,8 @@ canvas.sparkline{width:100%;display:block}
     <div class="nav-item" data-page="performance"><span class="nav-icon">📈</span><span class="nav-label">Performance</span></div>
     <div class="nav-item" data-page="risk"><span class="nav-icon">🛡️</span><span class="nav-label">Risk Manager</span></div>
     <div class="nav-item" data-page="learning"><span class="nav-icon">🧠</span><span class="nav-label">IA Learning</span></div>
+    <div class="nav-item" data-page="trading-plan"><span class="nav-icon">📋</span><span class="nav-label">Trading Plan</span></div>
+    <div class="nav-item" data-page="analyse"><span class="nav-icon">🔬</span><span class="nav-label">Analyse IA</span></div>
   </nav>
   <div class="sb-footer">
     <div class="sb-status"><div class="sb-dot green"></div><span class="sb-status-label">7 agents actifs</span></div>
@@ -542,6 +544,147 @@ canvas.sparkline{width:100%;display:block}
       </div>
     </div>
 
+    <!-- ══════════ PAGE: TRADING PLAN ══════════ -->
+    <div class="page" id="page-trading-plan">
+      <div class="flex items-center gap-8 mb-12" style="flex-wrap:wrap">
+        <div style="font-size:20px">📋</div>
+        <h1 style="font-size:20px;font-weight:800">Trading Plan Journalier</h1>
+        <span class="badge badge-violet">Portefeuille $1 000</span>
+        <span class="badge badge-bull" id="tp-date"></span>
+        <button class="btn btn-primary" style="margin-left:auto" onclick="refreshTradingPlan()">↻ Actualiser le plan</button>
+      </div>
+
+      <!-- Portfolio + risk summary -->
+      <div class="grid-4 mb-12" id="tp-stats"></div>
+
+      <!-- Market context -->
+      <div class="card mb-12" style="padding:16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:14px">🌍</span>
+          <span style="font-size:13px;font-weight:700">Contexte marché du jour</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px" id="tp-context"></div>
+      </div>
+
+      <!-- Positions du jour -->
+      <div class="card mb-12">
+        <div class="card-h">
+          <div class="card-title">🎯 Positions à prendre aujourd'hui</div>
+          <span class="fs-11 text-t3">Risque max par trade: <strong class="text-amber">$20 (2%)</strong></span>
+        </div>
+        <div id="tp-positions" style="padding:0 0 8px"></div>
+      </div>
+
+      <!-- Plan horaire -->
+      <div class="card">
+        <div class="card-h"><div class="card-title">🕐 Plan horaire — Sessions</div></div>
+        <div style="padding:16px" id="tp-schedule"></div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: ANALYSE IA ══════════ -->
+    <div class="page" id="page-analyse">
+      <div class="flex items-center gap-8 mb-12">
+        <div style="font-size:20px">🔬</div>
+        <h1 style="font-size:20px;font-weight:800">Entraînement Bot IA</h1>
+        <span class="badge badge-violet" id="ai-stats-badge">0 validés / 0 refusés</span>
+      </div>
+
+      <div class="grid-7-5" style="gap:14px">
+        <!-- Left: canvas zone -->
+        <div class="card" style="display:flex;flex-direction:column;min-height:520px">
+          <div class="card-h">
+            <div class="card-title">📸 Graphique d'analyse</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span class="fs-11 text-t3" id="ai-mode-label">Importer une image pour commencer</span>
+              <label class="btn btn-primary" style="cursor:pointer;font-size:12px">
+                📂 Importer<input type="file" id="ai-file-input" accept="image/*" style="display:none" onchange="loadAnalyseImage(event)">
+              </label>
+            </div>
+          </div>
+
+          <!-- Canvas container -->
+          <div style="flex:1;position:relative;background:var(--bg0);display:flex;align-items:center;justify-content:center;min-height:380px" id="ai-canvas-zone">
+            <div id="ai-placeholder" style="text-align:center;color:var(--t3)">
+              <div style="font-size:48px;margin-bottom:12px">📈</div>
+              <div style="font-size:13px">Importez une capture de graphique</div>
+              <div style="font-size:11px;margin-top:6px">Le bot analysera la 1ère moitié et prédictera la suite</div>
+            </div>
+            <canvas id="ai-canvas" style="display:none;max-width:100%;max-height:420px;border-radius:10px"></canvas>
+            <canvas id="ai-overlay" style="display:none;position:absolute;top:0;left:0;pointer-events:none;border-radius:10px"></canvas>
+          </div>
+
+          <!-- Action buttons -->
+          <div id="ai-actions" style="padding:14px;border-top:1px solid var(--b1);display:none">
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+              <button class="btn" id="btn-predict" onclick="runBotPrediction()"
+                style="background:var(--violet);color:#fff;font-size:14px;padding:10px 24px">
+                🤖 Prédire la suite
+              </button>
+              <button class="btn" id="btn-reveal" onclick="revealChart()" style="display:none;background:var(--bg3);color:var(--t2);border:1px solid var(--b1);font-size:14px;padding:10px 24px">
+                👁️ Révéler la vraie suite
+              </button>
+              <button class="btn" id="btn-validate" onclick="validatePrediction(true)" style="display:none;background:rgba(0,212,177,.2);color:var(--bull);border:1px solid var(--bull);font-size:14px;padding:10px 24px">
+                ✅ Valider
+              </button>
+              <button class="btn" id="btn-refuse" onclick="validatePrediction(false)" style="display:none;background:rgba(255,77,109,.2);color:var(--bear);border:1px solid var(--bear);font-size:14px;padding:10px 24px">
+                ❌ Refuser
+              </button>
+              <button class="btn btn-ghost" onclick="resetAnalyse()" style="font-size:14px;padding:10px 24px">
+                🔄 Nouvelle image
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: bot info + history -->
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <!-- Bot status -->
+          <div class="card" style="padding:16px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+              <div style="width:42px;height:42px;border-radius:14px;background:var(--violet-dim);display:flex;align-items:center;justify-content:center;font-size:22px">🤖</div>
+              <div>
+                <div style="font-size:14px;font-weight:700">Bot Prédicteur IA</div>
+                <div style="font-size:11px;color:var(--t3)" id="bot-status-label">En attente d'un graphique...</div>
+              </div>
+              <div style="margin-left:auto;width:10px;height:10px;border-radius:50%;background:var(--amber)" id="bot-dot"></div>
+            </div>
+            <div style="space-y:8px" id="bot-explanation">
+              <div style="font-size:12px;color:var(--t2);line-height:1.7;background:var(--bg3);border-radius:10px;padding:12px">
+                Importez une capture d'écran de graphique (TradingView, Binance…). Le bot analysera les pixels de la <strong style="color:var(--violet)">moitié gauche</strong> pour détecter la tendance et prédire la continuation.
+              </div>
+            </div>
+          </div>
+
+          <!-- Score -->
+          <div class="card" style="padding:16px">
+            <div style="font-size:13px;font-weight:700;margin-bottom:12px">📊 Score d'entraînement</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+              <div style="background:rgba(0,212,177,.08);border:1px solid rgba(0,212,177,.2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-size:24px;font-weight:800;color:var(--bull)" id="score-valid">0</div>
+                <div style="font-size:11px;color:var(--t3)">Validés ✅</div>
+              </div>
+              <div style="background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-size:24px;font-weight:800;color:var(--bear)" id="score-refuse">0</div>
+                <div style="font-size:11px;color:var(--t3)">Refusés ❌</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--t3);margin-bottom:6px">Précision actuelle du bot</div>
+            <div style="height:8px;background:var(--bg0);border-radius:4px;overflow:hidden">
+              <div id="score-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--bear),var(--amber),var(--bull));border-radius:4px;transition:width .6s ease"></div>
+            </div>
+            <div style="text-align:right;font-size:12px;font-weight:800;margin-top:4px" id="score-pct">—%</div>
+          </div>
+
+          <!-- Historique -->
+          <div class="card" style="flex:1;display:flex;flex-direction:column">
+            <div class="card-h"><div class="card-title">📜 Historique</div></div>
+            <div style="flex:1;overflow-y:auto;padding:8px" id="ai-history"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /pages -->
 </div><!-- /main -->
 </div><!-- /app -->
@@ -672,15 +815,6 @@ function toggleSidebar(){
   S.sidebarCollapsed = !S.sidebarCollapsed;
   el('sidebar').classList.toggle('collapsed', S.sidebarCollapsed);
   document.querySelector('.sb-collapse-btn').textContent = S.sidebarCollapsed ? '▶' : '◀';
-}
-
-function renderPage(page){
-  if(page==='performance') renderPerformance();
-  if(page==='risk')        renderRisk();
-  if(page==='learning')    renderLearning();
-  if(page==='trades')      renderTrades();
-  if(page==='opportunities') renderOpportunities();
-  if(page==='news')        renderNewsPage();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1349,6 +1483,473 @@ function updatePrices(){
 // ═══════════════════════════════════════════════════════════
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>renderPage(S.currentPage),300);});
+
+// ═══════════════════════════════════════════════════════════
+// TRADING PLAN — $1000 portfolio daily plan
+// ═══════════════════════════════════════════════════════════
+const PORTFOLIO = 1000;
+const RISK_PCT  = 0.02; // 2% per trade
+const RISK_USD  = PORTFOLIO * RISK_PCT; // $20
+
+function renderPage(page){
+  if(page==='performance') renderPerformance();
+  if(page==='risk')        renderRisk();
+  if(page==='learning')    renderLearning();
+  if(page==='trades')      renderTrades();
+  if(page==='opportunities') renderOpportunities();
+  if(page==='news')        renderNewsPage();
+  if(page==='trading-plan') renderTradingPlan();
+  if(page==='analyse')     renderAnalysePage();
+}
+
+function generateDailyPlan(){
+  const now = new Date();
+  const hour = now.getHours();
+  // pick 3 trades per day based on current signals + mock opportunities
+  const pool = [
+    { sym:'BTCUSDT', name:'Bitcoin',  dir:'LONG',  tf:'4h', entry: S.assets.BTCUSDT?.p || 67420,  slPct:0.024, tpPct:0.054, reason:'Breakout résistance + volume élevé + sentiment haussier', session:'Asie/Europe', time:'08:00' },
+    { sym:'ETHUSDT', name:'Ethereum', dir:'LONG',  tf:'1h', entry: S.assets.ETHUSDT?.p || 3512,   slPct:0.030, tpPct:0.065, reason:'Support EMA20 tenu + MACD croisement haussier',           session:'Europe',       time:'10:30' },
+    { sym:'NVDA',    name:'NVIDIA',   dir:'LONG',  tf:'1d', entry: S.assets.NVDA?.p    || 125.8,  slPct:0.035, tpPct:0.080, reason:'Post-earnings momentum + accumulation institutionnelle',   session:'US Open',      time:'15:30' },
+    { sym:'SOLUSDT', name:'Solana',   dir:'LONG',  tf:'4h', entry: S.assets.SOLUSDT?.p || 185.4,  slPct:0.038, tpPct:0.090, reason:'Volume DEX record + flag haussier confirmé',              session:'Asie',         time:'03:00' },
+    { sym:'XRPUSDT', name:'XRP',      dir:'LONG',  tf:'1h', entry: S.assets.XRPUSDT?.p || 0.5823, slPct:0.028, tpPct:0.060, reason:'Flag haussier J1 + corrélation BTC positive',             session:'Europe',       time:'09:00' },
+    { sym:'AAPL',    name:'Apple',    dir:'LONG',  tf:'1d', entry: S.assets.AAPL?.p    || 213.5,  slPct:0.022, tpPct:0.048, reason:'Support $210 tenu + catalyseur M4 Ultra',                 session:'US Open',      time:'15:30' },
+  ];
+
+  // Pick 3 diversified trades
+  const picks = [pool[0], pool[2], pool[Math.floor(Math.random()*3)+3]];
+  return picks.map(t=>{
+    const sl = t.dir==='LONG' ? t.entry*(1-t.slPct) : t.entry*(1+t.slPct);
+    const tp = t.dir==='LONG' ? t.entry*(1+t.tpPct) : t.entry*(1-t.tpPct);
+    const slDist = Math.abs(t.entry - sl);
+    const qty = Math.min(RISK_USD / slDist, PORTFOLIO*0.30/t.entry); // max 30% of portfolio
+    const posSize = qty * t.entry;
+    const rr = (Math.abs(tp-t.entry)/slDist).toFixed(1);
+    return { ...t, sl, tp, qty, posSize, rr, slDist };
+  });
+}
+
+function refreshTradingPlan(){ renderTradingPlan(); }
+
+function renderTradingPlan(){
+  const now = new Date();
+  el('tp-date').textContent = now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+
+  const plan = generateDailyPlan();
+  const totalRisk = plan.reduce((s,t)=>s+RISK_USD,0);
+  const totalExp  = plan.reduce((s,t)=>s+t.posSize,0);
+  const potGain   = plan.reduce((s,t)=>s+RISK_USD*parseFloat(t.rr),0);
+
+  // Stats row
+  el('tp-stats').innerHTML=[
+    {l:'Portefeuille',   v:'$'+PORTFOLIO.toLocaleString(), c:'var(--violet)'},
+    {l:'Risque total',   v:'$'+totalRisk.toFixed(0)+' ('+((totalRisk/PORTFOLIO)*100).toFixed(0)+'%)', c:'var(--amber)'},
+    {l:'Exposition',     v:'$'+totalExp.toFixed(0),        c:'var(--sky)'},
+    {l:'Gain potentiel', v:'+$'+potGain.toFixed(0),        c:'var(--bull)'},
+  ].map(s=>`<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-value" style="color:${s.c}">${s.v}</div></div>`).join('');
+
+  // Market context
+  const ctx=[
+    {icon:'₿',  label:'BTC Tendance',  val:'Haussier', color:'var(--bull)'},
+    {icon:'😱', label:'Fear & Greed',  val:'68 — Avidité', color:'var(--amber)'},
+    {icon:'🏦', label:'Fed / Macro',   val:'Neutre', color:'var(--t2)'},
+    {icon:'📊', label:'Volatilité',    val:'Modérée (VIX 14)', color:'var(--amber)'},
+    {icon:'🌍', label:'Session active',val:getSession(), color:'var(--sky)'},
+    {icon:'💧', label:'Liquidité',     val:'Élevée', color:'var(--bull)'},
+  ];
+  el('tp-context').innerHTML=ctx.map(c=>`
+    <div style="background:var(--bg3);border:1px solid var(--b1);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">${c.icon}</span>
+      <div><div style="font-size:10px;color:var(--t3)">${c.label}</div><div style="font-size:12px;font-weight:700;color:${c.color}">${c.val}</div></div>
+    </div>`).join('');
+
+  // Positions
+  el('tp-positions').innerHTML = plan.map((t,i)=>`
+    <div style="border-bottom:1px solid var(--b1);padding:16px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:44px;height:44px;border-radius:13px;background:var(--violet-dim);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--violet)">${i+1}</div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:16px;font-weight:800;color:var(--t1)">${t.sym.replace('USDT','')}</span>
+              <span class="badge badge-bull">▲ ${t.dir}</span>
+              <span style="font-size:10px;color:var(--t3)">${t.tf}</span>
+            </div>
+            <div style="font-size:11px;color:var(--sky);margin-top:2px">🕐 ${t.time} — Session ${t.session}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <div style="background:var(--bg3);border:1px solid var(--b1);border-radius:10px;padding:8px 12px;text-align:center">
+            <div style="font-size:10px;color:var(--t3)">Taille position</div>
+            <div style="font-size:13px;font-weight:800;color:var(--t1)">$${t.posSize.toFixed(0)}</div>
+          </div>
+          <div style="background:var(--rose-dim);border:1px solid rgba(255,77,109,.2);border-radius:10px;padding:8px 12px;text-align:center">
+            <div style="font-size:10px;color:var(--t3)">Risque</div>
+            <div style="font-size:13px;font-weight:800;color:var(--bear)">$${RISK_USD.toFixed(0)}</div>
+          </div>
+          <div style="background:var(--teal-dim);border:1px solid rgba(0,212,177,.2);border-radius:10px;padding:8px 12px;text-align:center">
+            <div style="font-size:10px;color:var(--t3)">R/R</div>
+            <div style="font-size:13px;font-weight:800;color:var(--bull)">1:${t.rr}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+        ${[
+          {l:'Entrée',      v:'$'+fmtP(t.entry),  c:'var(--t1)'},
+          {l:'Stop Loss',   v:'$'+fmtP(t.sl),     c:'var(--bear)'},
+          {l:'Take Profit', v:'$'+fmtP(t.tp),     c:'var(--bull)'},
+          {l:'Quantité',    v:fmtQ(t.qty,t.sym),  c:'var(--violet)'},
+        ].map(f=>`<div style="background:var(--bg3);border:1px solid var(--b1);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:4px">${f.l}</div>
+          <div style="font-size:13px;font-weight:800;font-family:var(--font-mono);color:${f.c}">${f.v}</div>
+        </div>`).join('')}
+      </div>
+
+      <div style="background:var(--violet-dim);border:1px solid var(--b-accent);border-radius:10px;padding:10px 14px;display:flex;gap:8px">
+        <span style="font-size:14px;flex-shrink:0">🤖</span>
+        <div style="font-size:12px;color:var(--t2);line-height:1.6">${t.reason}</div>
+      </div>
+    </div>`).join('');
+
+  // Schedule
+  const sessions=[
+    {time:'00:00–08:00', name:'Session Asie',   color:'var(--sky)',    active:isInSession(0,8),    note:'Crypto actif, faible liquidité actions. BTC/ETH/SOL volatils.' },
+    {time:'08:00–15:30', name:'Session Europe',  color:'var(--violet)', active:isInSession(8,15.5), note:'Ouverture London. EUR/USD actif. Crypto souvent en consolidation.' },
+    {time:'15:30–17:00', name:'US Open',         color:'var(--amber)',  active:isInSession(15.5,17),note:'Pic de volatilité. Signaux actions + crypto. Opportunités majeures.' },
+    {time:'17:00–22:00', name:'Session US',      color:'var(--bull)',   active:isInSession(17,22),  note:'Tendances confirmées. Actions jusqu\'à 22h, crypto continue.' },
+    {time:'22:00–00:00', name:'After-market',    color:'var(--t3)',     active:isInSession(22,24),  note:'Faible volume. Éviter les nouvelles positions importantes.' },
+  ];
+  el('tp-schedule').innerHTML=`<div style="display:flex;flex-direction:column;gap:8px">
+    ${sessions.map(s=>`
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:12px;background:${s.active?'var(--bg4)':'var(--bg3)'};border:1px solid ${s.active?s.color+'50':'var(--b1)'}">
+        <div style="width:3px;height:44px;border-radius:2px;background:${s.color};flex-shrink:0"></div>
+        <div style="width:100px;flex-shrink:0">
+          <div style="font-size:11px;font-family:var(--font-mono);color:${s.color};font-weight:700">${s.time}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--t1)">${s.name}</div>
+        </div>
+        <div style="font-size:12px;color:var(--t2);flex:1">${s.note}</div>
+        ${s.active?`<span class="badge badge-bull" style="flex-shrink:0">● Actif</span>`:''}
+      </div>`).join('')}
+  </div>`;
+}
+
+function fmtP(n){ return n<1?n.toFixed(4):n<10?n.toFixed(3):n<1000?n.toFixed(2):n.toLocaleString('fr-FR',{maximumFractionDigits:2}); }
+function fmtQ(q,sym){ return sym.includes('USDT')?q.toFixed(sym==='BTCUSDT'?4:2):q.toFixed(2); }
+function getSession(){ const h=new Date().getHours(); if(h<8)return'Asie'; if(h<15)return'Europe'; if(h<22)return'New York'; return'After-market'; }
+function isInSession(s,e){ const h=new Date().getHours()+new Date().getMinutes()/60; return h>=s&&h<e; }
+
+// ═══════════════════════════════════════════════════════════
+// ANALYSE IA — Chart image prediction trainer
+// ═══════════════════════════════════════════════════════════
+const AI = {
+  img: null,       // original image
+  canvas: null,    // main canvas
+  overlay: null,   // overlay canvas for prediction
+  state: 'empty',  // empty | loaded | predicted | revealed
+  scores: { valid:0, refuse:0 },
+  history: [],
+  pricePoints: [], // detected price line from left half
+};
+
+function renderAnalysePage(){
+  updateScoreUI();
+  renderAiHistory();
+}
+
+function loadAnalyseImage(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      AI.img = img;
+      setupAnalyseCanvases(img);
+      showLeftHalf();
+      el('ai-placeholder').style.display='none';
+      el('ai-canvas').style.display='block';
+      el('ai-overlay').style.display='block';
+      el('ai-actions').style.display='block';
+      el('btn-predict').style.display='';
+      el('btn-reveal').style.display='none';
+      el('btn-validate').style.display='none';
+      el('btn-refuse').style.display='none';
+      el('ai-mode-label').textContent='Moitié gauche visible — analysez avec le bot';
+      el('bot-status-label').textContent='Image chargée — prêt à prédire';
+      el('bot-dot').style.background='var(--amber)';
+      el('bot-explanation').innerHTML=`<div style="font-size:12px;color:var(--t2);line-height:1.7;background:var(--bg3);border-radius:10px;padding:12px">
+        La <strong style="color:var(--violet)">moitié gauche</strong> du graphique est affichée.<br>
+        Appuyez sur <strong style="color:var(--violet)">🤖 Prédire la suite</strong> pour que le bot analyse la tendance et dessine sa prévision.
+      </div>`;
+      AI.state = 'loaded';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  evt.target.value=''; // reset input
+}
+
+function setupAnalyseCanvases(img){
+  const zone = el('ai-canvas-zone');
+  const maxW  = zone.clientWidth  - 28;
+  const maxH  = 420;
+  const ratio = Math.min(maxW/img.width, maxH/img.height, 1);
+  const W = Math.round(img.width  * ratio);
+  const H = Math.round(img.height * ratio);
+
+  const cv  = el('ai-canvas');
+  const ov  = el('ai-overlay');
+  cv.width=W; cv.height=H; cv.style.width=W+'px'; cv.style.height=H+'px';
+  ov.width=W; ov.height=H; ov.style.width=W+'px'; ov.style.height=H+'px';
+  ov.style.left = cv.offsetLeft+'px';
+  ov.style.top  = cv.offsetTop+'px';
+
+  // Draw full image on main canvas
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(img, 0, 0, W, H);
+  AI.canvas = cv;
+  AI.overlay= ov;
+}
+
+function showLeftHalf(){
+  const cv = AI.canvas; const ov = AI.overlay;
+  if(!cv||!ov) return;
+  const W=cv.width, H=cv.height;
+  const midX = Math.floor(W/2);
+
+  // Redraw full image
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(AI.img, 0, 0, W, H);
+
+  // Cover right half with dark overlay on main canvas
+  ctx.fillStyle='rgba(6,6,15,0.92)';
+  ctx.fillRect(midX, 0, W-midX, H);
+  // Dashed separator line
+  ctx.setLineDash([6,4]);
+  ctx.strokeStyle='rgba(124,92,252,0.6)';
+  ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(midX,0);ctx.lineTo(midX,H);ctx.stroke();
+  ctx.setLineDash([]);
+  // Label
+  ctx.fillStyle='rgba(124,92,252,0.8)';
+  ctx.font='bold 12px Inter';
+  ctx.textAlign='center';
+  ctx.fillText('← Visible',midX/2,18);
+  ctx.fillStyle='rgba(255,255,255,0.25)';
+  ctx.fillText('Prédiction →',midX+(W-midX)/2,18);
+}
+
+function extractPriceLine(){
+  const cv=AI.canvas; const W=cv.width,H=cv.height;
+  const midX=Math.floor(W/2);
+  const ctx=cv.getContext('2d');
+  const samples=40;
+  const pts=[];
+
+  for(let i=0;i<samples;i++){
+    const x=Math.floor((i/samples)*midX*0.9 + 4);
+    const col=ctx.getImageData(x,0,1,H).data;
+    // Find the most "interesting" y (brightest non-background pixel)
+    let bestY=H/2, bestScore=-1;
+    for(let y=0;y<H;y++){
+      const r=col[y*4],g=col[y*4+1],b=col[y*4+2];
+      // Score: prefer colored lines (green, white, orange) over dark backgrounds
+      const brightness=(r+g+b)/3;
+      const colorfulness=Math.max(Math.abs(r-g),Math.abs(g-b),Math.abs(r-b));
+      const score=brightness*0.6+colorfulness*0.4;
+      if(score>bestScore&&brightness>40){bestScore=score;bestY=y;}
+    }
+    pts.push({x,y:bestY});
+  }
+  // Smooth with moving average
+  const smoothed=pts.map((_,i)=>{
+    const w=pts.slice(Math.max(0,i-3),Math.min(pts.length,i+4));
+    return{x:pts[i].x,y:w.reduce((s,p)=>s+p.y,0)/w.length};
+  });
+  AI.pricePoints=smoothed;
+  return smoothed;
+}
+
+function runBotPrediction(){
+  if(AI.state!=='loaded') return;
+  el('bot-status-label').textContent='Analyse des pixels en cours…';
+  el('bot-dot').style.background='var(--violet)';
+
+  setTimeout(()=>{
+    const pts = extractPriceLine();
+    drawPrediction(pts);
+    el('btn-predict').style.display='none';
+    el('btn-reveal').style.display='';
+    el('btn-validate').style.display='none';
+    el('btn-refuse').style.display='none';
+    el('ai-mode-label').textContent='Prédiction tracée — révélez ou évaluez directement';
+    el('bot-status-label').textContent='Prédiction générée ✓';
+    el('bot-dot').style.background='var(--violet)';
+
+    // Explain
+    const lastPts=pts.slice(-8);
+    const dy=lastPts[lastPts.length-1].y-lastPts[0].y;
+    const trend=dy<-5?'haussière (prix monte)':dy>5?'baissière (prix descend)':'latérale';
+    el('bot-explanation').innerHTML=`<div style="font-size:12px;color:var(--t2);line-height:1.7;background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:8px">
+      <strong style="color:var(--violet)">Analyse bot :</strong><br>
+      • Tendance détectée : <strong style="color:${dy<-5?'var(--bull)':dy>5?'var(--bear)':'var(--amber)'}">${trend}</strong><br>
+      • Pente moyenne : ${(Math.abs(dy)/lastPts.length).toFixed(1)}px/point<br>
+      • Momentum : ${Math.abs(dy)>15?'fort':'modéré'}<br>
+      • La ligne <strong style="color:var(--violet)">violette pointillée</strong> est la prédiction.
+    </div>
+    <div style="font-size:11px;color:var(--t3)">Révélez la vraie suite puis validez ou refusez.</div>`;
+    AI.state='predicted';
+  }, 800);
+}
+
+function drawPrediction(pts){
+  const ov=AI.overlay; if(!ov) return;
+  const ctx=ov.getContext('2d');
+  const W=ov.width,H=ov.height;
+  const midX=Math.floor(W/2);
+  ctx.clearRect(0,0,W,H);
+
+  // Linear regression on last 30% of left half to get slope
+  const tail=pts.slice(-Math.max(6,Math.floor(pts.length*0.3)));
+  const n=tail.length;
+  let sx=0,sy=0,sxy=0,sx2=0;
+  tail.forEach(p=>{sx+=p.x;sy+=p.y;sxy+=p.x*p.y;sx2+=p.x*p.x;});
+  const slope=(n*sxy-sx*sy)/(n*sx2-sx*sx)||0;
+  const intercept=(sy-slope*sx)/n;
+
+  // Project into right half with some wave/noise
+  const steps=60;
+  const predPts=[];
+  const lastY=tail[tail.length-1].y;
+  let curY=lastY;
+  const momentum=slope*1.1;
+  let wave=0;
+  for(let i=0;i<=steps;i++){
+    const x=midX+i*(W-midX-4)/steps;
+    wave+=( Math.random()-0.5)*1.2;
+    curY+=momentum+wave*0.3;
+    curY=Math.max(8,Math.min(H-8,curY));
+    predPts.push({x,y:curY});
+  }
+
+  // Draw smooth prediction line
+  ctx.save();
+  ctx.setLineDash([8,5]);
+  ctx.strokeStyle='rgba(124,92,252,0.9)';
+  ctx.lineWidth=2.5;
+  ctx.lineJoin='round';
+  ctx.beginPath();
+  ctx.moveTo(midX, lastY);
+  predPts.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.stroke();
+
+  // Confidence band
+  ctx.setLineDash([3,5]);
+  ctx.strokeStyle='rgba(124,92,252,0.25)';
+  ctx.lineWidth=8;
+  ctx.beginPath();
+  ctx.moveTo(midX,lastY);
+  predPts.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.stroke();
+  ctx.restore();
+
+  // Endpoint dot
+  const ep=predPts[predPts.length-1];
+  ctx.beginPath();
+  ctx.arc(ep.x,ep.y,5,0,Math.PI*2);
+  ctx.fillStyle='var(--violet)';
+  ctx.fill();
+}
+
+function revealChart(){
+  if(!AI.canvas||!AI.img) return;
+  const cv=AI.canvas; const W=cv.width,H=cv.height;
+  const ctx=cv.getContext('2d');
+  // Redraw full image
+  ctx.drawImage(AI.img,0,0,W,H);
+  // Dashed midline
+  const midX=Math.floor(W/2);
+  ctx.setLineDash([6,4]);
+  ctx.strokeStyle='rgba(124,92,252,0.5)';
+  ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(midX,0);ctx.lineTo(midX,H);ctx.stroke();
+  ctx.setLineDash([]);
+  // Keep prediction overlay
+  el('btn-reveal').style.display='none';
+  el('btn-validate').style.display='';
+  el('btn-refuse').style.display='';
+  el('ai-mode-label').textContent='Comparez la prédiction à la vraie courbe';
+  el('bot-status-label').textContent='En attente de votre évaluation…';
+  el('bot-dot').style.background='var(--amber)';
+  AI.state='revealed';
+}
+
+function validatePrediction(isValid){
+  if(AI.state==='predicted') revealChart(); // auto-reveal if not done
+  const now=new Date();
+  if(isValid) AI.scores.valid++;
+  else AI.scores.refuse++;
+
+  // Add to history
+  AI.history.unshift({
+    ts: now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+    valid: isValid,
+    label: isValid ? 'Prédiction validée ✅' : 'Prédiction refusée ❌',
+  });
+  if(AI.history.length>20) AI.history.pop();
+
+  updateScoreUI();
+  renderAiHistory();
+  el('ai-stats-badge').textContent=`${AI.scores.valid} validés / ${AI.scores.refuse} refusés`;
+
+  // Show feedback
+  el('bot-explanation').innerHTML=`<div style="background:${isValid?'rgba(0,212,177,.08)':'rgba(255,77,109,.08)'};border:1px solid ${isValid?'rgba(0,212,177,.25)':'rgba(255,77,109,.25)'};border-radius:10px;padding:14px;font-size:13px;font-weight:700;text-align:center;color:${isValid?'var(--bull)':'var(--bear)'}">
+    ${isValid?'✅ Bon ! Le bot apprend de ce succès.':'❌ Refusé. L\'image est enregistrée pour améliorer le modèle.'}
+  </div>`;
+  el('btn-validate').style.display='none';
+  el('btn-refuse').style.display='none';
+  el('btn-reveal').style.display='none';
+  el('bot-status-label').textContent=isValid?'Succès enregistré 🎉':'Échec enregistré — entraînement mis à jour';
+  el('bot-dot').style.background=isValid?'var(--bull)':'var(--bear)';
+  AI.state='done';
+}
+
+function resetAnalyse(){
+  AI.img=null; AI.state='empty'; AI.pricePoints=[];
+  el('ai-placeholder').style.display='block';
+  el('ai-canvas').style.display='none';
+  el('ai-overlay').style.display='none';
+  el('ai-actions').style.display='none';
+  if(AI.canvas){const ctx=AI.canvas.getContext('2d');ctx.clearRect(0,0,AI.canvas.width,AI.canvas.height);}
+  if(AI.overlay){const ctx=AI.overlay.getContext('2d');ctx.clearRect(0,0,AI.overlay.width,AI.overlay.height);}
+  el('ai-mode-label').textContent='Importer une image pour commencer';
+  el('bot-status-label').textContent='En attente d\'un graphique...';
+  el('bot-dot').style.background='var(--amber)';
+  el('bot-explanation').innerHTML=`<div style="font-size:12px;color:var(--t2);line-height:1.7;background:var(--bg3);border-radius:10px;padding:12px">
+    Importez une capture d'écran de graphique (TradingView, Binance…). Le bot analysera les pixels de la <strong style="color:var(--violet)">moitié gauche</strong> pour détecter la tendance et prédire la continuation.
+  </div>`;
+}
+
+function updateScoreUI(){
+  const total=AI.scores.valid+AI.scores.refuse;
+  const pct=total>0?Math.round((AI.scores.valid/total)*100):0;
+  el('score-valid').textContent=AI.scores.valid;
+  el('score-refuse').textContent=AI.scores.refuse;
+  el('score-bar').style.width=pct+'%';
+  el('score-pct').textContent=total>0?pct+'%':'—%';
+  el('score-pct').style.color=pct>=70?'var(--bull)':pct>=50?'var(--amber)':'var(--bear)';
+}
+
+function renderAiHistory(){
+  const hEl=el('ai-history');
+  if(!AI.history.length){hEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">Aucune analyse pour l\'instant</div>';return;}
+  hEl.innerHTML=AI.history.map(h=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;margin-bottom:6px;background:var(--bg3)">
+      <span style="font-size:16px">${h.valid?'✅':'❌'}</span>
+      <span style="font-size:12px;color:var(--t2);flex:1">${h.label}</span>
+      <span style="font-size:10px;color:var(--t3)">${h.ts}</span>
+    </div>`).join('');
+}
 
 // ═══════════════════════════════════════════════════════════
 // INIT — wrapped in DOMContentLoaded for reliability
