@@ -457,14 +457,23 @@ canvas.sparkline{width:100%;display:block}
 
     <!-- ══════════ PAGE: TRADES ══════════ -->
     <div class="page" id="page-trades">
-      <div class="flex items-center gap-8 mb-12">
+      <div class="flex items-center gap-8 mb-12" style="flex-wrap:wrap">
         <div style="font-size:20px">📊</div>
         <h1 style="font-size:20px;font-weight:800">Journal des Trades</h1>
-        <span class="badge badge-violet">Paper Trading</span>
+        <span class="badge badge-violet">$1 000 Portfolio</span>
         <button class="btn btn-primary" style="margin-left:auto" onclick="openNewTrade()">+ Nouveau Trade</button>
       </div>
       <div class="grid-4 mb-12" id="trades-stats"></div>
-      <div class="card"><div class="card-h"><div class="card-title">📋 Historique</div><div style="display:flex;gap:6px" id="trades-filter"></div></div><div style="overflow-x:auto"><table class="data-table" id="trades-table"><thead><tr><th>Statut</th><th>Symbole</th><th>Direction</th><th>Entrée</th><th>Sortie</th><th>Quantité</th><th>Stop Loss</th><th>Take Profit</th><th>PnL</th><th>Tags</th><th>Ouvert</th></tr></thead><tbody id="trades-tbody"></tbody></table></div></div>
+      <div class="mb-12">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px">
+          <span>🟡 Trades Ouverts</span><span class="badge badge-neutral" id="open-trades-count">0</span>
+        </div>
+        <div id="open-trades-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="card-title">✅ Trades Fermés</div></div>
+        <div id="closed-trades-list" style="padding:10px"></div>
+      </div>
     </div>
 
     <!-- ══════════ PAGE: PERFORMANCE ══════════ -->
@@ -695,6 +704,87 @@ canvas.sparkline{width:100%;display:block}
   <div id="notif-list"></div>
 </div>
 
+<!-- ═══ MODAL: NOUVEAU TRADE ═══ -->
+<div id="trade-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px)">
+  <div class="card" style="width:100%;max-width:480px;max-height:92vh;overflow-y:auto">
+    <div class="card-h">
+      <div class="card-title">📝 Nouveau Trade</div>
+      <button onclick="closeTradeModal()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:22px;line-height:1;padding:0">×</button>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div class="grid-2">
+        <div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:5px">Symbole</div>
+          <select id="tm-sym" onchange="tm_autofill()" style="width:100%;background:var(--bg3);border:1px solid var(--b1);border-radius:10px;padding:9px 12px;color:var(--t1);font-size:13px;outline:none"></select>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:5px">Direction</div>
+          <div style="display:flex;gap:6px">
+            <button id="tm-long"  onclick="tm_dir('LONG')"  class="btn" style="flex:1;justify-content:center;background:rgba(0,212,177,.2);color:var(--bull);border:1px solid var(--bull)">▲ LONG</button>
+            <button id="tm-short" onclick="tm_dir('SHORT')" class="btn" style="flex:1;justify-content:center;background:var(--bg3);color:var(--t3);border:1px solid var(--b1)">▼ SHORT</button>
+          </div>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div>
+          <div style="font-size:11px;color:var(--t2);margin-bottom:5px">Prix d'entrée</div>
+          <input id="tm-entry" type="number" step="any" placeholder="0.00" oninput="tm_calcqty()" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:10px;padding:9px 12px;color:var(--t1);font-size:13px;outline:none;font-family:var(--font-mono)">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--bear);margin-bottom:5px">Stop Loss 🛑</div>
+          <input id="tm-sl" type="number" step="any" placeholder="0.00" oninput="tm_calcqty()" style="width:100%;background:rgba(255,77,109,.06);border:1px solid rgba(255,77,109,.35);border-radius:10px;padding:9px 12px;color:var(--bear);font-size:13px;outline:none;font-family:var(--font-mono)">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--bull);margin-bottom:5px">Take Profit 🎯</div>
+          <input id="tm-tp" type="number" step="any" placeholder="0.00" oninput="tm_calcqty()" style="width:100%;background:rgba(0,212,177,.06);border:1px solid rgba(0,212,177,.35);border-radius:10px;padding:9px 12px;color:var(--bull);font-size:13px;outline:none;font-family:var(--font-mono)">
+        </div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--b1);border-radius:10px;padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Risque max</div><div style="font-weight:800;color:var(--amber);font-size:14px">$20 (2%)</div></div>
+        <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Quantité auto</div><div style="font-weight:800;color:var(--t1);font-family:var(--font-mono);font-size:14px" id="tm-qty-disp">—</div></div>
+        <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Ratio R/R</div><div style="font-weight:800;font-size:14px" id="tm-rr-disp">—</div></div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:5px">📸 Screenshot ordre (optionnel)</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-ghost" style="font-size:12px" onclick="el('tm-img-input').click()">📂 Ajouter</button>
+          <input type="file" id="tm-img-input" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" onchange="tm_loadimg(event)">
+          <span id="tm-img-label" style="font-size:11px;color:var(--t3)">Aucune image</span>
+          <button id="tm-img-clear" onclick="tm_clearimg()" style="display:none;background:none;border:none;color:var(--bear);cursor:pointer;font-size:13px">✕</button>
+        </div>
+        <img id="tm-img-preview" style="display:none;margin-top:8px;max-width:100%;border-radius:10px;max-height:150px;object-fit:contain;border:1px solid var(--b1)">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:5px">Note (optionnel)</div>
+        <input id="tm-note" type="text" placeholder="Ex: breakout résistance, signal RSI…" style="width:100%;background:var(--bg3);border:1px solid var(--b1);border-radius:10px;padding:9px 12px;color:var(--t1);font-size:12px;outline:none">
+      </div>
+      <button class="btn btn-primary" onclick="submitNewTrade()" style="width:100%;justify-content:center;padding:13px;font-size:14px;margin-top:4px">✅ Enregistrer le trade</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: FERMER TRADE ═══ -->
+<div id="close-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px)">
+  <div class="card" style="width:100%;max-width:400px">
+    <div class="card-h">
+      <div class="card-title">🔒 Fermer le trade</div>
+      <button onclick="el('close-modal').style.display='none'" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:22px;line-height:1;padding:0">×</button>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div id="close-modal-info" style="background:var(--bg3);border-radius:10px;padding:12px;font-size:12px"></div>
+      <div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:5px">Prix de sortie</div>
+        <input id="close-exit-price" type="number" step="any" oninput="cm_preview()" style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:10px;padding:10px 12px;color:var(--t1);font-size:15px;outline:none;font-family:var(--font-mono);text-align:center;font-weight:700">
+      </div>
+      <div id="close-pnl-preview" style="text-align:center;font-size:24px;font-weight:800;padding:6px;min-height:40px"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="el('close-modal').style.display='none'" style="flex:1;justify-content:center">Annuler</button>
+        <button class="btn btn-primary" id="close-confirm-btn" style="flex:1;justify-content:center;background:var(--bull);box-shadow:0 0 18px rgba(0,212,177,.35)">✅ Confirmer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TradingView loaded via iframe — no blocking script -->
 
 <script>
@@ -750,14 +840,7 @@ const S = {
     { id:'o5', sym:'AAPL',    type:'TREND',           icon:'📈', color:'#00d4b1', dir:'BUY',  conf:74, gain:4.1, risk:1.9, desc:'Tendance haussière soutenue par catalyseur M4 — breakout en cours' },
   ],
 
-  trades: [
-    { id:'t1', sym:'BTCUSDT', type:'LONG',  status:'OPEN',   entry:66800, exit:null,  qty:0.15, sl:65200, tp:70000, pnl:null, pct:null, opened:Date.now()-2*3600000,  closed:null,        tags:['breakout','momentum'] },
-    { id:'t2', sym:'NVDA',    type:'LONG',  status:'OPEN',   entry:123.5, exit:null,  qty:20,   sl:118,   tp:135,   pnl:null, pct:null, opened:Date.now()-5*3600000,  closed:null,        tags:['news','earnings']    },
-    { id:'t3', sym:'ETHUSDT', type:'LONG',  status:'CLOSED', entry:3320,  exit:3510,  qty:2,    sl:3200,  tp:3600,  pnl:380,  pct:5.72, opened:Date.now()-24*3600000, closed:Date.now()-12*3600000, tags:['technical']    },
-    { id:'t4', sym:'SOLUSDT', type:'LONG',  status:'CLOSED', entry:178.5, exit:186.2, qty:10,   sl:172,   tp:195,   pnl:77,   pct:4.31, opened:Date.now()-30*3600000, closed:Date.now()-18*3600000, tags:['momentum']     },
-    { id:'t5', sym:'XRPUSDT', type:'SHORT', status:'CLOSED', entry:0.598, exit:0.621, qty:5000, sl:0.615, tp:0.55,  pnl:-115, pct:-3.85,opened:Date.now()-48*3600000, closed:Date.now()-36*3600000, tags:['reversal']     },
-    { id:'t6', sym:'AAPL',    type:'LONG',  status:'CLOSED', entry:210.2, exit:215.8, qty:15,   sl:206,   tp:220,   pnl:84,   pct:2.66, opened:Date.now()-72*3600000, closed:Date.now()-48*3600000, tags:['macro']        },
-  ],
+  trades: [],
 
   agents: [
     { id:'news',      name:'Agent News',      icon:'📰', color:'#7c5cfc', acc:78, signals:234, status:'ACTIVE'   },
@@ -1177,52 +1260,203 @@ function openNewsDetail(id){
 el('news-search').addEventListener('input',()=>renderNewsList());
 
 // ═══════════════════════════════════════════════════════════
-// TRADES PAGE
+// TRADES — Journal manuel $1000 portfolio
 // ═══════════════════════════════════════════════════════════
-function renderTrades(){
-  const closed=S.trades.filter(t=>t.status==='CLOSED');
-  const open=S.trades.filter(t=>t.status==='OPEN');
-  const wins=closed.filter(t=>(t.pnl||0)>0);
-  const totalPnL=closed.reduce((s,t)=>s+(t.pnl||0),0);
-  el('trades-stats').innerHTML=[
-    {l:'Trades ouverts', v:open.length, c:'var(--amber)'},
-    {l:'PnL total',      v:(totalPnL>=0?'+':'')+'$'+Math.abs(totalPnL).toFixed(0), c:totalPnL>=0?'var(--bull)':'var(--bear)'},
-    {l:'Win Rate',       v:closed.length>0?((wins.length/closed.length)*100).toFixed(0)+'%':'—', c:'var(--violet)'},
-    {l:'Total trades',   v:S.trades.length, c:'var(--t1)'},
-  ].map(s=>`<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-value" style="color:${s.c}">${s.v}</div></div>`).join('');
+const T_RISK_USD = 20; // 2% de $1000
+let _tmDir='LONG', _tmImg=null, _closeTradeId=null;
 
-  // filter
-  const fWrap=el('trades-filter');
-  fWrap.innerHTML='';
-  ['ALL','OPEN','CLOSED'].forEach(f=>{
-    const b=document.createElement('button');
-    b.textContent=f==='ALL'?'Tous':f==='OPEN'?'Ouverts':'Fermés';
-    b.className='btn btn-ghost';b.style.cssText='padding:3px 10px;font-size:11px';
-    if(f===S.tradesFilter){b.style.background='var(--violet)';b.style.color='#fff';}
-    b.onclick=()=>{ S.tradesFilter=f; renderTrades(); };
-    fWrap.appendChild(b);
-  });
-
-  const filtered=S.trades.filter(t=>S.tradesFilter==='ALL'||t.status===S.tradesFilter);
-  el('trades-tbody').innerHTML=filtered.map(t=>{
-    const up=(t.pnl||0)>=0;
-    return `<tr>
-      <td>${t.status==='OPEN'?'<span style="color:var(--amber)">● Ouvert</span>':'<span style="color:var(--t3)">✓ Fermé</span>'}</td>
-      <td><strong style="color:var(--t1)">${t.sym.replace('USDT','')}</strong></td>
-      <td><span class="badge ${t.type==='LONG'?'badge-bull':'badge-bear'}">${t.type==='LONG'?'▲':'▼'} ${t.type}</span></td>
-      <td class="font-mono">${fmt.price(t.entry)}</td>
-      <td class="font-mono">${t.exit?fmt.price(t.exit):'—'}</td>
-      <td class="font-mono">${t.qty}</td>
-      <td class="font-mono text-down">${fmt.price(t.sl)}</td>
-      <td class="font-mono text-up">${fmt.price(t.tp)}</td>
-      <td>${t.pnl!=null?`<strong class="font-mono ${up?'text-up':'text-down'}">${up?'+':''}$${t.pnl.toFixed(0)}</strong><span style="font-size:10px;color:var(--t3);margin-left:4px">(${t.pct?.toFixed(2)}%)</span>`:'<span style="color:var(--t3)">—</span>'}</td>
-      <td>${t.tags.map(g=>`<span class="badge badge-violet" style="font-size:9px;margin-right:3px">${g}</span>`).join('')}</td>
-      <td style="color:var(--t3);font-size:11px">${fmt.ago(t.opened)}</td>
-    </tr>`;
-  }).join('');
+function initTradeModal(){
+  const sel=el('tm-sym'); if(sel.options.length>0)return;
+  Object.values(S.assets).forEach(a=>{const o=document.createElement('option');o.value=a.sym;o.textContent=a.sym.replace('USDT','').replace('USD','')+' — '+a.name;sel.appendChild(o);});
 }
 
-function openNewTrade(){alert('Simulation: nouveau trade ajouté !\n\nEn production, ce formulaire permet de créer un trade paper avec SL/TP automatiques calculés par l\'Agent Risk.');}
+function openNewTrade(){
+  initTradeModal(); _tmDir='LONG'; _tmImg=null;
+  el('tm-long').style.cssText='flex:1;justify-content:center;background:rgba(0,212,177,.2);color:var(--bull);border:1px solid var(--bull)';
+  el('tm-short').style.cssText='flex:1;justify-content:center;background:var(--bg3);color:var(--t3);border:1px solid var(--b1)';
+  el('tm-img-preview').style.display='none'; el('tm-img-label').textContent='Aucune image';
+  el('tm-img-clear').style.display='none'; el('tm-note').value='';
+  el('tm-qty-disp').textContent='—'; el('tm-rr-disp').textContent='—';
+  tm_autofill(); el('trade-modal').style.display='flex';
+}
+function closeTradeModal(){ el('trade-modal').style.display='none'; }
+
+function tm_dir(dir){
+  _tmDir=dir;
+  if(dir==='LONG'){
+    el('tm-long').style.cssText='flex:1;justify-content:center;background:rgba(0,212,177,.2);color:var(--bull);border:1px solid var(--bull)';
+    el('tm-short').style.cssText='flex:1;justify-content:center;background:var(--bg3);color:var(--t3);border:1px solid var(--b1)';
+  } else {
+    el('tm-short').style.cssText='flex:1;justify-content:center;background:rgba(255,77,109,.2);color:var(--bear);border:1px solid var(--bear)';
+    el('tm-long').style.cssText='flex:1;justify-content:center;background:var(--bg3);color:var(--t3);border:1px solid var(--b1)';
+  }
+  tm_autofill();
+}
+
+function tm_autofill(){
+  const sym=el('tm-sym').value; const p=S.assets[sym]?.p||0; if(!p)return;
+  const d=p<1?5:p<10?4:p<1000?2:0;
+  el('tm-entry').value=p.toFixed(d);
+  if(_tmDir==='LONG'){el('tm-sl').value=(p*.98).toFixed(d);el('tm-tp').value=(p*1.05).toFixed(d);}
+  else{el('tm-sl').value=(p*1.02).toFixed(d);el('tm-tp').value=(p*.95).toFixed(d);}
+  tm_calcqty();
+}
+
+function tm_calcqty(){
+  const entry=parseFloat(el('tm-entry').value), sl=parseFloat(el('tm-sl').value), tp=parseFloat(el('tm-tp').value);
+  if(!entry||!sl)return;
+  const slD=Math.abs(entry-sl); if(slD<=0)return;
+  const qty=Math.min(T_RISK_USD/slD,(1000*.3)/entry);
+  el('tm-qty-disp').textContent=qty<0.001?qty.toFixed(6):qty<1?qty.toFixed(4):qty.toFixed(2);
+  if(tp){const rr=(Math.abs(tp-entry)/slD).toFixed(1);el('tm-rr-disp').textContent='1:'+rr;el('tm-rr-disp').style.color=parseFloat(rr)>=2?'var(--bull)':parseFloat(rr)>=1?'var(--amber)':'var(--bear)';}
+}
+
+function tm_loadimg(evt){
+  const file=evt.target.files[0]; if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{_tmImg=e.target.result;el('tm-img-preview').src=_tmImg;el('tm-img-preview').style.display='block';el('tm-img-label').textContent=file.name;el('tm-img-clear').style.display='';};
+  r.readAsDataURL(file); evt.target.value='';
+}
+function tm_clearimg(){_tmImg=null;el('tm-img-preview').style.display='none';el('tm-img-label').textContent='Aucune image';el('tm-img-clear').style.display='none';}
+
+function submitNewTrade(){
+  const sym=el('tm-sym').value, entry=parseFloat(el('tm-entry').value), sl=parseFloat(el('tm-sl').value), tp=parseFloat(el('tm-tp').value);
+  if(!sym||!entry||!sl||!tp){alert('Remplis le symbole, entrée, SL et TP.');return;}
+  const slD=Math.abs(entry-sl), qty=slD>0?Math.min(T_RISK_USD/slD,(1000*.3)/entry):0;
+  S.trades.unshift({id:'T'+Date.now(),sym,dir:_tmDir,entry,sl,tp,qty,posSize:qty*entry,riskUsd:T_RISK_USD,screenshot:_tmImg||null,note:el('tm-note').value.trim()||null,status:'OPEN',opened:Date.now(),closed:null,exitPrice:null,pnl:null,pnlPct:null});
+  closeTradeModal(); renderTrades();
+}
+
+function calcLivePnL(t){
+  const cur=S.assets[t.sym]?.p||t.entry;
+  const pnl=t.dir==='LONG'?(cur-t.entry)*t.qty:(t.entry-cur)*t.qty;
+  return{cur,pnl,pct:t.posSize>0?(pnl/t.posSize)*100:0};
+}
+
+function openCloseTrade(id){
+  const t=S.trades.find(x=>x.id===id); if(!t)return;
+  _closeTradeId=id; window._cmTrade=t;
+  const{cur,pnl}=calcLivePnL(t); const up=pnl>=0;
+  el('close-modal-info').innerHTML=`
+    <div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="color:var(--t3)">Symbole</span><strong>${t.sym.replace('USDT','')}</strong></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="color:var(--t3)">Direction</span><span class="${t.dir==='LONG'?'text-up':'text-down'}">${t.dir==='LONG'?'▲':'▼'} ${t.dir}</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="color:var(--t3)">Entrée</span><span style="font-family:var(--font-mono)">${fmt.price(t.entry)}</span></div>
+    <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Prix actuel</span><span style="font-family:var(--font-mono);font-weight:800;color:${up?'var(--bull)':'var(--bear)'}">${fmt.price(cur)}</span></div>`;
+  const d=cur<1?5:cur<10?4:cur<1000?2:0;
+  el('close-exit-price').value=cur.toFixed(d);
+  cm_preview();
+  el('close-confirm-btn').onclick=()=>confirmCloseTrade(parseFloat(el('close-exit-price').value));
+  el('close-modal').style.display='flex';
+}
+
+function cm_preview(){
+  const t=window._cmTrade; if(!t)return;
+  const exitP=parseFloat(el('close-exit-price').value)||0; if(!exitP){el('close-pnl-preview').textContent='';return;}
+  const pnl=t.dir==='LONG'?(exitP-t.entry)*t.qty:(t.entry-exitP)*t.qty;
+  const pct=t.posSize>0?(pnl/t.posSize)*100:0; const u=pnl>=0;
+  el('close-pnl-preview').innerHTML=`<span style="color:${u?'var(--bull)':'var(--bear)'}">${u?'+':''}$${Math.abs(pnl).toFixed(2)}<span style="font-size:14px;font-weight:600"> (${u?'+':''}${pct.toFixed(2)}%)</span></span>`;
+}
+
+function confirmCloseTrade(exitPrice){
+  const t=S.trades.find(x=>x.id===_closeTradeId); if(!t||!exitPrice)return;
+  t.status='CLOSED'; t.exitPrice=exitPrice; t.closed=Date.now();
+  t.pnl=t.dir==='LONG'?(exitPrice-t.entry)*t.qty:(t.entry-exitPrice)*t.qty;
+  t.pnlPct=t.posSize>0?(t.pnl/t.posSize)*100:0;
+  el('close-modal').style.display='none'; renderTrades();
+}
+
+function deleteTrade(id){if(!confirm('Supprimer ce trade ?'))return;S.trades=S.trades.filter(x=>x.id!==id);renderTrades();}
+
+function renderTrades(){
+  const open=S.trades.filter(t=>t.status==='OPEN');
+  const closed=S.trades.filter(t=>t.status==='CLOSED');
+  const wins=closed.filter(t=>(t.pnl||0)>0);
+  const realPnL=closed.reduce((s,t)=>s+(t.pnl||0),0);
+  const livePnL=open.reduce((s,t)=>s+calcLivePnL(t).pnl,0);
+  const porto=1000+realPnL;
+
+  el('trades-stats').innerHTML=[
+    {l:'Portefeuille',v:'$'+porto.toFixed(0),sub:(realPnL>=0?'+':'')+'$'+Math.abs(realPnL).toFixed(0)+' réalisé',c:porto>=1000?'var(--bull)':'var(--bear)'},
+    {l:'PnL en cours',v:(livePnL>=0?'+':'')+'$'+Math.abs(livePnL).toFixed(2),sub:open.length+' ouvert'+(open.length>1?'s':''),c:livePnL>=0?'var(--bull)':'var(--bear)'},
+    {l:'Win Rate',v:closed.length>0?((wins.length/closed.length)*100).toFixed(0)+'%':'—',sub:wins.length+'/'+closed.length+' trades',c:'var(--violet)'},
+    {l:'Risque/trade',v:'$'+T_RISK_USD+' max',sub:'2% du portfolio',c:'var(--amber)'},
+  ].map(s=>`<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-value" style="font-size:18px;color:${s.c}">${s.v}</div><div class="stat-sub text-t3">${s.sub}</div></div>`).join('');
+
+  el('open-trades-count').textContent=open.length;
+  if(!open.length){
+    el('open-trades-list').innerHTML=`<div style="text-align:center;padding:28px;color:var(--t3);background:var(--bg-card);border:1px dashed var(--b2);border-radius:14px"><div style="font-size:36px;margin-bottom:8px">📋</div><div style="font-size:13px;font-weight:600">Aucun trade ouvert</div><div style="font-size:11px;margin-top:4px">Appuie sur <strong style="color:var(--violet)">+ Nouveau Trade</strong> pour saisir un trade</div></div>`;
+  } else {
+    el('open-trades-list').innerHTML=open.map(t=>{
+      const{cur,pnl,pct}=calcLivePnL(t); const up=pnl>=0;
+      const slD=Math.abs(t.entry-t.sl), tpD=Math.abs(t.tp-t.entry);
+      const tpHit=t.dir==='LONG'?cur>=t.tp:cur<=t.tp;
+      const slHit=t.dir==='LONG'?cur<=t.sl:cur>=t.sl;
+      const nearSl=!slHit&&Math.abs(cur-t.sl)/slD<0.25;
+      const nearTp=!tpHit&&Math.abs(t.tp-cur)/tpD<0.12;
+      const lo=Math.min(t.sl,t.tp),hi=Math.max(t.sl,t.tp);
+      const trk=Math.min(99,Math.max(1,((cur-lo)/(hi-lo))*100));
+      return `<div class="card mb-12" style="border-color:${up?'rgba(0,212,177,.35)':'rgba(255,77,109,.35)'}">
+        <div style="padding:14px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:44px;height:44px;border-radius:14px;background:${t.dir==='LONG'?'rgba(0,212,177,.12)':'rgba(255,77,109,.12)'};display:flex;align-items:center;justify-content:center;font-size:22px">${t.dir==='LONG'?'📈':'📉'}</div>
+              <div>
+                <div style="font-size:17px;font-weight:800">${t.sym.replace('USDT','').replace('USD','')}</div>
+                <div style="display:flex;gap:6px;align-items:center;margin-top:3px">
+                  <span class="badge ${t.dir==='LONG'?'badge-bull':'badge-bear'}">${t.dir==='LONG'?'▲':'▼'} ${t.dir}</span>
+                  <span style="font-size:10px;color:var(--t3)">${fmt.ago(t.opened)}</span>
+                </div>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:24px;font-weight:800;color:${up?'var(--bull)':'var(--bear)'}">${up?'+':''}$${Math.abs(pnl).toFixed(2)}</div>
+              <div style="font-size:12px;color:${up?'var(--bull)':'var(--bear)'}">${up?'+':''}${pct.toFixed(2)}%</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+            <div style="background:var(--bg3);border-radius:10px;padding:8px;text-align:center"><div style="font-size:10px;color:var(--t3)">Entrée</div><div style="font-size:13px;font-weight:700;font-family:var(--font-mono)">${fmt.price(t.entry)}</div></div>
+            <div style="background:${up?'rgba(0,212,177,.08)':'rgba(255,77,109,.08)'};border:1px solid ${up?'rgba(0,212,177,.2)':'rgba(255,77,109,.2)'};border-radius:10px;padding:8px;text-align:center"><div style="font-size:10px;color:var(--t3)">Prix actuel</div><div style="font-size:13px;font-weight:800;font-family:var(--font-mono);color:${up?'var(--bull)':'var(--bear)'}">${fmt.price(cur)}</div></div>
+            <div style="background:var(--bg3);border-radius:10px;padding:8px;text-align:center"><div style="font-size:10px;color:var(--t3)">Quantité</div><div style="font-size:12px;font-weight:700;font-family:var(--font-mono)">${t.qty<0.001?t.qty.toFixed(5):t.qty<1?t.qty.toFixed(4):t.qty.toFixed(2)}</div></div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px">
+              <span style="color:var(--bear)">🛑 SL ${fmt.price(t.sl)}</span>
+              <span style="color:var(--bull)">🎯 TP ${fmt.price(t.tp)}</span>
+            </div>
+            <div style="height:8px;background:var(--bg0);border-radius:4px;overflow:hidden;position:relative">
+              <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,77,109,.25),transparent 45%,transparent 55%,rgba(0,212,177,.25));border-radius:4px"></div>
+              <div style="position:absolute;top:1px;bottom:1px;width:4px;background:white;border-radius:2px;left:${trk}%;transform:translateX(-50%);box-shadow:0 0 6px rgba(255,255,255,.5)"></div>
+            </div>
+          </div>
+          ${slHit?`<div style="background:rgba(255,77,109,.12);border:1px solid rgba(255,77,109,.35);border-radius:10px;padding:10px;text-align:center;font-size:13px;font-weight:800;color:var(--bear);margin-bottom:10px;animation:pulse 1s infinite">🛑 STOP LOSS ATTEINT — Coupe maintenant !</div>`:''}
+          ${tpHit?`<div style="background:rgba(0,212,177,.12);border:1px solid rgba(0,212,177,.35);border-radius:10px;padding:10px;text-align:center;font-size:13px;font-weight:800;color:var(--bull);margin-bottom:10px">🎯 TAKE PROFIT ATTEINT — Prends tes gains !</div>`:''}
+          ${nearSl&&!slHit?`<div style="background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);border-radius:8px;padding:8px;text-align:center;font-size:12px;color:var(--amber);margin-bottom:10px">⚠️ Proche du Stop Loss — surveille</div>`:''}
+          ${nearTp&&!tpHit?`<div style="background:rgba(0,212,177,.08);border:1px solid rgba(0,212,177,.2);border-radius:8px;padding:8px;text-align:center;font-size:12px;color:var(--bull);margin-bottom:10px">🔥 Presque au Take Profit !</div>`:''}
+          ${t.note?`<div style="font-size:12px;color:var(--t2);background:var(--bg3);border-radius:8px;padding:8px 10px;margin-bottom:10px">💬 ${t.note}</div>`:''}
+          ${t.screenshot?`<div style="margin-bottom:10px"><img src="${t.screenshot}" style="max-width:100%;border-radius:10px;max-height:160px;object-fit:contain;cursor:pointer;border:1px solid var(--b1)" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'160px':'none'" title="Tap pour agrandir"></div>`:''}
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="openCloseTrade('${t.id}')" style="flex:1;justify-content:center;background:rgba(0,212,177,.15);color:var(--bull);border:1px solid rgba(0,212,177,.4);font-size:13px">🔒 Fermer le trade</button>
+            <button onclick="deleteTrade('${t.id}')" style="background:none;border:1px solid var(--b1);border-radius:10px;color:var(--bear);cursor:pointer;padding:0 14px;font-size:16px">🗑️</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  el('closed-trades-list').innerHTML=!closed.length
+    ?'<div style="text-align:center;padding:16px;color:var(--t3);font-size:12px">Aucun trade fermé</div>'
+    :closed.map(t=>{const up=(t.pnl||0)>=0;return`<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--bg3);margin-bottom:6px">
+      <span style="font-size:20px">${up?'✅':'❌'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;font-weight:700">${t.sym.replace('USDT','')}</span><span class="badge ${t.dir==='LONG'?'badge-bull':'badge-bear'}" style="font-size:9px">${t.dir}</span></div>
+        <div style="font-size:11px;color:var(--t3)">${fmt.price(t.entry)} → ${fmt.price(t.exitPrice||0)} · ${fmt.ago(t.closed||t.opened)}</div>
+        ${t.note?`<div style="font-size:10px;color:var(--t3);margin-top:1px">💬 ${t.note}</div>`:''}
+      </div>
+      ${t.screenshot?`<img src="${t.screenshot}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--b1);cursor:pointer;flex-shrink:0" onclick="this.style.width=this.style.width==='44px'?'120px':'44px';this.style.height=this.style.height==='44px'?'auto':'44px'">`:''}
+      <div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:800;color:${up?'var(--bull)':'var(--bear)'}">${up?'+':''}$${Math.abs(t.pnl||0).toFixed(2)}</div><div style="font-size:11px;color:var(--t3)">${(t.pnlPct||0).toFixed(2)}%</div></div>
+      <button onclick="deleteTrade('${t.id}')" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:4px;flex-shrink:0">🗑️</button>
+    </div>`;}).join('');
+}
 
 // ═══════════════════════════════════════════════════════════
 // CANVAS CHARTS
@@ -2019,9 +2253,10 @@ function boot(){
   initDashboard();
   updateClock();
   setInterval(updateClock, 1000);
-  initBinanceWS();          // live crypto prices via WebSocket
-  fetchStocks();            // load stocks once on boot
-  setInterval(fetchStocks, 30000); // refresh stocks every 30s
+  initBinanceWS();
+  fetchStocks();
+  setInterval(fetchStocks, 30000);
+  setInterval(()=>{ if(S.currentPage==='trades'&&S.trades.some(t=>t.status==='OPEN')) renderTrades(); }, 5000);
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot);
 else boot();
