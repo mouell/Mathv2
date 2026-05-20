@@ -1452,60 +1452,83 @@ document.addEventListener('click',e=>{if(S.notifOpen&&!el('notif-panel').contain
 // ═══════════════════════════════════════════════════════════
 // LIVE PRICE UPDATES
 // ═══════════════════════════════════════════════════════════
-// REAL-TIME PRICES — Binance (crypto) + Yahoo Finance (stocks)
+// REAL-TIME PRICES — Binance WebSocket (crypto) + Yahoo Finance (stocks)
+// WebSocket bypasses CORS restrictions from file:// origin
 // ═══════════════════════════════════════════════════════════
-async function fetchRealPrices(){
-  // ── Crypto: Binance 24hr ticker (CORS OK, no auth) ───────
-  try {
-    const syms = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT'];
-    const url = 'https://api.binance.com/api/v3/ticker/24hr?symbols='+encodeURIComponent(JSON.stringify(syms));
-    const r = await fetch(url);
-    if(r.ok){
-      const data = await r.json();
-      data.forEach(d=>{
-        if(S.assets[d.symbol]){
-          S.assets[d.symbol].p   = parseFloat(d.lastPrice);
-          S.assets[d.symbol].chg = parseFloat(d.priceChangePercent);
-        }
-      });
-    }
-  } catch(e){ console.warn('Binance fetch failed', e); }
+let _bws = null;
 
-  // ── Stocks + Forex: Yahoo Finance v7 ─────────────────────
-  try {
-    const r = await fetch('https://query1.finance.yahoo.com/v7/finance/quote?symbols=AAPL,NVDA,SPY,EURUSD%3DX&fields=regularMarketPrice,regularMarketChangePercent',
-      { headers:{'Accept':'application/json'} });
-    if(r.ok){
-      const data = await r.json();
-      (data?.quoteResponse?.result||[]).forEach(q=>{
-        const sym = q.symbol==='EURUSD=X'?'EURUSD':q.symbol;
-        if(S.assets[sym]){
-          S.assets[sym].p   = q.regularMarketPrice;
-          S.assets[sym].chg = q.regularMarketChangePercent;
-        }
-      });
-    }
-  } catch(e){ console.warn('Yahoo Finance fetch failed', e); }
+function initBinanceWS(){
+  if(_bws && _bws.readyState < 2) return;
+  const streams = ['btcusdt','ethusdt','solusdt','bnbusdt','xrpusdt','adausdt']
+    .map(s=>s+'@miniTicker').join('/');
+  _bws = new WebSocket('wss://stream.binance.com:9443/stream?streams='+streams);
 
-  applyPriceDOM();
+  _bws.onopen = ()=>{
+    const d=el('sb-ws-dot'); if(d) d.style.background='var(--bull)';
+  };
+
+  _bws.onmessage = evt=>{
+    try {
+      const { data } = JSON.parse(evt.data);
+      const sym = data.s; // e.g. 'BTCUSDT'
+      if(!S.assets[sym]) return;
+      const c = parseFloat(data.c); // close/last price
+      const o = parseFloat(data.o); // open 24h ago
+      S.assets[sym].p   = c;
+      S.assets[sym].chg = o>0 ? ((c-o)/o)*100 : 0;
+      updateSymbolDOM(sym);
+      if(sym==='BTCUSDT'||sym==='ETHUSDT') updateTopbar();
+      if(S.currentPage==='dashboard') renderHeatmap();
+      renderTicker();
+    } catch(e){}
+  };
+
+  _bws.onerror = ()=>{ _bws.close(); };
+  _bws.onclose = ()=>{ setTimeout(initBinanceWS, 4000); }; // auto-reconnect
 }
 
-function applyPriceDOM(){
-  Object.keys(S.assets).forEach(sym=>{
-    const a=S.assets[sym]; const up=a.chg>=0;
-    const pEl=el(`wl-p-${sym}`); const cEl=el(`wl-c-${sym}`);
-    if(pEl){pEl.textContent=fmt.price(a.p);pEl.style.color=up?'var(--bull)':'var(--bear)';}
-    if(cEl){cEl.textContent=(up?'▲':'▼')+' '+Math.abs(a.chg).toFixed(2)+'%';cEl.className='wl-chg '+(up?'text-up':'text-down');}
-  });
+function updateSymbolDOM(sym){
+  const a=S.assets[sym]; if(!a) return;
+  const up=a.chg>=0;
+  const pEl=el('wl-p-'+sym); const cEl=el('wl-c-'+sym);
+  if(pEl){ pEl.textContent=fmt.price(a.p); pEl.style.color=up?'var(--bull)':'var(--bear)'; }
+  if(cEl){ cEl.textContent=(up?'▲':'▼')+' '+Math.abs(a.chg).toFixed(2)+'%'; cEl.className='wl-chg '+(up?'text-up':'text-down'); }
+}
+
+function updateTopbar(){
   const btc=S.assets.BTCUSDT, eth=S.assets.ETHUSDT;
+  if(!btc||!eth) return;
   el('tb-btc-price').textContent='$'+btc.p.toLocaleString('fr-FR',{maximumFractionDigits:0});
   el('tb-btc-chg').textContent=(btc.chg>=0?'▲ +':'▼ ')+Math.abs(btc.chg).toFixed(2)+'%';
   el('tb-btc-chg').className='tb-chg '+(btc.chg>=0?'up':'down');
   el('tb-eth-price').textContent='$'+eth.p.toLocaleString('fr-FR',{maximumFractionDigits:0});
   el('tb-eth-chg').textContent=(eth.chg>=0?'▲ +':'▼ ')+Math.abs(eth.chg).toFixed(2)+'%';
   el('tb-eth-chg').className='tb-chg '+(eth.chg>=0?'up':'down');
+}
+
+function applyPriceDOM(){
+  Object.keys(S.assets).forEach(sym=>updateSymbolDOM(sym));
+  updateTopbar();
   if(S.currentPage==='dashboard') renderHeatmap();
   renderTicker();
+}
+
+// Stocks + Forex via Yahoo Finance (best-effort, may need HTTPS server)
+async function fetchStocks(){
+  try {
+    const r = await fetch('https://query2.finance.yahoo.com/v7/finance/quote?symbols=AAPL,NVDA,SPY,EURUSD%3DX&fields=regularMarketPrice,regularMarketChangePercent',
+      { headers:{'Accept':'application/json'}, cache:'no-store' });
+    if(!r.ok) return;
+    const data = await r.json();
+    (data?.quoteResponse?.result||[]).forEach(q=>{
+      const sym = q.symbol==='EURUSD=X'?'EURUSD':q.symbol;
+      if(S.assets[sym]){
+        S.assets[sym].p   = q.regularMarketPrice;
+        S.assets[sym].chg = q.regularMarketChangePercent || 0;
+        updateSymbolDOM(sym);
+      }
+    });
+  } catch(e){}
 }
 
 function updateClock(){
@@ -1996,8 +2019,9 @@ function boot(){
   initDashboard();
   updateClock();
   setInterval(updateClock, 1000);
-  fetchRealPrices();
-  setInterval(fetchRealPrices, 15000); // refresh every 15s
+  initBinanceWS();          // live crypto prices via WebSocket
+  fetchStocks();            // load stocks once on boot
+  setInterval(fetchStocks, 30000); // refresh stocks every 30s
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot);
 else boot();
