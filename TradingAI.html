@@ -461,9 +461,13 @@ canvas.sparkline{width:100%;display:block}
         <div style="font-size:20px">📊</div>
         <h1 style="font-size:20px;font-weight:800">Journal des Trades</h1>
         <span class="badge badge-violet">$1 000 Portfolio</span>
-        <button class="btn btn-primary" style="margin-left:auto" onclick="openNewTrade()">+ Nouveau Trade</button>
+        <div style="display:flex;gap:8px;margin-left:auto;flex-wrap:wrap">
+          <button class="btn" style="background:rgba(0,212,177,.15);color:var(--bull);border:1px solid rgba(0,212,177,.4)" onclick="openQuickResult()">💰 Résultat rapide</button>
+          <button class="btn btn-primary" onclick="openNewTrade()">+ Nouveau Trade</button>
+        </div>
       </div>
       <div class="grid-4 mb-12" id="trades-stats"></div>
+      <div id="trades-progress" class="mb-12"></div>
       <div class="mb-12">
         <div style="font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px">
           <span>🟡 Trades Ouverts</span><span class="badge badge-neutral" id="open-trades-count">0</span>
@@ -781,6 +785,46 @@ canvas.sparkline{width:100%;display:block}
         <button class="btn btn-ghost" onclick="el('close-modal').style.display='none'" style="flex:1;justify-content:center">Annuler</button>
         <button class="btn btn-primary" id="close-confirm-btn" style="flex:1;justify-content:center;background:var(--bull);box-shadow:0 0 18px rgba(0,212,177,.35)">✅ Confirmer</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: RÉSULTAT RAPIDE ═══ -->
+<div id="qr-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.78);align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px)">
+  <div class="card" style="width:100%;max-width:440px;max-height:94vh;overflow-y:auto">
+    <div class="card-h">
+      <div class="card-title">💰 Résultat de Trade</div>
+      <button onclick="closeQuickResult()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:22px;line-height:1;padding:0">×</button>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+      <div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:6px">Résultat du trade</div>
+        <div style="display:flex;gap:8px">
+          <button id="qr-gain-btn" onclick="qr_dir('GAIN')" class="btn" style="flex:1;justify-content:center;background:rgba(0,212,177,.2);color:var(--bull);border:1px solid var(--bull);font-size:14px;padding:11px">✅ GAIN</button>
+          <button id="qr-perte-btn" onclick="qr_dir('PERTE')" class="btn" style="flex:1;justify-content:center;background:var(--bg3);color:var(--t3);border:1px solid var(--b1);font-size:14px;padding:11px">❌ PERTE</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:5px">Montant ($)</div>
+        <input id="qr-amount" type="number" step="any" min="0" placeholder="0.00"
+          style="width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:10px;padding:14px;color:var(--t1);font-size:26px;font-weight:800;outline:none;font-family:var(--font-mono);text-align:center">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:5px">📸 Photo de l'ordre (optionnel)</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-ghost" style="font-size:12px" onclick="el('qr-img-input').click()">📂 Ajouter</button>
+          <input type="file" id="qr-img-input" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" onchange="qr_loadimg(event)">
+          <span id="qr-img-label" style="font-size:11px;color:var(--t3)">Aucune image</span>
+          <button id="qr-img-clear" onclick="qr_clearimg()" style="display:none;background:none;border:none;color:var(--bear);cursor:pointer;font-size:13px">✕</button>
+        </div>
+        <img id="qr-img-preview" style="display:none;margin-top:10px;max-width:100%;border-radius:12px;max-height:200px;object-fit:contain;border:1px solid var(--b1)">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:5px">Note (optionnel)</div>
+        <input id="qr-note" type="text" placeholder="Ex: clôture BTC long, scalp NVDA…"
+          style="width:100%;background:var(--bg3);border:1px solid var(--b1);border-radius:10px;padding:9px 12px;color:var(--t1);font-size:12px;outline:none">
+      </div>
+      <button class="btn btn-primary" onclick="submitQuickResult()" style="width:100%;justify-content:center;padding:14px;font-size:15px">💾 Enregistrer le résultat</button>
     </div>
   </div>
 </div>
@@ -1367,6 +1411,61 @@ function confirmCloseTrade(exitPrice){
 
 function deleteTrade(id){if(!confirm('Supprimer ce trade ?'))return;S.trades=S.trades.filter(x=>x.id!==id);renderTrades();}
 
+// ═══════════════════════════════════════════════════════════
+// RÉSULTAT RAPIDE
+// ═══════════════════════════════════════════════════════════
+let _qrDir='GAIN', _qrImg=null;
+
+function openQuickResult(){
+  _qrDir='GAIN'; _qrImg=null;
+  el('qr-gain-btn').style.cssText='flex:1;justify-content:center;background:rgba(0,212,177,.2);color:var(--bull);border:1px solid var(--bull);font-size:14px;padding:11px';
+  el('qr-perte-btn').style.cssText='flex:1;justify-content:center;background:var(--bg3);color:var(--t3);border:1px solid var(--b1);font-size:14px;padding:11px';
+  el('qr-amount').value='';
+  el('qr-img-preview').style.display='none'; el('qr-img-label').textContent='Aucune image'; el('qr-img-clear').style.display='none';
+  el('qr-note').value='';
+  el('qr-modal').style.display='flex';
+  setTimeout(()=>el('qr-amount').focus(),120);
+}
+function closeQuickResult(){ el('qr-modal').style.display='none'; }
+
+function qr_dir(dir){
+  _qrDir=dir;
+  if(dir==='GAIN'){
+    el('qr-gain-btn').style.cssText='flex:1;justify-content:center;background:rgba(0,212,177,.2);color:var(--bull);border:1px solid var(--bull);font-size:14px;padding:11px';
+    el('qr-perte-btn').style.cssText='flex:1;justify-content:center;background:var(--bg3);color:var(--t3);border:1px solid var(--b1);font-size:14px;padding:11px';
+  } else {
+    el('qr-perte-btn').style.cssText='flex:1;justify-content:center;background:rgba(255,77,109,.2);color:var(--bear);border:1px solid var(--bear);font-size:14px;padding:11px';
+    el('qr-gain-btn').style.cssText='flex:1;justify-content:center;background:var(--bg3);color:var(--t3);border:1px solid var(--b1);font-size:14px;padding:11px';
+  }
+}
+
+function qr_loadimg(evt){
+  const file=evt.target.files[0]; if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{_qrImg=e.target.result;el('qr-img-preview').src=_qrImg;el('qr-img-preview').style.display='block';el('qr-img-label').textContent=file.name;el('qr-img-clear').style.display='';};
+  r.readAsDataURL(file); evt.target.value='';
+}
+function qr_clearimg(){_qrImg=null;el('qr-img-preview').style.display='none';el('qr-img-label').textContent='Aucune image';el('qr-img-clear').style.display='none';}
+
+function submitQuickResult(){
+  const amount=parseFloat(el('qr-amount').value);
+  if(!amount||amount<=0){alert('Entre un montant valide.');return;}
+  const pnl=_qrDir==='GAIN'?amount:-amount;
+  S.trades.unshift({
+    id:'Q'+Date.now(),
+    type:'QUICK',
+    dir:_qrDir,
+    pnl,
+    pnlPct:(pnl/1000)*100,
+    note:el('qr-note').value.trim()||null,
+    screenshot:_qrImg||null,
+    status:'CLOSED',
+    opened:Date.now(),
+    closed:Date.now()
+  });
+  closeQuickResult(); renderTrades();
+}
+
 function renderTrades(){
   const open=S.trades.filter(t=>t.status==='OPEN');
   const closed=S.trades.filter(t=>t.status==='CLOSED');
@@ -1381,6 +1480,30 @@ function renderTrades(){
     {l:'Win Rate',v:closed.length>0?((wins.length/closed.length)*100).toFixed(0)+'%':'—',sub:wins.length+'/'+closed.length+' trades',c:'var(--violet)'},
     {l:'Risque/trade',v:'$'+T_RISK_USD+' max',sub:'2% du portfolio',c:'var(--amber)'},
   ].map(s=>`<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-value" style="font-size:18px;color:${s.c}">${s.v}</div><div class="stat-sub text-t3">${s.sub}</div></div>`).join('');
+
+  // Progress bar
+  const pct=Math.abs(realPnL/1000)*100; const up=realPnL>=0;
+  const today=new Date().toDateString();
+  const todayPnL=closed.filter(t=>new Date(t.closed||t.opened).toDateString()===today).reduce((s,t)=>s+(t.pnl||0),0);
+  const barW=Math.min(pct,100);
+  el('trades-progress').innerHTML=`<div class="card" style="padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;color:var(--t2)">📊 Progression du portfolio</div>
+      <div style="font-size:11px;color:var(--t3)">Objectif de départ : $1 000</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--t3);white-space:nowrap">$1 000</div>
+      <div style="flex:1;height:10px;background:var(--bg0);border-radius:5px;overflow:hidden;position:relative">
+        <div style="position:absolute;inset:0;height:10px;width:${barW}%;background:${up?'linear-gradient(90deg,#00d4b1,#84cc16)':'linear-gradient(90deg,#ff4d6d,#f5a623)'};border-radius:5px;transition:width .4s ease"></div>
+      </div>
+      <div style="font-size:13px;font-weight:800;color:${up?'var(--bull)':'var(--bear)'};white-space:nowrap">$${porto.toFixed(0)} <span style="font-size:11px;font-weight:600">(${up?'+':''}${realPnL>=0?'+':''}${((porto-1000)/1000*100).toFixed(1)}%)</span></div>
+    </div>
+    <div style="display:flex;gap:16px;font-size:11px">
+      <div style="color:var(--t3)">Aujourd'hui : <span style="font-weight:700;color:${todayPnL>=0?'var(--bull)':'var(--bear)'}">${todayPnL>=0?'+':''}$${Math.abs(todayPnL).toFixed(2)}</span></div>
+      <div style="color:var(--t3)">Total réalisé : <span style="font-weight:700;color:${realPnL>=0?'var(--bull)':'var(--bear)'}">${realPnL>=0?'+':''}$${Math.abs(realPnL).toFixed(2)}</span></div>
+      <div style="color:var(--t3)">Trades : <span style="font-weight:700;color:var(--t1)">${closed.length}</span></div>
+    </div>
+  </div>`;
 
   el('open-trades-count').textContent=open.length;
   if(!open.length){
@@ -1444,18 +1567,39 @@ function renderTrades(){
   }
 
   el('closed-trades-list').innerHTML=!closed.length
-    ?'<div style="text-align:center;padding:16px;color:var(--t3);font-size:12px">Aucun trade fermé</div>'
-    :closed.map(t=>{const up=(t.pnl||0)>=0;return`<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--bg3);margin-bottom:6px">
-      <span style="font-size:20px">${up?'✅':'❌'}</span>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;font-weight:700">${t.sym.replace('USDT','')}</span><span class="badge ${t.dir==='LONG'?'badge-bull':'badge-bear'}" style="font-size:9px">${t.dir}</span></div>
-        <div style="font-size:11px;color:var(--t3)">${fmt.price(t.entry)} → ${fmt.price(t.exitPrice||0)} · ${fmt.ago(t.closed||t.opened)}</div>
-        ${t.note?`<div style="font-size:10px;color:var(--t3);margin-top:1px">💬 ${t.note}</div>`:''}
-      </div>
-      ${t.screenshot?`<img src="${t.screenshot}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--b1);cursor:pointer;flex-shrink:0" onclick="this.style.width=this.style.width==='44px'?'120px':'44px';this.style.height=this.style.height==='44px'?'auto':'44px'">`:''}
-      <div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:800;color:${up?'var(--bull)':'var(--bear)'}">${up?'+':''}$${Math.abs(t.pnl||0).toFixed(2)}</div><div style="font-size:11px;color:var(--t3)">${(t.pnlPct||0).toFixed(2)}%</div></div>
-      <button onclick="deleteTrade('${t.id}')" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:4px;flex-shrink:0">🗑️</button>
-    </div>`;}).join('');
+    ?'<div style="text-align:center;padding:16px;color:var(--t3);font-size:12px">Aucun résultat enregistré</div>'
+    :closed.map(t=>{
+      const up=(t.pnl||0)>=0;
+      if(t.type==='QUICK'){
+        return `<div style="background:var(--bg3);border-radius:12px;margin-bottom:8px;overflow:hidden;border:1px solid ${up?'rgba(0,212,177,.2)':'rgba(255,77,109,.2)'}">
+          ${t.screenshot?`<img src="${t.screenshot}" style="width:100%;max-height:220px;object-fit:contain;display:block;cursor:pointer;background:var(--bg0)" onclick="this.style.maxHeight=this.style.maxHeight==='220px'?'none':'220px'" title="Tap pour agrandir">`:''}
+          <div style="display:flex;align-items:center;gap:10px;padding:10px">
+            <span style="font-size:20px">${up?'✅':'❌'}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:700;color:var(--t2)">Résultat rapide</div>
+              <div style="font-size:11px;color:var(--t3)">${fmt.ago(t.closed||t.opened)}</div>
+              ${t.note?`<div style="font-size:10px;color:var(--t3);margin-top:1px">💬 ${t.note}</div>`:''}
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:18px;font-weight:800;color:${up?'var(--bull)':'var(--bear)'}">${up?'+':''}$${Math.abs(t.pnl||0).toFixed(2)}</div>
+              <div style="font-size:11px;color:var(--t3)">${up?'+':''}${(t.pnlPct||0).toFixed(2)}%</div>
+            </div>
+            <button onclick="deleteTrade('${t.id}')" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:4px;flex-shrink:0">🗑️</button>
+          </div>
+        </div>`;
+      }
+      return`<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--bg3);margin-bottom:6px">
+        <span style="font-size:20px">${up?'✅':'❌'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px"><span style="font-size:13px;font-weight:700">${t.sym.replace('USDT','')}</span><span class="badge ${t.dir==='LONG'?'badge-bull':'badge-bear'}" style="font-size:9px">${t.dir}</span></div>
+          <div style="font-size:11px;color:var(--t3)">${fmt.price(t.entry)} → ${fmt.price(t.exitPrice||0)} · ${fmt.ago(t.closed||t.opened)}</div>
+          ${t.note?`<div style="font-size:10px;color:var(--t3);margin-top:1px">💬 ${t.note}</div>`:''}
+        </div>
+        ${t.screenshot?`<img src="${t.screenshot}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--b1);cursor:pointer;flex-shrink:0" onclick="this.style.width=this.style.width==='44px'?'120px':'44px';this.style.height=this.style.height==='44px'?'auto':'44px'">`:''}
+        <div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:800;color:${up?'var(--bull)':'var(--bear)'}">${up?'+':''}$${Math.abs(t.pnl||0).toFixed(2)}</div><div style="font-size:11px;color:var(--t3)">${(t.pnlPct||0).toFixed(2)}%</div></div>
+        <button onclick="deleteTrade('${t.id}')" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:4px;flex-shrink:0">🗑️</button>
+      </div>`;
+    }).join('');
 }
 
 // ═══════════════════════════════════════════════════════════
