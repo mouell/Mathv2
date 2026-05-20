@@ -339,16 +339,17 @@ canvas.sparkline{width:100%;display:block}
     <div class="tb-div"></div>
     <div class="tb-price-block">
       <span class="tb-sym">BTC</span>
-      <span class="tb-price" id="tb-btc-price">$67 420</span>
-      <span class="tb-chg up" id="tb-btc-chg">▲ +2.34%</span>
+      <span class="tb-price" id="tb-btc-price">$70 500</span>
+      <span class="tb-chg up" id="tb-btc-chg">— %</span>
     </div>
     <div class="tb-div"></div>
     <div class="tb-price-block">
       <span class="tb-sym">ETH</span>
-      <span class="tb-price" id="tb-eth-price">$3 512</span>
-      <span class="tb-chg up" id="tb-eth-chg">▲ +1.87%</span>
+      <span class="tb-price" id="tb-eth-price">$2 500</span>
+      <span class="tb-chg up" id="tb-eth-chg">— %</span>
     </div>
     <div class="tb-spacer"></div>
+    <div id="live-clock" style="font-size:11px;color:var(--t2);font-family:var(--font-mono);background:var(--bg3);border:1px solid var(--b1);border-radius:8px;padding:4px 10px;white-space:nowrap;letter-spacing:.3px"></div>
     <div class="tb-badge" id="market-sentiment" style="background:var(--teal-dim);color:var(--bull)">↑ BULLISH</div>
     <div class="icon-btn" onclick="toggleNotif()">🔔<span class="notif-badge" id="notif-count">3</span></div>
     <div class="icon-btn">⚙️</div>
@@ -597,9 +598,8 @@ canvas.sparkline{width:100%;display:block}
             <div class="card-title">📸 Graphique d'analyse</div>
             <div style="display:flex;gap:8px;align-items:center">
               <span class="fs-11 text-t3" id="ai-mode-label">Importer une image pour commencer</span>
-              <label class="btn btn-primary" style="cursor:pointer;font-size:12px">
-                📂 Importer<input type="file" id="ai-file-input" accept="image/*" style="display:none" onchange="loadAnalyseImage(event)">
-              </label>
+              <button class="btn btn-primary" style="cursor:pointer;font-size:12px" onclick="el('ai-file-input').click()">📂 Importer</button>
+              <input type="file" id="ai-file-input" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" onchange="loadAnalyseImage(event)">
             </div>
           </div>
 
@@ -712,27 +712,27 @@ const S = {
   selectedNews: null,
 
   assets: {
-    BTCUSDT:  { sym:'BTCUSDT',  name:'Bitcoin',    type:'crypto',  p:67420,   chg: 2.34  },
-    ETHUSDT:  { sym:'ETHUSDT',  name:'Ethereum',   type:'crypto',  p:3512,    chg: 1.87  },
-    SOLUSDT:  { sym:'SOLUSDT',  name:'Solana',     type:'crypto',  p:185.4,   chg: 4.21  },
-    BNBUSDT:  { sym:'BNBUSDT',  name:'BNB',        type:'crypto',  p:612.3,   chg:-0.80  },
-    XRPUSDT:  { sym:'XRPUSDT',  name:'XRP',        type:'crypto',  p:0.5823,  chg: 3.15  },
-    ADAUSDT:  { sym:'ADAUSDT',  name:'Cardano',    type:'crypto',  p:0.4521,  chg:-1.20  },
-    AAPL:     { sym:'AAPL',     name:'Apple',      type:'stock',   p:213.5,   chg: 0.87  },
-    NVDA:     { sym:'NVDA',     name:'NVIDIA',     type:'stock',   p:125.8,   chg: 3.42  },
-    SPY:      { sym:'SPY',      name:'S&P 500',    type:'stock',   p:551.2,   chg: 0.54  },
-    EURUSD:   { sym:'EURUSD',   name:'EUR/USD',    type:'forex',   p:1.0821,  chg: 0.12  },
+    BTCUSDT:  { sym:'BTCUSDT',  name:'Bitcoin',    type:'crypto',  p:70500,   chg: 0  },
+    ETHUSDT:  { sym:'ETHUSDT',  name:'Ethereum',   type:'crypto',  p:2500,    chg: 0  },
+    SOLUSDT:  { sym:'SOLUSDT',  name:'Solana',     type:'crypto',  p:165,     chg: 0  },
+    BNBUSDT:  { sym:'BNBUSDT',  name:'BNB',        type:'crypto',  p:600,     chg: 0  },
+    XRPUSDT:  { sym:'XRPUSDT',  name:'XRP',        type:'crypto',  p:2.40,    chg: 0  },
+    ADAUSDT:  { sym:'ADAUSDT',  name:'Cardano',    type:'crypto',  p:0.72,    chg: 0  },
+    AAPL:     { sym:'AAPL',     name:'Apple',      type:'stock',   p:200,     chg: 0  },
+    NVDA:     { sym:'NVDA',     name:'NVIDIA',     type:'stock',   p:115,     chg: 0  },
+    SPY:      { sym:'SPY',      name:'S&P 500',    type:'stock',   p:580,     chg: 0  },
+    EURUSD:   { sym:'EURUSD',   name:'EUR/USD',    type:'forex',   p:1.12,    chg: 0  },
   },
 
   signals: [
-    { id:'s1', sym:'BTCUSDT', dir:'BUY',   str:'STRONG',   conf:87, entry:67420, sl:65800, tp:[69000,71000,74000], tf:'4h',   reason:'Breakout résistance 67k — volume +34%, sentiment FOMO détecté, MACD croisement haussier, RSI 58 positif', agents:[82,78,91,85,72], created: Date.now()-25*60000 },
+    { id:'s1', sym:'BTCUSDT', dir:'BUY',   str:'STRONG',   conf:87, entry:70500, sl:68800, tp:[72500,74800,78000], tf:'4h',   reason:'Breakout résistance 70k — volume +34%, sentiment FOMO détecté, MACD croisement haussier, RSI 58 positif', agents:[82,78,91,85,72], created: Date.now()-25*60000 },
     { id:'s2', sym:'NVDA',    dir:'BUY',   str:'STRONG',   conf:92, entry:125.8, sl:121.5, tp:[131,138,145],       tf:'1d',   reason:'Résultats Q2 record au-dessus consensus, accumulation institutionnelle détectée, momentum IA sectoriel très fort', agents:[95,88,81,78,92], created: Date.now()-2*3600000 },
     { id:'s3', sym:'ETHUSDT', dir:'WATCH', str:'MODERATE', conf:64, entry:3512,  sl:3380,  tp:[3700,3900],         tf:'1h',   reason:'Consolidation au support — attendre confirmation breakout avec volume, RSI neutre 48', agents:[45,62,55,58,70], created: Date.now()-45*60000 },
     { id:'s4', sym:'SOLUSDT', dir:'BUY',   str:'MODERATE', conf:73, entry:185.4, sl:178,   tp:[196,208],           tf:'4h',   reason:'Momentum DEX record, volume NFT en hausse, flag haussier confirmé sur H4', agents:[68,74,60,80,65], created: Date.now()-90*60000 },
   ],
 
   news: [
-    { id:'n1', title:'Bitcoin dépasse les 67 000$ après des données d\'inflation positives aux USA', sent:'BULLISH', impact:85, assets:['BTC','ETH'], source:'CoinDesk',    ago:18,  key:['Fed dovish','CPI en baisse','Achat institutionnel'], impl:'Opportunité achat court terme — confirmation technique requise' },
+    { id:'n1', title:'Bitcoin dépasse les 70 000$ après des données d\'inflation positives aux USA', sent:'BULLISH', impact:85, assets:['BTC','ETH'], source:'CoinDesk',    ago:18,  key:['Fed dovish','CPI en baisse','Achat institutionnel'], impl:'Opportunité achat court terme — confirmation technique requise' },
     { id:'n2', title:'NVIDIA dépasse les attentes de bénéfices — secteur IA en pleine expansion',    sent:'BULLISH', impact:92, assets:['NVDA','SPY'], source:'Bloomberg',   ago:42,  key:['BPA +23%','Revenue $30B','Guidance relevée'], impl:'Signal fort pour positions longues sur NVDA et secteur semiconducteurs' },
     { id:'n3', title:'La Fed maintient ses taux, signal positif pour les actifs à risque',           sent:'BULLISH', impact:78, assets:['SPY','BTC'],  source:'Reuters',     ago:95,  key:['Taux stables','Pivot attendu Q4','Inflation en baisse'], impl:'Environnement favorable aux actifs risqués pour les prochaines semaines' },
     { id:'n4', title:'Solana enregistre un volume record sur les DEX — $4.2B en 24h',               sent:'BULLISH', impact:71, assets:['SOL'],         source:'CoinGecko',   ago:140, key:['Volume DEX record','NFT en hausse','Adoption DeFi'], impl:'Catalyseur positif — surveiller breakout résistance $195' },
@@ -743,7 +743,7 @@ const S = {
   ],
 
   opportunities: [
-    { id:'o1', sym:'BTCUSDT', type:'BREAKOUT',      icon:'🚀', color:'#7c5cfc', dir:'BUY',  conf:87, gain:5.4, risk:2.1, desc:'Breakout résistance 67k avec volume élevé et confirmation RSI' },
+    { id:'o1', sym:'BTCUSDT', type:'BREAKOUT',      icon:'🚀', color:'#7c5cfc', dir:'BUY',  conf:87, gain:5.4, risk:2.1, desc:'Breakout résistance 70k avec volume élevé et confirmation RSI' },
     { id:'o2', sym:'NVDA',    type:'NEWS_CATALYST',  icon:'📰', color:'#84cc16', dir:'BUY',  conf:92, gain:8.1, risk:2.8, desc:'Résultats Q2 record + guidance relevée — momentum exceptionnel' },
     { id:'o3', sym:'SOLUSDT', type:'MOMENTUM',       icon:'⚡', color:'#f5a623', dir:'BUY',  conf:71, gain:6.3, risk:3.2, desc:'Momentum DEX record + volume NFT — tendance forte' },
     { id:'o4', sym:'XRPUSDT', type:'PATTERN',        icon:'🎯', color:'#a78bfa', dir:'BUY',  conf:68, gain:4.8, risk:2.4, desc:'Flag haussier confirmé sur graphique journalier' },
@@ -770,7 +770,7 @@ const S = {
   ],
 
   notifications: [
-    { type:'SIGNAL', icon:'⚡', bg:'rgba(245,166,35,.12)', color:'#f5a623', title:'Signal BUY BTCUSDT', msg:'Conf. 87% — Breakout résistance 67k confirmé' },
+    { type:'SIGNAL', icon:'⚡', bg:'rgba(245,166,35,.12)', color:'#f5a623', title:'Signal BUY BTCUSDT', msg:'Conf. 87% — Breakout résistance 70k confirmé' },
     { type:'NEWS',   icon:'📰', bg:'rgba(56,189,248,.12)', color:'#38bdf8', title:'NVDA résultats record', msg:'Impact 92% — Opportunité d\'achat détectée' },
     { type:'ALERT',  icon:'🚨', bg:'rgba(255,77,109,.12)', color:'#ff4d6d', title:'Volatilité élevée XRP', msg:'Mouvement +3.15% en 1h — surveiller' },
   ],
@@ -1452,30 +1452,68 @@ document.addEventListener('click',e=>{if(S.notifOpen&&!el('notif-panel').contain
 // ═══════════════════════════════════════════════════════════
 // LIVE PRICE UPDATES
 // ═══════════════════════════════════════════════════════════
-function updatePrices(){
-  const BASE={BTCUSDT:67420,ETHUSDT:3512,SOLUSDT:185.4,BNBUSDT:612.3,XRPUSDT:0.5823,ADAUSDT:0.4521,AAPL:213.5,NVDA:125.8,SPY:551.2,EURUSD:1.0821};
+// REAL-TIME PRICES — Binance (crypto) + Yahoo Finance (stocks)
+// ═══════════════════════════════════════════════════════════
+async function fetchRealPrices(){
+  // ── Crypto: Binance 24hr ticker (CORS OK, no auth) ───────
+  try {
+    const syms = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT'];
+    const url = 'https://api.binance.com/api/v3/ticker/24hr?symbols='+encodeURIComponent(JSON.stringify(syms));
+    const r = await fetch(url);
+    if(r.ok){
+      const data = await r.json();
+      data.forEach(d=>{
+        if(S.assets[d.symbol]){
+          S.assets[d.symbol].p   = parseFloat(d.lastPrice);
+          S.assets[d.symbol].chg = parseFloat(d.priceChangePercent);
+        }
+      });
+    }
+  } catch(e){ console.warn('Binance fetch failed', e); }
+
+  // ── Stocks + Forex: Yahoo Finance v7 ─────────────────────
+  try {
+    const r = await fetch('https://query1.finance.yahoo.com/v7/finance/quote?symbols=AAPL,NVDA,SPY,EURUSD%3DX&fields=regularMarketPrice,regularMarketChangePercent',
+      { headers:{'Accept':'application/json'} });
+    if(r.ok){
+      const data = await r.json();
+      (data?.quoteResponse?.result||[]).forEach(q=>{
+        const sym = q.symbol==='EURUSD=X'?'EURUSD':q.symbol;
+        if(S.assets[sym]){
+          S.assets[sym].p   = q.regularMarketPrice;
+          S.assets[sym].chg = q.regularMarketChangePercent;
+        }
+      });
+    }
+  } catch(e){ console.warn('Yahoo Finance fetch failed', e); }
+
+  applyPriceDOM();
+}
+
+function applyPriceDOM(){
   Object.keys(S.assets).forEach(sym=>{
-    const a=S.assets[sym];
-    const drift=(Math.random()-.48)*0.0018;
-    a.p=Math.max(a.p*0.92,a.p*(1+drift));
-    a.chg=((a.p-BASE[sym])/BASE[sym])*100;
-    const up=a.chg>=0;
-    const pEl=el(`wl-p-${sym}`);const cEl=el(`wl-c-${sym}`);
-    if(pEl){pEl.textContent=fmt.price(a.p);pEl.style.color=up?'var(--bull)':'var(--bear)';pEl.style.transition='color .3s';}
+    const a=S.assets[sym]; const up=a.chg>=0;
+    const pEl=el(`wl-p-${sym}`); const cEl=el(`wl-c-${sym}`);
+    if(pEl){pEl.textContent=fmt.price(a.p);pEl.style.color=up?'var(--bull)':'var(--bear)';}
     if(cEl){cEl.textContent=(up?'▲':'▼')+' '+Math.abs(a.chg).toFixed(2)+'%';cEl.className='wl-chg '+(up?'text-up':'text-down');}
   });
-  // Update topbar BTC/ETH
-  const btc=S.assets.BTCUSDT,eth=S.assets.ETHUSDT;
+  const btc=S.assets.BTCUSDT, eth=S.assets.ETHUSDT;
   el('tb-btc-price').textContent='$'+btc.p.toLocaleString('fr-FR',{maximumFractionDigits:0});
-  el('tb-btc-chg').textContent=(btc.chg>=0?'▲ +':'▼ ')+btc.chg.toFixed(2)+'%';
+  el('tb-btc-chg').textContent=(btc.chg>=0?'▲ +':'▼ ')+Math.abs(btc.chg).toFixed(2)+'%';
   el('tb-btc-chg').className='tb-chg '+(btc.chg>=0?'up':'down');
   el('tb-eth-price').textContent='$'+eth.p.toLocaleString('fr-FR',{maximumFractionDigits:0});
-  el('tb-eth-chg').textContent=(eth.chg>=0?'▲ +':'▼ ')+eth.chg.toFixed(2)+'%';
+  el('tb-eth-chg').textContent=(eth.chg>=0?'▲ +':'▼ ')+Math.abs(eth.chg).toFixed(2)+'%';
   el('tb-eth-chg').className='tb-chg '+(eth.chg>=0?'up':'down');
-  // Update heatmap
   if(S.currentPage==='dashboard') renderHeatmap();
-  // Rebuild ticker
   renderTicker();
+}
+
+function updateClock(){
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  const timeStr = now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const clockEl = el('live-clock');
+  if(clockEl) clockEl.textContent = dateStr + '  •  ' + timeStr;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1507,7 +1545,7 @@ function generateDailyPlan(){
   const hour = now.getHours();
   // pick 3 trades per day based on current signals + mock opportunities
   const pool = [
-    { sym:'BTCUSDT', name:'Bitcoin',  dir:'LONG',  tf:'4h', entry: S.assets.BTCUSDT?.p || 67420,  slPct:0.024, tpPct:0.054, reason:'Breakout résistance + volume élevé + sentiment haussier', session:'Asie/Europe', time:'08:00' },
+    { sym:'BTCUSDT', name:'Bitcoin',  dir:'LONG',  tf:'4h', entry: S.assets.BTCUSDT?.p || 70500,  slPct:0.024, tpPct:0.054, reason:'Breakout résistance + volume élevé + sentiment haussier', session:'Asie/Europe', time:'08:00' },
     { sym:'ETHUSDT', name:'Ethereum', dir:'LONG',  tf:'1h', entry: S.assets.ETHUSDT?.p || 3512,   slPct:0.030, tpPct:0.065, reason:'Support EMA20 tenu + MACD croisement haussier',           session:'Europe',       time:'10:30' },
     { sym:'NVDA',    name:'NVIDIA',   dir:'LONG',  tf:'1d', entry: S.assets.NVDA?.p    || 125.8,  slPct:0.035, tpPct:0.080, reason:'Post-earnings momentum + accumulation institutionnelle',   session:'US Open',      time:'15:30' },
     { sym:'SOLUSDT', name:'Solana',   dir:'LONG',  tf:'4h', entry: S.assets.SOLUSDT?.p || 185.4,  slPct:0.038, tpPct:0.090, reason:'Volume DEX record + flag haussier confirmé',              session:'Asie',         time:'03:00' },
@@ -1956,7 +1994,10 @@ function renderAiHistory(){
 // ═══════════════════════════════════════════════════════════
 function boot(){
   initDashboard();
-  setInterval(updatePrices, 2000);
+  updateClock();
+  setInterval(updateClock, 1000);
+  fetchRealPrices();
+  setInterval(fetchRealPrices, 15000); // refresh every 15s
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot);
 else boot();
