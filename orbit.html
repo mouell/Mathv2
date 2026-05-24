@@ -179,13 +179,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <div class="bic" title="Réorganiser" onclick="resetLayout()">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
   </div>
-  <div class="bic" title="Exporter JSON" onclick="exportJSON()">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  <div class="bic" title="Sauvegarder (Ctrl+S) — génère un fichier HTML avec vos données intégrées" onclick="exportHTML()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
   </div>
-  <div class="bic" title="Importer JSON" onclick="document.getElementById('imp').click()">
+  <div class="bic" title="Charger une sauvegarde (.html ou .json)" onclick="document.getElementById('imp').click()">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
   </div>
-  <input type="file" id="imp" accept=".json">
+  <input type="file" id="imp" accept=".json,.html">
 </div>
 
 <div id="cbadge"><span id="cbtxt">Cliquez sur un nœud source</span> · <span style="cursor:pointer;text-decoration:underline" onclick="toggleConnect()">Annuler</span></div>
@@ -226,6 +226,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div>
 </div>
 <div id="toast"></div>
+<script id="orbit-save" type="application/json"></script>
 
 <script>
 // ── STATE ─────────────────────────────────────────────────────
@@ -892,24 +893,37 @@ document.querySelectorAll('.pill[data-cat]').forEach(p=>{
 });
 
 // ── EXPORT / IMPORT ───────────────────────────────────────────
-function exportJSON(){
-  const data=JSON.stringify({nodes,edges},null,2);
-  const url=URL.createObjectURL(new Blob([data],{type:'application/json'}));
-  const a=document.createElement('a');a.href=url;a.download='orbit-network.json';a.click();
-  URL.revokeObjectURL(url);toast('Réseau exporté');
+function exportHTML(){
+  // Inject current data into the embedded save tag, then snapshot the DOM
+  const el=document.getElementById('orbit-save');
+  el.textContent=JSON.stringify({nodes,edges});
+  const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  const date=new Date().toISOString().slice(0,10);
+  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+  const a=document.createElement('a');a.href=url;a.download=`orbit-${date}.html`;a.click();
+  URL.revokeObjectURL(url);
+  toast('Sauvegarde téléchargée — ouvre ce fichier pour retrouver tes données');
 }
 document.getElementById('imp').addEventListener('change',e=>{
   const f=e.target.files[0];if(!f) return;
   const r=new FileReader();
   r.onload=ev=>{
     try{
-      const d=JSON.parse(ev.target.result);
+      let d;
+      if(f.name.endsWith('.html')){
+        // Extract embedded JSON from an orbit HTML save
+        const m=ev.target.result.match(/<script id="orbit-save"[^>]*>([\s\S]*?)<\/script>/);
+        if(!m||!m[1].trim()) throw new Error('no data');
+        d=JSON.parse(m[1]);
+      } else {
+        d=JSON.parse(ev.target.result);
+      }
       if(Array.isArray(d.nodes)&&Array.isArray(d.edges)){
-        showCf('Importer ce réseau','Remplacer le réseau actuel ?',()=>{
-          nodes=d.nodes;edges=d.edges;save();closePanel();centerView();startSim(1);toast('Réseau importé');
+        showCf('Charger cette sauvegarde','Remplacer le réseau actuel ?',()=>{
+          nodes=d.nodes;edges=d.edges;save();closePanel();centerView();startSim(1);toast('Réseau chargé');
         });
       } else toast('Format invalide');
-    } catch{toast('Erreur de lecture')}
+    } catch{toast('Impossible de lire ce fichier')}
   };r.readAsText(f);e.target.value='';
 });
 
@@ -930,6 +944,7 @@ function resetLayout(){
 
 // ── KEYBOARD ─────────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();exportHTML();return}
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
   if(e.key==='Escape'){if(connectMode) toggleConnect(); else closePanel()}
   if(e.key==='r'||e.key==='R') toggleConnect();
@@ -941,6 +956,15 @@ document.addEventListener('keydown',e=>{
 // ── PERSISTENCE ───────────────────────────────────────────────
 function save(){localStorage.setItem('orbit',JSON.stringify({nodes,edges}))}
 function load(){
+  // 1. Priorité : données intégrées dans le fichier HTML (sauvegarde exportée)
+  try{
+    const el=document.getElementById('orbit-save');
+    if(el?.textContent?.trim()){
+      const d=JSON.parse(el.textContent);
+      if(d?.nodes&&d?.edges){nodes=d.nodes;edges=d.edges;return true}
+    }
+  } catch{}
+  // 2. Fallback : localStorage (session courante)
   try{
     const d=JSON.parse(localStorage.getItem('orbit'));
     if(d?.nodes&&d?.edges){nodes=d.nodes;edges=d.edges;return true}
