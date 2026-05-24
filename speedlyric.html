@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpeedLyric 💘</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --bg: #0d0d1a;
+    --panel: #12122a;
+    --border: #2a1a4a;
+    --pink: #ff2d8a;
+    --purple: #a020f0;
+    --cyan: #00e5ff;
+    --text: #f0e6ff;
+    --dim: #7a6a9a;
+    --accent: #ff2d8a;
+    --accent-glow: rgba(255,45,138,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ---- Scrollbar ---- */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 3px; }
+
+  /* ---- Header ---- */
+  #header {
+    width: 100%;
+    max-width: 640px;
+    padding: 18px 16px 0;
+    text-align: center;
+  }
+
+  #title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(18px, 4vw, 28px);
+    color: var(--pink);
+    text-shadow: 0 0 12px var(--pink), 0 0 30px rgba(255,45,138,0.5);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+
+  #subtitle {
+    font-size: 11px;
+    color: var(--dim);
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+  }
+
+  /* ---- API Key input ---- */
+  #api-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    align-items: center;
+  }
+
+  #api-bar label {
+    font-size: 10px;
+    color: var(--dim);
+    white-space: nowrap;
+    font-family: 'Press Start 2P', monospace;
+  }
+
+  #apiKey {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    min-width: 0;
+  }
+
+  #apiKey::placeholder { color: var(--dim); }
+
+  /* ---- Main container ---- */
+  #app {
+    width: 100%;
+    max-width: 640px;
+    padding: 0 16px 80px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---- Start screen ---- */
+  #start-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 24px;
+    padding: 40px 0;
+  }
+
+  .big-emoji {
+    font-size: 80px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  #start-text {
+    text-align: center;
+    font-size: 13px;
+    color: var(--dim);
+    line-height: 1.9;
+    max-width: 400px;
+  }
+
+  .btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    padding: 14px 28px;
+    border: 2px solid var(--pink);
+    background: transparent;
+    color: var(--pink);
+    cursor: pointer;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    box-shadow: 0 0 10px var(--accent-glow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn:hover, .btn:focus {
+    background: var(--pink);
+    color: var(--bg);
+    box-shadow: 0 0 20px var(--accent-glow);
+    outline: none;
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 60%);
+  }
+
+  /* ---- Game screen ---- */
+  #game-screen { display: none; flex-direction: column; gap: 12px; }
+
+  /* ---- Girl card ---- */
+  #girl-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #girl-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  /* ---- Avatar ---- */
+  #avatar {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    position: relative;
+  }
+
+  .avatar-svg {
+    width: 72px;
+    height: 72px;
+  }
+
+  /* ---- Girl info ---- */
+  #girl-info { flex: 1; }
+
+  #girl-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    text-shadow: 0 0 8px var(--accent-glow);
+    margin-bottom: 6px;
+  }
+
+  #girl-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+
+  .tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    opacity: 0.8;
+  }
+
+  #girl-temperament {
+    font-size: 11px;
+    color: var(--dim);
+    font-style: italic;
+  }
+
+  /* ---- Heart meter ---- */
+  #meter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+  }
+
+  #meter-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+
+  #hearts {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .heart {
+    font-size: 20px;
+    transition: transform 0.3s, filter 0.3s;
+    filter: grayscale(1) brightness(0.4);
+    cursor: default;
+    user-select: none;
+  }
+
+  .heart.filled {
+    filter: none;
+    animation: heartPop 0.4s ease;
+  }
+
+  .heart.breaking {
+    filter: none;
+    animation: heartBreak 0.4s ease;
+  }
+
+  @keyframes heartPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.5); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes heartBreak {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.3) rotate(-10deg); }
+    60% { transform: scale(0.9) rotate(5deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  #exchange-counter {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+
+  /* ---- Chat ---- */
+  #chat-window {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    min-height: 220px;
+    max-height: 360px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-behavior: smooth;
+  }
+
+  .bubble-wrap {
+    display: flex;
+    animation: slideIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .bubble-wrap.player { justify-content: flex-end; }
+  .bubble-wrap.npc    { justify-content: flex-start; }
+
+  .bubble {
+    max-width: 78%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 13px;
+    line-height: 1.6;
+    word-break: break-word;
+    position: relative;
+  }
+
+  .bubble-wrap.player .bubble {
+    background: linear-gradient(135deg, var(--purple), #6010b0);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 2px 12px rgba(160,32,240,0.4);
+  }
+
+  .bubble-wrap.npc .bubble {
+    background: #1e1e3a;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+
+  .bubble-sender {
+    font-size: 9px;
+    color: var(--dim);
+    margin-bottom: 2px;
+    font-family: 'Press Start 2P', monospace;
+  }
+
+  .bubble-wrap.player .bubble-sender { text-align: right; }
+
+  .typing-indicator {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 4px 0;
+  }
+
+  .typing-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: typingBounce 1s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes typingBounce {
+    0%,60%,100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* ---- Input row ---- */
+  #input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  #msg-input {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    resize: none;
+    min-height: 44px;
+    max-height: 120px;
+    overflow-y: auto;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+  }
+
+  #msg-input:focus { border-color: var(--accent); }
+  #msg-input::placeholder { color: var(--dim); }
+
+  #send-btn {
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    font-size: 20px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-family: inherit;
+  }
+
+  /* ---- Tip ---- */
+  #tip {
+    font-size: 10px;
+    color: var(--dim);
+    text-align: center;
+    padding: 4px 0;
+    line-height: 1.6;
+  }
+
+  /* ---- Verdict screen ---- */
+  #verdict-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 40px 0;
+    text-align: center;
+  }
+
+  #verdict-emoji { font-size: 72px; animation: float 2s ease-in-out infinite; }
+
+  #verdict-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(14px, 3vw, 20px);
+    text-shadow: 0 0 12px currentColor;
+  }
+
+  #verdict-title.win  { color: #ff2d8a; }
+  #verdict-title.mid  { color: #ffcc00; }
+  #verdict-title.fail { color: #555; }
+
+  #verdict-text {
+    font-size: 13px;
+    color: var(--dim);
+    max-width: 380px;
+    line-height: 1.8;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-style: italic;
+  }
+
+  #verdict-score {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: var(--text);
+  }
+
+  /* ---- Loading overlay ---- */
+  #loading {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(13,13,26,0.7);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  #loading.active { display: flex; }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--pink);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- Scanline overlay ---- */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.07) 0px,
+      rgba(0,0,0,0.07) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 480px) {
+    #girl-card { flex-direction: column; align-items: center; text-align: center; }
+    #girl-tags { justify-content: center; }
+    .bubble { max-width: 90%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading"><div class="spinner"></div></div>
+
+<!-- Header -->
+<div id="header">
+  <div id="title">SpeedLyric 💘</div>
+  <div id="subtitle">Le jeu de séduction en vers &amp; en musique</div>
+  <div id="api-bar">
+    <label>API KEY</label>
+    <input id="apiKey" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+
+  <!-- Start screen -->
+  <div id="start-screen">
+    <div class="big-emoji">💘</div>
+    <div id="start-text">
+      Tu as <strong style="color:var(--pink)">5 échanges</strong> pour séduire une inconnue.<br>
+      Utilise des paroles de chansons, des vers improvisés,<br>
+      ou tes plus belles métaphores poétiques.<br><br>
+      <span style="color:var(--dim)">Elle a son propre caractère. Elle n'est pas facile à convaincre.</span>
+    </div>
+    <button class="btn" id="start-btn" onclick="startGame()">Nouvelle Rencontre ✨</button>
+  </div>
+
+  <!-- Game screen -->
+  <div id="game-screen">
+    <!-- Girl card -->
+    <div id="girl-card">
+      <div id="avatar"></div>
+      <div id="girl-info">
+        <div id="girl-name">???</div>
+        <div id="girl-tags"></div>
+        <div id="girl-temperament"></div>
+      </div>
+    </div>
+
+    <!-- Séduction meter -->
+    <div id="meter-row">
+      <div id="meter-label">SÉDUCTION</div>
+      <div id="hearts">
+        <span class="heart" id="h1">💗</span>
+        <span class="heart" id="h2">💗</span>
+        <span class="heart" id="h3">💗</span>
+        <span class="heart" id="h4">💗</span>
+        <span class="heart" id="h5">💗</span>
+      </div>
+      <div id="exchange-counter">0/5</div>
+    </div>
+
+    <!-- Chat window -->
+    <div id="chat-window"></div>
+
+    <!-- Input -->
+    <div id="input-row">
+      <textarea id="msg-input" rows="1"
+        placeholder="Chante-lui quelque chose... 🎵"
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"></textarea>
+      <button class="btn" id="send-btn" onclick="sendMessage()" title="Envoyer">♪</button>
+    </div>
+
+    <div id="tip">
+      💡 Conseil : cite ses centres d'intérêt, utilise des métaphores, sois poétique.
+    </div>
+  </div>
+
+  <!-- Verdict screen -->
+  <div id="verdict-screen">
+    <div id="verdict-emoji">💔</div>
+    <div id="verdict-title" class="fail">GAME OVER</div>
+    <div id="verdict-text">...</div>
+    <div id="verdict-score">Score de séduction : 0 / 5</div>
+    <button class="btn" onclick="startGame()">Rejouer ↺</button>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA POOLS
+// ─────────────────────────────────────────────
+const NAMES = [
+  'Chloé','Inès','Léa','Manon','Camille','Jade','Lucie','Sarah','Emma','Zoé',
+  'Noémie','Clara','Anaïs','Alice','Eva','Lola','Nina','Océane','Mia','Zara',
+  'Sofia','Yasmine','Ambre','Elise','Laure','Juliette','Romy','Victoire','Eléa','Selena'
+];
+
+const INTERESTS = [
+  'astrologie','skateboard','manga','true crime','cottagecore','K-pop','philosophie',
+  'escalade','NFTs','cuisine','jazz','tarot','yoga','mode vintage','jeux vidéo rétro',
+  'botanique','cinéma d\'auteur','surf','calligraphie','slam','rave','roller derby',
+  'poésie beat','photographie argentique','ASMR','baroque','hiphop underground',
+  'science-fiction','tatouage','origami'
+];
+
+const TEMPERAMENTS = [
+  { id:'froide',     emoji:'🧊', label:'Froide / Détachée',      color:'#00e5ff', glow:'rgba(0,229,255,0.4)'  },
+  { id:'passionnee', emoji:'🔥', label:'Passionnée / Intense',    color:'#ff6a00', glow:'rgba(255,106,0,0.4)'  },
+  { id:'sarcastique',emoji:'😏', label:'Sarcastique / Cynique',   color:'#b0ff00', glow:'rgba(176,255,0,0.4)'  },
+  { id:'reveuse',    emoji:'🌸', label:'Rêveuse / Romantique',    color:'#ff80ab', glow:'rgba(255,128,171,0.4)'},
+  { id:'difficile',  emoji:'😤', label:'Difficile / Exigeante',   color:'#ff4444', glow:'rgba(255,68,68,0.4)'  },
+  { id:'comique',    emoji:'🤣', label:'Comique / Décontractée',  color:'#ffcc00', glow:'rgba(255,204,0,0.4)'  },
+];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let girl = null;
+let history = [];
+let exchangeCount = 0;
+let seductionScore = 0; // 0-5
+let gameActive = false;
+let audioCtx = null;
+let bgNodes = [];
+
+// ─────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const pickN = (arr, n) => {
+  const copy = [...arr];
+  const res = [];
+  for (let i = 0; i < n; i++) {
+    const idx = Math.floor(Math.random() * copy.length);
+    res.push(copy.splice(idx, 1)[0]);
+  }
+  return res;
+};
+
+function setAccent(color, glow) {
+  document.documentElement.style.setProperty('--accent', color);
+  document.documentElement.style.setProperty('--accent-glow', glow);
+}
+
+// ─────────────────────────────────────────────
+// AVATAR GENERATOR (CSS/SVG, no external images)
+// ─────────────────────────────────────────────
+function buildAvatar(color) {
+  const c = color;
+  return `<svg class="avatar-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="bg-g" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="${c}" stop-opacity="0.2"/>
+        <stop offset="100%" stop-color="${c}" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <!-- bg glow -->
+    <circle cx="36" cy="36" r="36" fill="url(#bg-g)"/>
+    <!-- body -->
+    <ellipse cx="36" cy="62" rx="16" ry="12" fill="${c}" opacity="0.7"/>
+    <!-- neck -->
+    <rect x="33" y="44" width="6" height="8" rx="3" fill="#f5c5a3"/>
+    <!-- head -->
+    <ellipse cx="36" cy="38" rx="14" ry="15" fill="#f5c5a3"/>
+    <!-- hair top -->
+    <ellipse cx="36" cy="26" rx="15" ry="10" fill="${c}"/>
+    <!-- bangs -->
+    <path d="M22 32 Q28 24 36 28 Q44 24 50 32 Q44 28 36 32 Q28 28 22 32Z" fill="${c}"/>
+    <!-- eyes -->
+    <ellipse cx="30" cy="39" rx="3" ry="3.5" fill="#1a0a2e"/>
+    <ellipse cx="42" cy="39" rx="3" ry="3.5" fill="#1a0a2e"/>
+    <!-- eye shine -->
+    <circle cx="31.2" cy="37.8" r="1" fill="white"/>
+    <circle cx="43.2" cy="37.8" r="1" fill="white"/>
+    <!-- blush -->
+    <ellipse cx="26" cy="43" rx="4" ry="2.5" fill="#ff8a9a" opacity="0.5"/>
+    <ellipse cx="46" cy="43" rx="4" ry="2.5" fill="#ff8a9a" opacity="0.5"/>
+    <!-- mouth -->
+    <path d="M32 46 Q36 50 40 46" stroke="#c0607a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- border ring -->
+    <circle cx="36" cy="36" r="35" fill="none" stroke="${c}" stroke-width="1.5" opacity="0.5"/>
+  </svg>`;
+}
+
+// ─────────────────────────────────────────────
+// GIRL GENERATOR
+// ─────────────────────────────────────────────
+function generateGirl() {
+  const name = pick(NAMES);
+  const interests = pickN(INTERESTS, 2 + Math.floor(Math.random() * 2)); // 2-3
+  const temperament = pick(TEMPERAMENTS);
+  return { name, interests, temperament };
+}
+
+// ─────────────────────────────────────────────
+// SYSTEM PROMPT
+// ─────────────────────────────────────────────
+function buildSystemPrompt(g) {
+  const interestStr = g.interests.join(', ');
+  const openingGuide = {
+    froide:      "Tu réagis avec froideur et distance, tu es difficile à impressionner, tu réponds avec des silences ou des phrases courtes.",
+    passionnee:  "Tu réagis avec intensité, tu t'embales facilement, tu exprimes tes émotions avec passion.",
+    sarcastique: "Tu réponds avec sarcasme et ironie, tu taquines, tu fais semblant d'être indifférente alors que tu es touchée.",
+    reveuse:     "Tu réagis avec douceur et poésie, tu es sensible aux métaphores et aux images romantiques.",
+    difficile:   "Tu es exigeante et critique, rien n'est jamais assez bien, tu donnes des challenges au joueur.",
+    comique:     "Tu réagis avec humour et légèreté, tu ris facilement, tu ne te prends pas au sérieux.",
+  };
+
+  return `Tu es ${g.name}, une jeune femme avec les centres d'intérêt suivants : ${interestStr}.
+Ton tempérament est : ${g.temperament.label} — ${openingGuide[g.temperament.id]}
+
+RÈGLES ABSOLUES :
+- Tu joues ce personnage à 100%. Tu ne casses JAMAIS le quatrième mur. Tu n'es pas une IA.
+- Tu réponds TOUJOURS en français, avec un style de chat moderne : court, percutant, émojis naturels.
+- Tes réponses font 1 à 4 phrases MAX. Comme de vrais SMS.
+- Tu réagis de façon authentique selon ta personnalité et selon la pertinence/créativité du message.
+- Si le joueur cite tes centres d'intérêt ou utilise de belles métaphores, tu es plus réceptive.
+- Si le message est banal, plat ou cliché, tu es déçue ou moqueuse.
+- Tu peux rougir, lever les yeux au ciel, être surprise, touchée, ou agacée.
+
+ÉCHANGE FINAL (5ème message du joueur) :
+Tu dois donner un VERDICT DE SÉDUCTION final, en restant dans ton personnage.
+Commence ta réponse par exactement l'un de ces trois codes :
+[VERDICT:CONQUISE] — si tu es vraiment séduite (score ≥ 4)
+[VERDICT:PRESQUE] — si tu es à moitié convaincue (score 2-3)
+[VERDICT:FAIL] — si la séduction a échoué (score 0-1)
+Puis donne une courte explication en caractère, suivie de ta réaction émotionnelle finale.`;
+}
+
+// ─────────────────────────────────────────────
+// SENTIMENT PARSER (heart score delta)
+// ─────────────────────────────────────────────
+function parseSentiment(text) {
+  const t = text.toLowerCase();
+  const positive = [
+    '😍','💖','❤️','🥰','touché','wow','waow','incroyable','magnifique','poétique',
+    'beau','belle','sensible','j\'aime','adorable','parfait','oui','exactement',
+    'vraiment','sublime','tu m\'as','rougis','blush','♥','coup de cœur','j\'avoue',
+    'impressionne','conquis','rêve','étoile','âme','soleil','lumière','doux'
+  ];
+  const negative = [
+    '🙄','😒','😑','bof','non','vraiment pas','banal','ennuyeux','déçu','déçue',
+    'nul','nulle','cliché','sans intérêt','pfft','mouais','encore','vraiment',
+    'sérieux','tu plaisantes','yawn','boring','fail','perdu','raté'
+  ];
+
+  let score = 0;
+  for (const w of positive) if (t.includes(w)) score++;
+  for (const w of negative) if (t.includes(w)) score--;
+
+  if (score > 0) return 1;
+  if (score < 0) return -1;
+  return 0;
+}
+
+// ─────────────────────────────────────────────
+// HEARTS UI
+// ─────────────────────────────────────────────
+function updateHearts() {
+  for (let i = 1; i <= 5; i++) {
+    const h = document.getElementById('h' + i);
+    h.classList.remove('filled', 'breaking');
+    if (i <= seductionScore) {
+      h.classList.add('filled');
+    }
+  }
+}
+
+function animateHeart(delta) {
+  if (delta === 0) return;
+  const idx = delta > 0 ? seductionScore : seductionScore + 1;
+  const h = document.getElementById('h' + idx);
+  if (!h) return;
+  const cls = delta > 0 ? 'filled' : 'breaking';
+  h.classList.remove('filled', 'breaking');
+  void h.offsetWidth;
+  h.classList.add(cls);
+}
+
+// ─────────────────────────────────────────────
+// CHAT UI
+// ─────────────────────────────────────────────
+function appendBubble(who, text, senderLabel) {
+  const chat = document.getElementById('chat-window');
+  const wrap = document.createElement('div');
+  wrap.className = 'bubble-wrap ' + who;
+
+  const inner = document.createElement('div');
+  inner.innerHTML = `<div class="bubble-sender">${senderLabel}</div><div class="bubble">${escHtml(text)}</div>`;
+  wrap.appendChild(inner);
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/\n/g,'<br>');
+}
+
+function showTyping() {
+  const chat = document.getElementById('chat-window');
+  const wrap = document.createElement('div');
+  wrap.className = 'bubble-wrap npc';
+  wrap.id = 'typing-bubble';
+  wrap.innerHTML = `<div><div class="bubble-sender">${girl.name}</div>
+    <div class="bubble"><div class="typing-indicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div></div></div>`;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing-bubble');
+  if (el) el.remove();
+}
+
+// ─────────────────────────────────────────────
+// API CALL
+// ─────────────────────────────────────────────
+async function callClaude(userMessage) {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) throw new Error('Clé API manquante — colle ta clé Anthropic en haut de la page.');
+
+  history.push({ role: 'user', content: userMessage });
+
+  const body = {
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 300,
+    system: buildSystemPrompt(girl),
+    messages: history
+  };
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Erreur API (${resp.status})`);
+  }
+
+  const data = await resp.json();
+  const reply = data.content[0].text;
+  history.push({ role: 'assistant', content: reply });
+  return reply;
+}
+
+// ─────────────────────────────────────────────
+// OPENING LINE (no API — generated locally)
+// ─────────────────────────────────────────────
+function getOpeningLine(g) {
+  const openers = {
+    froide:      [`Oui. Bonjour. 🧊`, `...Tu voulais quoi ? ❄️`, `Je suis là. Ce n'est pas une invitation. 🙄`],
+    passionnee:  [`Oh ! Je savais que cette soirée serait différente... 🔥`, `Bonsoir. Dis-moi quelque chose de vrai. 🌹`, `J'attends. Surprends-moi. 🔥`],
+    sarcastique: [`Laisse-moi deviner : tu vas me sortir un cliché ? 😏`, `Encore un romantique. Fantastique. 😒`, `Ok. Impressionne-moi. (Spoiler : c'est difficile.) 😏`],
+    reveuse:     [`Bonsoir... j'espérais quelqu'un qui aime les mots. 🌸`, `Il y a des soirs où l'on sent que quelque chose va arriver... ✨`, `Tu viens de là où les rêves ont une adresse ? 🌸`],
+    difficile:   [`Je t'écoute. Et je suis difficile à convaincre. 😤`, `Tu as cinq messages. Fais-en quelque chose. 😤`, `Ok. Parle. Mais je ne suis pas facile à impressionner. 💅`],
+    comique:     [`Salut ! Je te préviens, je suis nulle pour les trucs sérieux. 🤣`, `Hey ! Dis quelque chose de drôle et je suis à toi. 😂`, `Bonsoir ! Bon, vas-y, montre-moi ce que tu sais faire. 🤣`],
+  };
+  return pick(openers[g.temperament.id]);
+}
+
+// ─────────────────────────────────────────────
+// GAME START
+// ─────────────────────────────────────────────
+function startGame() {
+  girl = generateGirl();
+  history = [];
+  exchangeCount = 0;
+  seductionScore = 2; // start at 2/5 hearts (neutral)
+  gameActive = true;
+
+  // Apply accent color
+  setAccent(girl.temperament.color, girl.temperament.glow);
+
+  // Update girl card
+  document.getElementById('avatar').innerHTML = buildAvatar(girl.temperament.color);
+  document.getElementById('girl-name').textContent = girl.name;
+
+  const tagsEl = document.getElementById('girl-tags');
+  tagsEl.innerHTML = '';
+  for (const int of girl.interests) {
+    const span = document.createElement('span');
+    span.className = 'tag';
+    span.textContent = int;
+    tagsEl.appendChild(span);
+  }
+
+  document.getElementById('girl-temperament').textContent =
+    girl.temperament.emoji + ' ' + girl.temperament.label;
+  document.getElementById('exchange-counter').textContent = `0/5`;
+
+  // Clear chat
+  document.getElementById('chat-window').innerHTML = '';
+
+  // Update hearts
+  updateHearts();
+
+  // Show game screen
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('verdict-screen').style.display = 'none';
+  const gs = document.getElementById('game-screen');
+  gs.style.display = 'flex';
+  gs.style.flexDirection = 'column';
+
+  // Enable input
+  document.getElementById('msg-input').disabled = false;
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('msg-input').value = '';
+  document.getElementById('msg-input').style.height = 'auto';
+
+  // Opening line from girl
+  setTimeout(() => {
+    const opening = getOpeningLine(girl);
+    appendBubble('npc', opening, girl.name);
+    history.push({ role: 'assistant', content: opening });
+  }, 500);
+
+  // Start audio
+  startAudio();
+}
+
+// ─────────────────────────────────────────────
+// SEND MESSAGE
+// ─────────────────────────────────────────────
+async function sendMessage() {
+  if (!gameActive) return;
+  const input = document.getElementById('msg-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  exchangeCount++;
+  document.getElementById('exchange-counter').textContent = `${exchangeCount}/5`;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  appendBubble('player', msg, 'Toi');
+
+  document.getElementById('send-btn').disabled = true;
+  input.disabled = true;
+  showTyping();
+
+  try {
+    // Add verdict instruction on last exchange
+    let prompt = msg;
+    if (exchangeCount === 5) {
+      prompt = msg + `\n\n[C'est ton dernier échange. Donne le verdict final avec le code approprié : [VERDICT:CONQUISE], [VERDICT:PRESQUE], ou [VERDICT:FAIL], puis une réaction en caractère.]`;
+    }
+
+    const reply = await callClaude(prompt);
+    removeTyping();
+
+    // Parse verdict if last exchange
+    if (exchangeCount === 5) {
+      showVerdict(reply);
+      return;
+    }
+
+    // Update sentiment
+    const delta = parseSentiment(reply);
+    const prev = seductionScore;
+    seductionScore = Math.max(0, Math.min(5, seductionScore + delta));
+    if (seductionScore !== prev) animateHeart(delta);
+    updateHearts();
+
+    appendBubble('npc', reply, girl.name);
+
+  } catch (err) {
+    removeTyping();
+    appendBubble('npc', `⚠️ Erreur : ${err.message}`, 'Système');
+    exchangeCount--; // don't count failed exchange
+    document.getElementById('exchange-counter').textContent = `${exchangeCount}/5`;
+  } finally {
+    if (exchangeCount < 5) {
+      document.getElementById('send-btn').disabled = false;
+      input.disabled = false;
+      input.focus();
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// VERDICT
+// ─────────────────────────────────────────────
+function showVerdict(replyText) {
+  gameActive = false;
+  stopAudio();
+
+  // Strip verdict code from display text
+  let displayText = replyText
+    .replace(/\[VERDICT:(CONQUISE|PRESQUE|FAIL)\]/gi, '')
+    .trim();
+
+  // Determine verdict
+  let verdict = 'FAIL';
+  if (/\[VERDICT:CONQUISE\]/i.test(replyText)) verdict = 'CONQUISE';
+  else if (/\[VERDICT:PRESQUE\]/i.test(replyText)) verdict = 'PRESQUE';
+  else {
+    // fallback: use score
+    if (seductionScore >= 4) verdict = 'CONQUISE';
+    else if (seductionScore >= 2) verdict = 'PRESQUE';
+  }
+
+  // Show last NPC message briefly
+  appendBubble('npc', displayText, girl.name);
+
+  setTimeout(() => {
+    const vScreen = document.getElementById('verdict-screen');
+    document.getElementById('game-screen').style.display = 'none';
+    vScreen.style.display = 'flex';
+    vScreen.style.flexDirection = 'column';
+
+    const configs = {
+      CONQUISE: { emoji:'❤️', title:'CONQUISE !',    cls:'win',  score: seductionScore },
+      PRESQUE:  { emoji:'💛', title:'PRESQUE...',    cls:'mid',  score: seductionScore },
+      FAIL:     { emoji:'💔', title:'GAME OVER',     cls:'fail', score: seductionScore },
+    };
+
+    const cfg = configs[verdict];
+    document.getElementById('verdict-emoji').textContent = cfg.emoji;
+    document.getElementById('verdict-title').textContent = cfg.title;
+    document.getElementById('verdict-title').className = 'verdict-title ' + cfg.cls;
+    document.getElementById('verdict-title').id = 'verdict-title';
+    document.getElementById('verdict-text').textContent = displayText || '...';
+    document.getElementById('verdict-score').textContent =
+      `Score de séduction : ${cfg.score} / 5`;
+  }, 1800);
+}
+
+// ─────────────────────────────────────────────
+// INPUT HELPERS
+// ─────────────────────────────────────────────
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ─────────────────────────────────────────────
+// WEB AUDIO — lo-fi ambient
+// ─────────────────────────────────────────────
+function startAudio() {
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Drone base notes (lo-fi chord: D minor = D2, F2, A2)
+    const notes = [73.42, 87.31, 110.00, 146.83];
+    bgNodes = [];
+
+    for (const freq of notes) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+      // Slight detune for warmth
+      osc.detune.setValueAtTime(Math.random() * 10 - 5, audioCtx.currentTime);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+
+      gain.gain.setValueAtTime(0, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 2);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      bgNodes.push({ osc, gain });
+    }
+
+    // Subtle slow LFO tremolo
+    const lfo = audioCtx.createOscillator();
+    const lfoGain = audioCtx.createGain();
+    lfo.frequency.setValueAtTime(0.15, audioCtx.currentTime);
+    lfoGain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+    lfo.connect(lfoGain);
+    for (const { gain } of bgNodes) lfoGain.connect(gain.gain);
+    lfo.start();
+    bgNodes.push({ osc: lfo, gain: lfoGain });
+
+  } catch (e) {
+    // Audio not supported — silent fail
+  }
+}
+
+function stopAudio() {
+  if (!audioCtx) return;
+  try {
+    for (const { osc, gain } of bgNodes) {
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
+      setTimeout(() => { try { osc.stop(); } catch(_) {} }, 1200);
+    }
+    bgNodes = [];
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+document.getElementById('msg-input').addEventListener('paste', () => {
+  setTimeout(() => autoResize(document.getElementById('msg-input')), 10);
+});
+</script>
+</body>
+</html>
