@@ -3,20 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SpeedLyric 💘</title>
+<title>Rencontre</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
   :root {
-    --bg: #0d0d1a;
-    --panel: #12122a;
-    --border: #2a1a4a;
-    --pink: #ff2d8a;
-    --purple: #a020f0;
-    --text: #f0e6ff;
-    --dim: #7a6a9a;
-    --accent: #ff2d8a;
-    --accent-glow: rgba(255,45,138,0.4);
+    --bg:     #0e0e14;
+    --panel:  #16161f;
+    --border: #252538;
+    --text:   #c8c8dc;
+    --dim:    #52526a;
+    --accent: #6060c0;
+    --a15:    rgba(96,96,192,0.12);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,276 +22,269 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Share Tech Mono', monospace;
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
   }
 
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 3px; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
+  /* ── Header ── */
   #header {
     width: 100%;
-    max-width: 640px;
-    padding: 22px 16px 0;
-    text-align: center;
+    max-width: 600px;
+    padding: 28px 20px 0;
   }
 
-  #title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: clamp(18px, 4vw, 28px);
-    color: var(--pink);
-    text-shadow: 0 0 12px var(--pink), 0 0 30px rgba(255,45,138,0.5);
-    letter-spacing: 2px;
-    margin-bottom: 6px;
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    margin-bottom: 3px;
   }
+
+  h1 span { color: var(--accent); }
 
   #subtitle {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--dim);
-    margin-bottom: 18px;
-    letter-spacing: 1px;
+    margin-bottom: 20px;
   }
 
+  /* ── App container ── */
   #app {
     width: 100%;
-    max-width: 640px;
-    padding: 0 16px 80px;
+    max-width: 600px;
+    padding: 0 20px 60px;
     flex: 1;
     display: flex;
     flex-direction: column;
   }
 
-  /* ---- Start screen ---- */
+  /* ── Start screen ── */
   #start-screen {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    gap: 24px;
-    padding: 40px 0;
+    gap: 20px;
+    padding: 32px 0;
   }
 
-  .big-emoji {
-    font-size: 80px;
-    animation: float 3s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%,100% { transform: translateY(0); }
-    50% { transform: translateY(-12px); }
-  }
-
-  #start-text {
-    text-align: center;
+  #start-intro {
     font-size: 13px;
     color: var(--dim);
-    line-height: 1.9;
-    max-width: 400px;
+    line-height: 1.8;
+    max-width: 420px;
   }
 
+  #start-intro strong { color: var(--text); }
+
+  /* ── Buttons ── */
   .btn {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
-    padding: 14px 28px;
-    border: 2px solid var(--accent);
-    background: transparent;
-    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
     cursor: pointer;
-    border-radius: 4px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.2s;
-    box-shadow: 0 0 10px var(--accent-glow);
-    position: relative;
-    overflow: hidden;
+    border-radius: 6px;
+    transition: border-color 0.15s, background 0.15s;
+    width: fit-content;
   }
 
-  .btn:hover, .btn:focus {
-    background: var(--accent);
-    color: var(--bg);
-    box-shadow: 0 0 20px var(--accent-glow);
-    outline: none;
-  }
+  .btn:hover { border-color: var(--accent); background: var(--a15); }
+  .btn:focus { outline: 1px solid var(--accent); outline-offset: 2px; }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn.primary { border-color: var(--accent); color: var(--accent); }
+  .btn.primary:hover { background: var(--accent); color: var(--bg); }
 
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  /* ── Game screen ── */
+  #game-screen { display: none; flex-direction: column; gap: 14px; }
 
-  .btn::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 60%);
-  }
-
-  /* ---- Game screen ---- */
-  #game-screen { display: none; flex-direction: column; gap: 12px; }
-
-  /* ---- Girl card ---- */
+  /* ── Girl card ── */
   #girl-card {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 10px;
     padding: 16px;
     display: flex;
     gap: 14px;
-    align-items: flex-start;
-    position: relative;
-    overflow: hidden;
+    align-items: center;
   }
 
-  #girl-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  #avatar-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--a15);
+    border: 1px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+    flex-shrink: 0;
+    letter-spacing: -1px;
   }
 
-  #avatar { flex-shrink: 0; width: 72px; height: 72px; }
-  .avatar-svg { width: 72px; height: 72px; }
-
-  #girl-info { flex: 1; }
+  #girl-info { flex: 1; min-width: 0; }
 
   #girl-name {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 13px;
-    color: var(--accent);
-    text-shadow: 0 0 8px var(--accent-glow);
-    margin-bottom: 6px;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 3px;
   }
 
-  #girl-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+  #girl-temperament {
+    font-size: 12px;
+    color: var(--dim);
+    margin-bottom: 8px;
+  }
+
+  #girl-tags { display: flex; flex-wrap: wrap; gap: 5px; }
 
   .tag {
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    opacity: 0.8;
+    font-size: 11px;
+    padding: 2px 9px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    transition: all 0.4s ease;
   }
 
-  #girl-temperament { font-size: 11px; color: var(--dim); font-style: italic; }
+  .tag.hidden { opacity: 0.4; border-style: dashed; letter-spacing: 1px; }
 
-  /* ---- Heart meter ---- */
+  .tag.revealed {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--a15);
+    animation: tagReveal 0.5s ease;
+  }
+
+  @keyframes tagReveal {
+    0%  { opacity: 0; transform: scale(0.85) translateY(4px); }
+    100%{ opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* ── Connexion meter ── */
   #meter-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 0;
+    gap: 12px;
   }
 
-  #meter-label {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    color: var(--dim);
-    white-space: nowrap;
+  #meter-label { font-size: 11px; color: var(--dim); letter-spacing: 0.5px; white-space: nowrap; }
+
+  #dots { display: flex; gap: 5px; flex: 1; }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s, transform 0.2s;
   }
 
-  #hearts { display: flex; gap: 6px; flex: 1; }
-
-  .heart {
-    font-size: 20px;
-    transition: transform 0.3s, filter 0.3s;
-    filter: grayscale(1) brightness(0.4);
-    cursor: default;
-    user-select: none;
+  .dot.filled {
+    background: var(--accent);
+    animation: dotPop 0.3s ease;
   }
 
-  .heart.filled { filter: none; animation: heartPop 0.4s ease; }
-  .heart.breaking { filter: none; animation: heartBreak 0.4s ease; }
-
-  @keyframes heartPop {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.5); }
-    100% { transform: scale(1); }
+  @keyframes dotPop {
+    0%  { transform: scale(1); }
+    50% { transform: scale(1.6); }
+    100%{ transform: scale(1); }
   }
 
-  @keyframes heartBreak {
-    0% { transform: scale(1); }
-    30% { transform: scale(1.3) rotate(-10deg); }
-    60% { transform: scale(0.9) rotate(5deg); }
-    100% { transform: scale(1) rotate(0); }
-  }
+  #exchange-counter { font-size: 11px; color: var(--dim); white-space: nowrap; }
 
-  #exchange-counter {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    color: var(--dim);
-    white-space: nowrap;
-  }
-
-  /* ---- Chat ---- */
+  /* ── Chat window ── */
   #chat-window {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 10px;
     padding: 14px;
-    min-height: 220px;
-    max-height: 360px;
+    min-height: 240px;
+    max-height: 380px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    scroll-behavior: smooth;
+  }
+
+  .system-msg {
+    text-align: center;
+    font-size: 11px;
+    color: var(--dim);
+    padding: 6px 0;
+    font-style: italic;
   }
 
   .bubble-wrap {
     display: flex;
-    animation: slideIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
+    animation: slideIn 0.3s cubic-bezier(0.22,1,0.36,1) both;
   }
 
   @keyframes slideIn {
-    from { opacity: 0; transform: translateY(14px); }
+    from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
   .bubble-wrap.player { justify-content: flex-end; }
   .bubble-wrap.npc    { justify-content: flex-start; }
 
-  .bubble {
-    max-width: 78%;
-    padding: 10px 14px;
-    border-radius: 18px;
-    font-size: 13px;
-    line-height: 1.6;
-    word-break: break-word;
-    position: relative;
-  }
-
-  .bubble-wrap.player .bubble {
-    background: linear-gradient(135deg, var(--purple), #6010b0);
-    color: #fff;
-    border-bottom-right-radius: 4px;
-    box-shadow: 0 2px 12px rgba(160,32,240,0.4);
-  }
-
-  .bubble-wrap.npc .bubble {
-    background: #1e1e3a;
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-bottom-left-radius: 4px;
-  }
+  .bubble-inner { max-width: 76%; }
 
   .bubble-sender {
-    font-size: 9px;
+    font-size: 10px;
     color: var(--dim);
-    margin-bottom: 2px;
-    font-family: 'Press Start 2P', monospace;
+    margin-bottom: 3px;
+    font-family: 'Share Tech Mono', monospace;
   }
 
   .bubble-wrap.player .bubble-sender { text-align: right; }
 
-  .typing-indicator { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+  .bubble {
+    padding: 9px 13px;
+    border-radius: 14px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    word-break: break-word;
+  }
+
+  .bubble-wrap.player .bubble {
+    background: var(--a15);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    border-bottom-right-radius: 4px;
+  }
+
+  .bubble-wrap.npc .bubble {
+    background: #1c1c28;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+
+  .typing-indicator { display: flex; gap: 4px; align-items: center; padding: 2px 0; }
 
   .typing-dot {
-    width: 7px; height: 7px;
+    width: 6px; height: 6px;
     border-radius: 50%;
-    background: var(--accent);
+    background: var(--dim);
     animation: typingBounce 1s infinite;
   }
 
@@ -302,28 +293,28 @@
 
   @keyframes typingBounce {
     0%,60%,100% { transform: translateY(0); opacity: 0.4; }
-    30% { transform: translateY(-6px); opacity: 1; }
+    30%          { transform: translateY(-5px); opacity: 1; }
   }
 
-  /* ---- Input row ---- */
+  /* ── Input row ── */
   #input-row { display: flex; gap: 8px; align-items: flex-end; }
 
   #msg-input {
     flex: 1;
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
+    border-radius: 8px;
+    padding: 10px 13px;
     color: var(--text);
     font-family: 'Share Tech Mono', monospace;
     font-size: 13px;
     outline: none;
     resize: none;
-    min-height: 44px;
-    max-height: 120px;
+    min-height: 42px;
+    max-height: 110px;
     overflow-y: auto;
     line-height: 1.5;
-    transition: border-color 0.2s;
+    transition: border-color 0.15s;
   }
 
   #msg-input:focus { border-color: var(--accent); }
@@ -331,139 +322,133 @@
 
   #send-btn {
     flex-shrink: 0;
-    width: 46px; height: 46px;
-    font-size: 20px;
+    width: 42px; height: 42px;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 10px;
-    font-family: inherit;
+    font-size: 16px;
+    border-radius: 8px;
   }
 
-  #tip { font-size: 10px; color: var(--dim); text-align: center; padding: 4px 0; line-height: 1.6; }
+  #tip { font-size: 11px; color: var(--dim); padding: 2px 0; }
 
-  /* ---- Verdict screen ---- */
+  /* ── Verdict screen ── */
   #verdict-screen {
     display: none;
     flex-direction: column;
-    align-items: center;
     gap: 20px;
     padding: 40px 0;
-    text-align: center;
   }
 
-  #verdict-emoji { font-size: 72px; animation: float 2s ease-in-out infinite; }
+  #verdict-label {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
 
   #verdict-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: clamp(14px, 3vw, 20px);
-    text-shadow: 0 0 12px currentColor;
+    font-size: clamp(22px, 5vw, 32px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
   }
 
-  #verdict-title.win  { color: #ff2d8a; }
-  #verdict-title.mid  { color: #ffcc00; }
-  #verdict-title.fail { color: #555; }
+  #verdict-title.win  { color: var(--accent); }
+  #verdict-title.mid  { color: #b0a020; }
+  #verdict-title.fail { color: var(--dim); }
 
   #verdict-text {
     font-size: 13px;
     color: var(--dim);
     max-width: 380px;
     line-height: 1.8;
+    font-family: 'Share Tech Mono', monospace;
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 18px;
-    font-style: italic;
+    border-radius: 8px;
+    padding: 14px 16px;
   }
 
-  #verdict-score { font-family: 'Press Start 2P', monospace; font-size: 11px; color: var(--text); }
-
-  /* ---- Scanline overlay ---- */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      rgba(0,0,0,0.07) 0px,
-      rgba(0,0,0,0.07) 1px,
-      transparent 1px,
-      transparent 3px
-    );
-    pointer-events: none;
-    z-index: 999;
+  #verdict-interests {
+    font-size: 12px;
+    color: var(--dim);
   }
+
+  #verdict-interests span { color: var(--accent); }
+
+  #verdict-score { font-size: 12px; color: var(--dim); }
 
   @media (max-width: 480px) {
-    #girl-card { flex-direction: column; align-items: center; text-align: center; }
-    #girl-tags { justify-content: center; }
-    .bubble { max-width: 90%; }
+    .bubble-inner { max-width: 90%; }
+    #girl-card { align-items: flex-start; }
   }
 </style>
 </head>
 <body>
 
 <div id="header">
-  <div id="title">SpeedLyric 💘</div>
-  <div id="subtitle">Le jeu de séduction en vers &amp; en musique</div>
+  <h1>ren<span>contre</span>.</h1>
+  <div id="subtitle">Découvre la personne en face de toi — 10 échanges</div>
 </div>
 
 <div id="app">
 
+  <!-- Start screen -->
   <div id="start-screen">
-    <div class="big-emoji">💘</div>
-    <div id="start-text">
-      Tu as <strong style="color:var(--pink)">5 échanges</strong> pour séduire une inconnue.<br>
-      Utilise des paroles de chansons, des vers improvisés,<br>
-      ou tes plus belles métaphores poétiques.<br><br>
-      <span style="color:var(--dim)">Elle a son propre caractère. Elle n'est pas facile à convaincre.</span>
+    <div id="start-intro">
+      Une personne inconnue. Un caractère. Des passions cachées.<br><br>
+      Tu as <strong>10 échanges</strong> pour la découvrir.<br>
+      Pose des questions, écoute, creuse.<br><br>
+      <span style="color:var(--dim);font-size:12px">C'est toi qui fais le premier pas.</span>
     </div>
-    <button class="btn" onclick="startGame()">Nouvelle Rencontre ✨</button>
+    <button class="btn primary" onclick="startGame()">Nouvelle rencontre →</button>
   </div>
 
+  <!-- Game screen -->
   <div id="game-screen">
+
     <div id="girl-card">
-      <div id="avatar"></div>
+      <div id="avatar-circle">?</div>
       <div id="girl-info">
-        <div id="girl-name">???</div>
+        <div id="girl-name">—</div>
+        <div id="girl-temperament">—</div>
         <div id="girl-tags"></div>
-        <div id="girl-temperament"></div>
       </div>
     </div>
 
     <div id="meter-row">
-      <div id="meter-label">SÉDUCTION</div>
-      <div id="hearts">
-        <span class="heart" id="h1">💗</span>
-        <span class="heart" id="h2">💗</span>
-        <span class="heart" id="h3">💗</span>
-        <span class="heart" id="h4">💗</span>
-        <span class="heart" id="h5">💗</span>
+      <div id="meter-label">CONNEXION</div>
+      <div id="dots">
+        <div class="dot" id="d1"></div>
+        <div class="dot" id="d2"></div>
+        <div class="dot" id="d3"></div>
+        <div class="dot" id="d4"></div>
+        <div class="dot" id="d5"></div>
       </div>
-      <div id="exchange-counter">0/5</div>
+      <div id="exchange-counter">0 / 10</div>
     </div>
 
     <div id="chat-window"></div>
 
     <div id="input-row">
       <textarea id="msg-input" rows="1"
-        placeholder="Chante-lui quelque chose... 🎵"
+        placeholder="Commence la conversation..."
         onkeydown="handleKey(event)"
         oninput="autoResize(this)"></textarea>
-      <button class="btn" id="send-btn" onclick="sendMessage()" title="Envoyer">♪</button>
+      <button class="btn" id="send-btn" onclick="sendMessage()" title="Envoyer">→</button>
     </div>
 
-    <div id="tip">
-      💡 Conseil : cite ses centres d'intérêt, utilise des métaphores, sois poétique.
-    </div>
+    <div id="tip">💡 Pose des questions ouvertes, montre de la curiosité, parle de ce qui te passionne.</div>
   </div>
 
+  <!-- Verdict screen -->
   <div id="verdict-screen">
-    <div id="verdict-emoji">💔</div>
-    <div id="verdict-title" class="fail">GAME OVER</div>
+    <div id="verdict-label">Résultat</div>
+    <div id="verdict-title" class="fail">—</div>
     <div id="verdict-text">...</div>
-    <div id="verdict-score">Score de séduction : 0 / 5</div>
+    <div id="verdict-interests">Centres d'intérêt découverts : <span id="discovered-count">0</span> / <span id="total-count">0</span></div>
+    <div id="verdict-score">Score de connexion : 0 / 5</div>
     <button class="btn" onclick="startGame()">Rejouer ↺</button>
   </div>
 
@@ -488,347 +473,331 @@ const INTERESTS = [
 ];
 
 const TEMPERAMENTS = [
-  { id:'froide',      emoji:'🧊', label:'Froide / Détachée',     color:'#00e5ff', glow:'rgba(0,229,255,0.4)'  },
-  { id:'passionnee',  emoji:'🔥', label:'Passionnée / Intense',   color:'#ff6a00', glow:'rgba(255,106,0,0.4)'  },
-  { id:'sarcastique', emoji:'😏', label:'Sarcastique / Cynique',  color:'#b0ff00', glow:'rgba(176,255,0,0.4)'  },
-  { id:'reveuse',     emoji:'🌸', label:'Rêveuse / Romantique',   color:'#ff80ab', glow:'rgba(255,128,171,0.4)'},
-  { id:'difficile',   emoji:'😤', label:'Difficile / Exigeante',  color:'#ff4444', glow:'rgba(255,68,68,0.4)'  },
-  { id:'comique',     emoji:'🤣', label:'Comique / Décontractée', color:'#ffcc00', glow:'rgba(255,204,0,0.4)'  },
+  { id:'froide',      emoji:'🧊', label:'Réservée',     color:'#4a9eb8', glow:'rgba(74,158,184,0.15)'  },
+  { id:'passionnee',  emoji:'🔥', label:'Enthousiaste', color:'#c06020', glow:'rgba(192,96,32,0.15)'   },
+  { id:'sarcastique', emoji:'😏', label:'Ironique',     color:'#7a9920', glow:'rgba(122,153,32,0.15)'  },
+  { id:'reveuse',     emoji:'🌸', label:'Rêveuse',      color:'#b05878', glow:'rgba(176,88,120,0.15)'  },
+  { id:'difficile',   emoji:'😤', label:'Exigeante',    color:'#a03030', glow:'rgba(160,48,48,0.15)'   },
+  { id:'comique',     emoji:'🤣', label:'Décontractée', color:'#a08010', glow:'rgba(160,128,16,0.15)'  },
 ];
 
-// Keywords per interest for detection
 const INTEREST_KEYWORDS = {
   'astrologie':              ['astrologie','astro','zodiaque','horoscope','signe','lune','planète','saturne','vénus','mercure','scorpion','balance','verseau','poisson','bélier','taureau','gémeaux','vierge','sagittaire','capricorne','cancer','cosmos'],
   'skateboard':              ['skate','planche','ollie','trick','rampe','glisse','grind'],
   'manga':                   ['manga','anime','otaku','shonen','shojo','weeb','naruto','ghibli'],
-  'true crime':              ['true crime','crime','meurtre','tueur','serial killer','enquête','détective','serial'],
-  'cottagecore':             ['cottagecore','cottage','campagne','champignon','jardin','nature','fleur','ruche','prairie'],
-  'K-pop':                   ['kpop','k-pop','bts','blackpink','idol','coréen','corée','kdrama','exo','twice'],
-  'philosophie':             ['philosophie','philo','socrate','nietzsche','sartre','camus','platon','descartes','kant','spinoza','stoïcisme','existentialisme','épicure'],
-  'escalade':                ['escalade','grimper','grimpe','bloc','falaise','rocher','voie','paroi'],
-  'NFTs':                    ['nft','crypto','blockchain','web3','token','digital art','métavers'],
-  'cuisine':                 ['cuisine','recette','cuisinier','chef','plat','saveur','goût','dîner','manger','pâtisserie','gastro'],
-  'jazz':                    ['jazz','saxophone','trompette','contrebasse','blues','improvisation','coltrane','miles','bebop'],
-  'tarot':                   ['tarot','carte','arcane','divination','oracle','tirage','tarotiste'],
-  'yoga':                    ['yoga','méditation','pose','chakra','zen','pleine conscience','pranayama','asana'],
-  'mode vintage':            ['vintage','rétro','fripe','friperie','années 70','années 80','années 90','secondhand','brocante'],
-  'jeux vidéo rétro':        ['pixel','rétro','nes','snes','mario','zelda','arcade','pac-man','tetris','gameboy','8-bit','16-bit','atari'],
-  'botanique':               ['botanique','plante','fleur','herbe','mousse','fougère','arbre','racine','tige','pétale','graine'],
-  "cinéma d'auteur":         ['cinéma','film','réalisateur','godard','truffaut','kubrick','cinéphile','cinéaste','fellini','bergman','tarkovski'],
-  'surf':                    ['surf','vague','océan','mer','planche','tube','houle','surfer','côte'],
-  'calligraphie':            ['calligraphie','calligraph','encre','pinceau','écriture','lettre','trait'],
-  'slam':                    ['slam','spoken word','scène ouverte','micro ouvert','slameur','poème parlé'],
-  'rave':                    ['rave','techno','dancefloor','dj set','festival','clubbing','electro','303','rave party'],
-  'roller derby':            ['roller','derby','patin','patinage','piste','blocker','jammer'],
-  'poésie beat':             ['beat','beatnik','kerouac','ginsberg','bukowski','howl','on the road','burroughs'],
-  'photographie argentique': ['argentique','pellicule','chambre noire','35mm','polaroid','analogue','développement','film photo'],
-  'ASMR':                    ['asmr','chuchotement','crépitement','murmure','tingles','whisper'],
-  'baroque':                 ['baroque','bach','vivaldi','haendel','clavecin','orgue','fugue','cantate','oratorio','corelli'],
-  'hiphop underground':      ['hiphop','hip-hop','rap','freestyle','cypher','flow','rime','punchline','mixtape','underground'],
-  'science-fiction':         ['science-fiction','sci-fi','espace','robot','dystopie','utopie','galaxie','vaisseau','alien','asimov','dune','cyberpunk'],
-  'tatouage':                ['tatouage','tattoo','encre','dermique','tatoueur','peau','aiguille'],
-  'origami':                 ['origami','papier','pliage','grue','crane','fold','kirigami'],
+  'true crime':              ['true crime','crime','meurtre','tueur','serial killer','enquête','détective'],
+  'cottagecore':             ['cottagecore','cottage','campagne','champignon','jardin','nature','fleur','prairie'],
+  'K-pop':                   ['kpop','k-pop','bts','blackpink','idol','coréen','corée','kdrama'],
+  'philosophie':             ['philosophie','philo','socrate','nietzsche','sartre','camus','platon','descartes','kant','spinoza','stoïcisme','existentialisme'],
+  'escalade':                ['escalade','grimper','grimpe','bloc','falaise','rocher','voie'],
+  'NFTs':                    ['nft','crypto','blockchain','web3','token'],
+  'cuisine':                 ['cuisine','recette','cuisinier','chef','plat','saveur','gastronomie'],
+  'jazz':                    ['jazz','saxophone','trompette','contrebasse','blues','improvisation','coltrane','miles'],
+  'tarot':                   ['tarot','carte','arcane','divination','oracle','tirage'],
+  'yoga':                    ['yoga','méditation','pose','chakra','zen','pleine conscience','pranayama'],
+  'mode vintage':            ['vintage','rétro','fripe','friperie','années 70','années 80','années 90','brocante'],
+  'jeux vidéo rétro':        ['pixel','rétro','nes','snes','mario','zelda','arcade','pac-man','tetris','gameboy'],
+  'botanique':               ['botanique','plante','fleur','herbe','mousse','fougère','arbre','racine'],
+  "cinéma d'auteur":         ['cinéma','film','réalisateur','godard','truffaut','kubrick','cinéphile','tarkovski','fellini'],
+  'surf':                    ['surf','vague','océan','houle','surfer'],
+  'calligraphie':            ['calligraphie','calligraph','encre','pinceau','écriture'],
+  'slam':                    ['slam','spoken word','scène ouverte','micro ouvert','slameur'],
+  'rave':                    ['rave','techno','dancefloor','dj','festival','electro','clubbing'],
+  'roller derby':            ['roller','derby','patin','patinage','piste'],
+  'poésie beat':             ['beat','beatnik','kerouac','ginsberg','bukowski'],
+  'photographie argentique': ['argentique','pellicule','chambre noire','35mm','polaroid','analogue'],
+  'ASMR':                    ['asmr','chuchotement','crépitement','murmure','tingles'],
+  'baroque':                 ['baroque','bach','vivaldi','haendel','clavecin','orgue','fugue'],
+  'hiphop underground':      ['hiphop','hip-hop','rap','freestyle','cypher','flow','rime','punchline'],
+  'science-fiction':         ['science-fiction','sci-fi','espace','robot','dystopie','galaxie','asimov','dune','cyberpunk'],
+  'tatouage':                ['tatouage','tattoo','encre','dermique','tatoueur'],
+  'origami':                 ['origami','papier','pliage','grue'],
 };
 
 // ─────────────────────────────────────────────
-// RESPONSE POOLS
+// RESPONSE POOLS — natural conversation, discovery-focused
 // ─────────────────────────────────────────────
 const RESPONSES = {
   froide: {
     positive: [
-      '...ok. Je ne m\'y attendais pas. 🧊',
-      'Hmm. C\'était pas nul. ❄️',
-      'Tu m\'as... légèrement surprise. C\'est tout. 🧊',
-      'Bien. Mais ne te réjouis pas trop vite. 😶‍🌫️',
-      'Je ne dis rien, mais j\'ai écouté. 🧊',
-      'C\'est mieux que ce à quoi je m\'attendais. Un peu. ❄️',
-      'Intéressant. Pas transcendant, mais intéressant. 🫥',
-      'Je... oui. D\'accord. Continue. 🧊',
+      'Tu as posé exactement la question qu\'il ne faut pas poser. Et pourtant tu mérites une vraie réponse. 🧊',
+      'Intéressant. T\'es plus perceptif(ve) que t\'en as l\'air.',
+      'Je réponds pas à tout le monde là-dessus. Mais ok. ❄️',
+      'T\'as touché quelque chose. Je vais y répondre. 🧊',
+      'T\'es allé(e) chercher là où je cache les vraies choses.',
+      'Bonne question. Vraiment. ❄️',
+      'Je dirais que... oui. C\'est plus complexe que ça en a l\'air. 🧊',
+      'Tu écoutes vraiment. C\'est rare. ❄️',
     ],
     neutral: [
       '...',
-      'Ok. 🧊',
-      'Et alors ? 😐',
-      'Je t\'écoute. Mais ça ne veut pas dire grand chose. ❄️',
-      'Tu peux continuer. Je ne t\'ai pas encore coupé. 🌨️',
-      'Mmh. 🥶',
-      'C\'est... quelque chose. 😶',
-      'Noté. 🧊',
+      'Pourquoi tu veux savoir ça ? 🧊',
+      'C\'est une façon de voir les choses.',
+      'Je réponds si j\'en ai envie. ❄️',
+      'Mmh.',
+      'Je suis pas sûre de vouloir répondre à ça.',
+      'Ok. ❄️',
+      'Continue. 🧊',
     ],
     negative: [
-      'Non. ❄️',
-      'C\'est vraiment tout ce que tu as ? 🙄',
-      'Je suis déçue. Et c\'est difficile à faire avec moi. 🧊',
-      'Bof. 😑',
-      'J\'aurais préféré le silence. 😶‍🌫️',
-      '...next. 🥶',
-      'C\'est banal et tu le sais. ❄️',
+      'Je vois pas l\'intérêt. 🧊',
+      '...',
+      'C\'est vraiment ça comme question ? 😶',
+      'Je passe. ❄️',
+      'On peut parler d\'autre chose. 🧊',
+      'Mouais.',
+      'Non merci. ❄️',
       'Aucun intérêt. 🧊',
     ],
     interest: [
-      'Attends. Tu connais {i} ? 👁️ Je t\'écoute.',
-      'Tu parles de {i}... ok. Continue. 🧊',
-      '{i}... tu as fait tes recherches. Intéressant. ❄️',
-      'Hmm. {i}. Tu marques un point. 🌨️',
-      'Tu connais {i} pour de vrai ? Prouve-le. 🧊',
+      'Attends. Tu connais {i} ? Je l\'aurais pas deviné(e). 🧊',
+      '{i}... c\'est une surprise. Comment tu savais ? ❄️',
+      'Tu parles de {i}. Je t\'écoute. 🧊',
+      '{i}. Ok, maintenant tu as mon attention. ❄️',
+      'Tu touches à {i}. C\'est... personnel. 🧊',
     ],
     verdict: {
-      conquise: 'Je ne sais pas comment tu as fait ça. Mais tu l\'as fait. ❤️\nNe le dis à personne.',
-      presque:  'Tu étais... presque là. C\'est mieux que la plupart. 💛\nMais presque ne suffit pas.',
-      fail:     'Je savais que ça finirait comme ça. ❄️\nBonne nuit.',
+      success: 'Tu as su me trouver. Je t\'aurais pas dit tout ça à quelqu\'un d\'autre. ❤️',
+      partial: 'T\'en as appris un peu sur moi. Peut-être plus que la plupart. 💛',
+      fail:    'Tu n\'as pas vraiment cherché à me connaître. C\'est courant. ❄️',
     },
   },
 
   passionnee: {
     positive: [
-      'OUI ! C\'est ça ! Tu vois, VOILÀ ce que j\'attendais ! 🔥',
-      'Mon cœur. Tu as dit exactement ce qu\'il fallait. 🌹',
-      'Je... wow. Je ne m\'y attendais pas. 🔥💫',
-      'C\'est beau et ça me brûle de l\'intérieur. Continue. 🔥',
-      'Tu m\'as touchée là où je ne laisse personne toucher. 😳🔥',
-      'MAGNIFIQUE. Je suis sérieuse. 🌹',
-      'Oui oui oui. Tu ressens ça toi aussi ? 🔥',
-      'Je suis émue là. Vraiment. 🌹🔥',
+      'Tu m\'as posé LA bonne question. Je vais tout te raconter. 🔥',
+      'C\'est tellement important ce que tu dis là. 🌹',
+      'Oui ! Et en plus... j\'ai tellement de choses à dire là-dessus. 🔥',
+      'Tu touches à quelque chose qui me tient vraiment à cœur. 🌹',
+      'Oh oui ! C\'est exactement ce dont je voulais parler ! 🔥',
+      'Tu vois les choses comme moi. C\'est rare. 🌹',
+      'J\'adore qu\'on parle de ça. Vraiment. 🔥',
+      'Tu m\'écoutes vraiment. Je le sens. 🌹',
     ],
     neutral: [
-      'Mmm. C\'est un début. Mais je sens que tu peux mieux faire. 🔥',
-      'Intéressant. Mais ça manque d\'intensité. 🌹',
-      'J\'attends encore quelque chose qui me consume. 🔥',
-      'C\'est bien. Mais moi j\'ai besoin de plus que "bien". 🌹',
-      'Je ne ressens pas encore la flamme. Cherche encore. 🔥',
-      'Hmm. Tu frôles quelque chose. Creuse. 🌹',
-      'C\'est tiède. Je t\'en veux pas, mais je t\'en veux un peu. 🔥',
+      'C\'est pas mon sujet préféré mais ok. 🌹',
+      'T\'es sur la bonne voie mais t\'y es pas encore. 🔥',
+      'Je m\'attendais à une question plus vivante. 🌹',
+      'Mmm. Continue. 🔥',
+      'Intéressant. Mais sans plus. 🌹',
+      'Je répondrai mieux si tu poses mieux. 🔥',
+      'Hmm. Creuse un peu. 🌹',
     ],
     negative: [
-      'Non. Non non non. Tu peux faire tellement mieux. 😤🔥',
-      'Ça m\'a laissée froide. MOI. Tu imagines ? 🌹💔',
-      'C\'est ça ton effort ? Vraiment ? 🔥',
-      'Je suis déçue avec une intensité que tu ne peux pas comprendre. 🌹',
-      'Mon âme pleure. Tu aurais pu faire quelque chose de beau. 🔥💔',
-      'Non merci. Recommence. 😤',
-      'Tu gaspilles notre temps tous les deux. 🔥',
-      'Je m\'attendais à tellement plus. 🌹😔',
+      'Non, ça c\'est pas moi. Essaie encore. 🔥',
+      'On peut faire mieux que ça. 🌹',
+      'Ça me touche pas vraiment. 🔥',
+      'C\'est plat comme question. 🌹',
+      'Je suis déçue. Tu semblais plus curieux(se). 🔥',
+      'Non merci. Autre chose ? 🌹',
+      'Je vais changer de sujet si tu veux bien. 🔥',
     ],
     interest: [
-      'Tu parles de {i} ?! C\'est MA chose. Dis-m\'en plus ! 🔥',
-      '{i}... oh tu ne pouvais pas mieux choisir. 🌹',
-      'Attends. {i} ? Comment tu savais que ça me touche ? 🔥😳',
-      '{i} ! Enfin quelqu\'un qui comprend ! 🌹🔥',
-      '{i}... ok là tu as toute mon attention. 🔥',
+      '{i} ?! Tu viens de dire le mot magique ! 🔥',
+      'Oh, tu connais {i} ! On a quelque chose en commun ! 🌹',
+      '{i}... OUI ! C\'est tellement important pour moi ! 🔥',
+      'Comment tu savais que {i} c\'est ma chose ? 🌹',
+      'Tu parles de {i} ! Je pourrais en parler des heures ! 🔥',
     ],
     verdict: {
-      conquise: 'Tu as tout compris. Mon cœur est à toi. ❤️🔥\nPour l\'instant.',
-      presque:  'Tu étais si proche... une étincelle de plus et tu m\'avais. 💛🌹',
-      fail:     'Je voulais tellement que tu m\'impressionnes... 💔\nPeut-être une autre fois.',
+      success: 'Tu m\'as vraiment écoutée. Tout ce que j\'aime, tu l\'as effleuré. ❤️',
+      partial: 'On a eu quelque chose là. Un peu. 💛 Dommage de pas aller plus loin.',
+      fail:    'Je voulais tellement te parler de vraies choses... 💔',
     },
   },
 
   sarcastique: {
     positive: [
-      'Ok... ok je dois admettre que c\'était pas mal. 😏 Mais dis à personne.',
-      'Pfff. Bien joué. Je suis... légèrement impressionnée. 😒✨',
-      'Tiens tiens. Tu m\'as surprise. C\'est rare. Savourons. 😏',
-      'J\'aurais fait un commentaire mais... non. C\'était bien. 😑',
-      'Bon d\'accord. C\'était presque poétique. Je hais ça quand ça marche. 😏',
-      'Je te déteste un peu pour avoir dit quelque chose de beau. 😒',
-      'Ok tu sais écrire. Qui t\'a aidé ? 😏 (c\'était bien)',
-      'Contre toute attente... j\'ai aimé. 😒✨',
+      'Ok, je dois admettre que c\'était une bonne question. Contre toute attente. 😏',
+      'Tiens. Tu m\'as surprise. C\'est rare. Savourons le moment. 😒',
+      'Je répondrai jamais à ça... sauf que si. Bon. 😏',
+      'T\'es plus subtil(e) que t\'en as l\'air. Ok. 😒',
+      'J\'aurais dit non mais c\'est trop pertinent. Bon. 😏',
+      'Bonne entrée en matière. Je te mets 7/10. 😒',
+      'Pfff. T\'as trouvé le truc. Je vais répondre. 😏',
+      'Tu m\'as eue. C\'est agaçant. 😒',
     ],
     neutral: [
-      'Originalité : 3/10. Effort : visible. 😏',
-      'C\'est... quelque chose. Je dirai pas quoi exactement. 😒',
-      'Fascinant. Vraiment. (c\'est du sarcasme) 😏',
-      'On voit l\'effort. On voit aussi les limites. 🙄',
-      'Tu as essayé. C\'est mignon. 😏',
-      'Ni oui ni non. Genre... bof mais poliment. 😒',
-      'Continue. Ou pas. Ça m\'est égal. (ça m\'est pas égal) 😏',
+      'Fascinant. (c\'est du sarcasme) 😏',
+      'Je peux répondre à ça. À ma façon. 😒',
+      'C\'est une question. J\'aurais pu espérer mieux. 😏',
+      'T\'as essayé. C\'est mignon. 😒',
+      'Mmh. Originalité : 5/10. 😏',
+      'Et ? Continue. 😒',
+      'Je vais faire semblant que c\'était une bonne question. 😏',
     ],
     negative: [
-      'Ah oui. Le classique. J\'adore le classique. 🙄 (non)',
-      'Formidable. Encore un cliché. Ma collection s\'agrandit. 😒',
-      'Non mais vraiment ? C\'est tout ? 😑',
-      'Tu t\'es levé(e) ce matin et tu t\'es dit "aujourd\'hui je serai banal(e)" ? 😏',
-      'Ça mérite... rien. Absolument rien. 🙄',
-      'J\'ai connu des silences plus expressifs. 😒',
-      'Niveau séduction : 404 not found. 😏',
-      'C\'est pire qu\'un SMS automatique. 🙄',
+      'Quel rapport ? 😏',
+      'C\'est vraiment ça ta meilleure question ? 😒',
+      'Non. Question suivante. 😑',
+      'Cliché. 😏',
+      'Je t\'attendais plus original(e). 😒',
+      'Fascinant. (toujours du sarcasme) 😏',
+      'Je dirai rien d\'intéressant sur ce sujet. 😒',
     ],
     interest: [
-      'Attends. Tu connais {i} ? Là t\'as piqué ma curiosité. 😏',
-      '{i}... ok tu as fait tes devoirs. Pas mal. 😒',
-      'Ah, {i}. Voyons si tu t\'y connais vraiment. 😏',
-      'Tu parles de {i} pour m\'impressionner ? ... ça marche un peu. 😒',
-      '{i}. Intéressant choix de sujet. 😏',
+      'Tiens tiens. {i}. T\'as fait tes recherches ou c\'est une coïncidence ? 😏',
+      '{i}. Ok j\'avoue, t\'as trouvé quelque chose. 😒',
+      'Tu parles de {i}... là c\'est moi qui suis surprise. 😏',
+      '{i} ? Bon d\'accord. T\'as mon attention. 😒',
+      'Tu connais {i} ? Je dirai rien d\'autre... sauf que oui, c\'est ma chose. 😏',
     ],
     verdict: {
-      conquise: 'Bon. Contre toute attente, tu m\'as eue. 😏❤️\nJe haïs cet état.',
-      presque:  'Tu étais pas loin. Genre, vraiment pas loin. 💛😒\nDommage.',
-      fail:     'Je savais que ça finirait comme ça. 🙄\nJ\'aurais dû parier.',
+      success: 'Bon. T\'as réussi à me cerner malgré moi. ❤️ Impressionnant.',
+      partial: 'T\'étais proche. Vraiment pas loin. 💛 La prochaine fois.',
+      fail:    'Je savais que ça finirait comme ça. 🙄',
     },
   },
 
   reveuse: {
     positive: [
-      'Oh... c\'est exactement ce que je voulais entendre. 🌸✨',
-      'Tu parles comme dans les livres que j\'aime. 🌸💫',
-      'C\'est beau. Vraiment beau. Ça me touche quelque part de doux. 🌸',
-      'Je ferme les yeux et je vois ce que tu décris. 🌸🌙',
-      'Tu sais, il y a des mots qui ouvrent des portes... les tiens font ça. 🌸✨',
-      'Je pourrais lire ça en boucle toute la nuit. 🌙',
-      'C\'est comme une chanson dont je connaissais déjà la mélodie. 🌸🎵',
-      'Tu viens de peindre quelque chose dans ma tête. 🌸',
+      'Oh... tu poses les bonnes questions. 🌸',
+      'C\'est exactement ce type de conversation que j\'espérais avoir. ✨',
+      'T\'as mis des mots sur quelque chose que je ressentais sans l\'exprimer. 🌸',
+      'Je cherchais quelqu\'un qui saurait demander ça. 🌙',
+      'Tu viens de toucher à quelque chose de précieux. 🌸',
+      'Je pourrais parler de ça avec toi des heures. ✨',
+      'T\'as une belle façon de poser les choses. 🌸',
+      'Tu écoutes vraiment. Je le sens. 🌙',
     ],
     neutral: [
-      'C\'est joli. Mais j\'espérais quelque chose de plus... profond. 🌸',
-      'Hmm. Il y a quelque chose là. Continue de chercher. ✨',
-      'Je cherche les images derrière tes mots... 🌸',
-      'Tu effleurs quelque chose. Creuse plus loin. 🌙',
-      'Pas encore transportée... mais t\'es sur la bonne route. 🌸',
-      'C\'est bien. Mais je rêve d\'autre chose. 💫',
-      'Il manque une étincelle. Je suis patiente. 🌸',
+      'Je cherche une vraie réponse à ça... 🌸',
+      'C\'est joli comme question. Mais j\'espérais quelque chose de plus profond. 🌙',
+      'Hmm. Tu effleurs quelque chose. 🌸',
+      'C\'est un début. 💫',
+      'Je suis encore dans mes pensées là-dessus. 🌸',
+      'La réponse est longue. Tu veux vraiment l\'entendre ? 🌙',
+      'Je vais réfléchir avant de répondre. 🌸',
     ],
     negative: [
-      'Oh... je m\'attendais à plus de poésie. 🌸💔',
-      'Ce n\'est pas ça. Ce n\'est pas du tout ça. 🌙',
-      'C\'est trop direct. Trop sans magie. 🌸',
-      'Je cherche de la beauté dans tes mots et je ne la trouve pas. 💫',
-      'Hmm. Je retourne dans mes rêves. 🌸',
-      'Les mots sans images sont comme le ciel sans étoiles. 🌙',
-      'C\'est dommage. Il y avait de la place pour quelque chose de beau. 🌸',
-      'Non... ce n\'est pas la bonne clé. 💫',
+      'Oh... je m\'attendais à autre chose. 🌸',
+      'C\'est trop concret pour moi. 🌙',
+      'Il manque quelque chose dans cette question. 🌸',
+      'Ça manque de profondeur. 💫',
+      'Ce n\'est pas la bonne porte. 🌙',
+      'Non... c\'est pas comme ça que je fonctionne. 🌸',
+      'Je réponds pas à ça comme ça. 🌙',
     ],
     interest: [
-      'Tu connais {i} ? Ça fait partie de mes petits mondes secrets. 🌸✨',
-      '{i}... comment tu savais ? 🌙 C\'est un signe.',
-      'Oh ! {i} ! Tu touches à quelque chose de précieux. 🌸',
-      'Tu parles de {i}... maintenant je t\'imagine différemment. 💫',
+      'Tu connais {i} ? C\'est l\'un de mes petits mondes secrets. 🌸',
+      '{i}... comment tu savais que c\'est là que je vis ? 🌙',
+      'Oh ! {i} ! Tu viens de toucher à quelque chose de très précieux. 🌸',
+      'Tu parles de {i}... je t\'imaginais différemment. 💫',
       '{i} fait partie de mes rêves éveillés. 🌸',
     ],
     verdict: {
-      conquise: 'Tu as su trouver les mots qui ouvrent mon cœur. ❤️🌸\nC\'est rare.',
-      presque:  'Tu étais si près du rêve... 💛🌸\nPresque, c\'est quand même quelque chose.',
-      fail:     'Je retourne dans mon monde imaginaire. 🌸\nTu n\'as pas trouvé la porte.',
+      success: 'Tu as su poser les bonnes questions. Tu m\'as trouvée. ❤️',
+      partial: 'Tu as effleuré qui je suis... mais pas tout à fait. 💛',
+      fail:    'Tu n\'as pas frappé à la bonne porte. 🌸',
     },
   },
 
   difficile: {
     positive: [
-      'Ok. C\'était acceptable. Mais t\'as encore du travail. 😤',
-      'Bien. Maintenant prouve que c\'était pas un accident. 💅',
-      'Tu m\'as eu(e) sur ce coup. Fais pas la fête trop vite. 😤',
-      'C\'était... correct. Je dirais même bien. Mais bon. 💅',
-      'Tu montes dans mon estime. Légèrement. 😤✅',
-      'Tiens. T\'avais des ressources cachées. Pas mal. 💅',
-      'Ok je l\'admets. C\'était bon. Recommence. 😤',
-      'Je t\'accorde un point. Un seul. 💅',
+      'Bien. C\'était une vraie question. Je vais y répondre. 😤',
+      'T\'as trouvé quelque chose. Maintenant prouve que t\'en fais quelque chose. 💅',
+      'Première bonne question. Continue. 😤',
+      'Je t\'accordais pas beaucoup de crédit. Je revois ma position. 💅',
+      'C\'est mieux. Tu montres que t\'écoutes. 😤',
+      'Ok. On avance. 💅',
+      'Là tu creuses au bon endroit. 😤',
+      'Je t\'accorde un point. 💅',
     ],
     neutral: [
-      'Moyen. Peut faire mieux. 😤',
-      'C\'est bien mais c\'est pas assez bien. Comprends la différence. 💅',
-      'Tu peux viser plus haut. Beaucoup plus haut. 😤',
-      'Suffisant pour continuer. Insuffisant pour me convaincre. 💅',
-      'C\'est un début. Maintenant fais quelque chose avec. 😤',
-      'La barre est haute. Pour l\'instant tu sautes par-dessous. 💅',
-      'Hmm. J\'ai connu mieux. T\'as connu mieux aussi, j\'espère. 😤',
+      'C\'est moyen comme question. Réessaie. 😤',
+      'Tu peux aller plus loin. 💅',
+      'C\'est un début. Mais seulement un début. 😤',
+      'La barre est plus haute que ça. 💅',
+      'Je réponds. Mais t\'aurais pu mieux faire. 😤',
+      'T\'aurais pu poser une question plus intéressante. 💅',
+      'Insuffisant. Mais on continue. 😤',
     ],
     negative: [
       'Non. Recommence. 😤',
-      'C\'est tout ? Vraiment ? 💅',
-      'Tu penses que ça suffit ? Réfléchis encore. 😤',
-      'Décevant. D-é-c-e-v-a-n-t. 💅',
-      'J\'attendais mieux. J\'exige mieux. 😤',
-      'Raté. On réessaie ? 💅',
-      'Tu t\'es donné(e) de la peine ? Ça ne se voit pas. 😤',
-      'Insuffisant. Réessaie avec quelque chose qui a du sens. 💅',
+      'C\'est vraiment ça ? 💅',
+      'Décevant. 😤',
+      'Cette question ne mérite pas de réponse. 💅',
+      'Je passe. 😤',
+      'T\'as pas cherché. 💅',
+      'Raté. 😤',
     ],
     interest: [
-      'Tu connais {i} ? Ok. Maintenant impressionne-moi avec ça. 😤',
-      '{i}. Bien. Montre-moi que tu t\'y connais vraiment. 💅',
-      'Ah, {i}. C\'est un bon début. Un DÉBUT. 😤',
-      'Tu parles de {i}... ça compte. Un peu. 💅',
-      '{i}. Correct. J\'attend la suite qui soit à la hauteur. 😤',
+      'Tu connais {i} ? Ok. Montre-moi que tu t\'y connais vraiment. 😤',
+      '{i}. Bien. C\'est un bon point de départ. 💅',
+      'Ah, {i}. C\'est pertinent. Mais j\'en attends plus. 😤',
+      'Tu parles de {i}... t\'as fait des efforts. 💅',
+      '{i}. Ça compte. 😤',
     ],
     verdict: {
-      conquise: 'Tu l\'as mérité. C\'était difficile et tu as tenu bon. ❤️😤\nRespect.',
-      presque:  'Presque bien. Presque suffisant. 💛💅\nPresque, c\'est pas assez.',
-      fail:     'Je savais que tu n\'irais pas jusqu\'au bout. 😤\nDommage pour toi.',
+      success: 'Tu as su me poser les bonnes questions. C\'est rare. ❤️ Respect.',
+      partial: 'Presque. Tu t\'es approché(e) mais t\'as pas fini le travail. 💛',
+      fail:    'Tu n\'as pas su me trouver. Manque d\'effort. 😤',
     },
   },
 
   comique: {
     positive: [
-      'HAHAHA ok là tu m\'as eue ! 🤣✨',
-      'Ah mais là c\'est bon ! T\'as du talent ! 😂🎵',
-      'Ok ok ok je suis officiellement fan. 🤣',
-      'Ptdr t\'as même pas l\'air de réaliser à quel point c\'était bien. 😂✨',
-      'Oh là là je suis trop contente ! C\'est trop bien ! 🤣🎵',
-      'Bon d\'accord, là tu m\'as vraiment touchée. Et fait rire. 😂❤️',
-      'Je t\'avais pas vu venir celui-là ! 🤣✨ Bien joué !',
-      'Stop, arrête, je suis gênée tellement c\'est bien. 😂🎵',
+      'HAHAHA ok là c\'est une super question ! 🤣',
+      'Oooh tu viens de marquer un point ! 😂',
+      'Je suis trop contente qu\'on parle de ça ! 🤣',
+      'Ok là c\'est bien ! T\'as trouvé le truc ! 😂',
+      'Ptdr j\'aurais jamais cru qu\'on aurait cette conversation ! 🤣',
+      'Là tu m\'as trop bien cernée ! 😂',
+      'Excellente question, j\'adore ! 🤣',
+      'Ok officiellement je t\'aime bien. 😂',
     ],
     neutral: [
-      'Haha. Non mais haha. C\'est quelque chose. 🤣',
-      'Okay. C\'est... un essai. Encourageant. 😂',
-      'T\'es marrant(e) mais pas encore assez pour moi. 🤣',
+      'Haha. C\'est... quelque chose. 🤣',
+      'C\'est un essai. Je valide à 60%. 😂',
+      'T\'es sympa mais pas encore au niveau. 🤣',
       'Je vois ce que tu fais là. Continue. 😂',
-      'C\'est pas mal mais j\'ai connu des gens plus fun. 🤣',
-      'Hmm. Amusant mais pas transcendant. 😂',
-      'T\'es dans la bonne direction ! Un peu à gauche. 🤣',
+      'C\'est pas mal mais j\'ai connu mieux. 🤣',
+      'T\'es sur la bonne route ! Un peu à gauche. 😂',
+      'Hmm. Amusant mais pas transcendant. 🤣',
     ],
     negative: [
-      'Oh non. Oh non non non. 🤣💀',
-      'J\'ai pas ri. Et c\'est difficile de pas me faire rire. 😒',
-      'Zéro sur dix. Mais avec bienveillance. 🤣',
-      'Hmm. Essaie encore. Beaucoup plus fort. 😂',
-      'Je t\'aime bien mais là t\'es dans le rouge. 🤣',
-      'Tu m\'as presque fait bâiller. C\'est dur à faire. 😂',
-      'C\'est nul mais c\'est nul avec conviction au moins. 🤣',
-      'J\'attendais quelque chose et j\'ai eu... ça. 😂',
+      'Oh non. Oh non non non. 🤣',
+      'J\'ai pas ri. Et c\'est difficile avec moi. 😒',
+      'Zéro sur dix. Avec bienveillance. 🤣',
+      'Tu m\'as presque fait bâiller. 😂',
+      'Essaie encore. Beaucoup plus fort. 🤣',
+      'Je t\'aime bien mais là t\'es dans le rouge. 😂',
+      'C\'est plat comme conversation. 🤣',
     ],
     interest: [
-      'ATTENDS tu connais {i} ?! On est soulmates ou quoi ! 🤣✨',
-      'OH. {i} !! C\'est ma chose ! 😂🎵',
+      'ATTENDS tu connais {i} ?! On est soulmates ou quoi ! 🤣',
+      'OH ! {i} !! C\'est ma chose préférée ! 😂',
       'Tu parles de {i} ?! Maintenant j\'ai besoin de tout savoir sur toi. 🤣',
-      '{i} ! Ah non là t\'as tout compris ! 😂✨',
-      'Hein, {i} ?! Sérieusement ?! Trop bien ! 🤣',
+      '{i} ! Là t\'as tout compris ! 😂',
+      'Hein, {i} ?! Sérieusement ?! Trop cool ! 🤣',
     ],
     verdict: {
-      conquise: 'Ok, officiellement tu m\'as conquise. 🤣❤️\nJe savais même pas que c\'était possible comme ça !',
-      presque:  'T\'étais là ! Juste là ! 🤣💛\nDommage, j\'avais presque craqué.',
-      fail:     'Ahah c\'était quand même drôle ! 🤣\nMais non. Bises !',
+      success: 'Tu m\'as super bien cernée ! 🤣❤️ T\'as vraiment fait l\'effort !',
+      partial: 'T\'étais là ! Juste là ! 🤣💛 Dommage de pas aller jusqu\'au bout !',
+      fail:    'C\'était sympa mais on a pas vraiment parlé de moi. 🤣 Bises !',
     },
   },
-};
-
-// Opening lines per temperament
-const OPENERS = {
-  froide:      ['Oui. Bonjour. 🧊','...Tu voulais quoi ? ❄️','Je suis là. Ce n\'est pas une invitation. 🙄','Parle. 🧊'],
-  passionnee:  ['Oh ! Je savais que cette soirée serait différente... 🔥','Bonsoir. Dis-moi quelque chose de vrai. 🌹','J\'attends. Surprends-moi. 🔥','Bonsoir. Je suis là. Impressionne-moi. 🌹'],
-  sarcastique: ['Laisse-moi deviner : tu vas me sortir un cliché ? 😏','Encore un(e) romantique. Fantastique. 😒','Ok. Impressionne-moi. (Spoiler : c\'est difficile.) 😏','Je t\'écoute. Sans garantie que j\'apprécie. 😒'],
-  reveuse:     ['Bonsoir... j\'espérais quelqu\'un qui aime les mots. 🌸','Il y a des soirs où l\'on sent que quelque chose va arriver... ✨','Tu viens de là où les rêves ont une adresse ? 🌸','Bonsoir. Dis-moi quelque chose de beau. 🌙'],
-  difficile:   ['Je t\'écoute. Et je suis difficile à convaincre. 😤','Tu as cinq messages. Fais-en quelque chose. 💅','Ok. Parle. Mais je ne suis pas facile à impressionner. 😤','La barre est haute. Tu peux la franchir ? 💅'],
-  comique:     ['Salut ! Je te préviens, je suis nulle pour les trucs sérieux. 🤣','Hey ! Dis quelque chose de drôle et je suis à toi. 😂','Bonsoir ! Bon, vas-y, montre-moi ce que tu sais faire. 🤣','Allo ? Tu vas me séduire ou quoi ? 😂'],
 };
 
 // ─────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────
-let girl = null;
-let exchangeCount = 0;
-let seductionScore = 0;
-let gameActive = false;
-let usedResponses = {};
+let girl           = null;
+let exchangeCount  = 0;
+let connectionScore = 0;
+let gameActive     = false;
+let usedResponses  = {};
 let mentionedInterests = new Set();
-let audioCtx = null;
-let bgNodes = [];
+let discoveredCount = 0;
+let audioCtx       = null;
+let bgNodes        = [];
 
 // ─────────────────────────────────────────────
 // UTILS
 // ─────────────────────────────────────────────
-const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const pick  = arr => arr[Math.floor(Math.random() * arr.length)];
 const pickN = (arr, n) => {
-  const copy = [...arr];
-  const res = [];
+  const copy = [...arr], res = [];
   for (let i = 0; i < n && copy.length; i++) {
     const idx = Math.floor(Math.random() * copy.length);
     res.push(copy.splice(idx, 1)[0]);
@@ -836,106 +805,62 @@ const pickN = (arr, n) => {
   return res;
 };
 
-function setAccent(color, glow) {
+function setAccent(color) {
   document.documentElement.style.setProperty('--accent', color);
-  document.documentElement.style.setProperty('--accent-glow', glow);
+  document.documentElement.style.setProperty('--a15', hexToRgba(color, 0.12));
 }
 
-// ─────────────────────────────────────────────
-// AVATAR (pure SVG, no external images)
-// ─────────────────────────────────────────────
-function buildAvatar(c) {
-  return `<svg class="avatar-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <radialGradient id="bg-g" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="${c}" stop-opacity="0.2"/>
-        <stop offset="100%" stop-color="${c}" stop-opacity="0"/>
-      </radialGradient>
-    </defs>
-    <circle cx="36" cy="36" r="36" fill="url(#bg-g)"/>
-    <ellipse cx="36" cy="62" rx="16" ry="12" fill="${c}" opacity="0.7"/>
-    <rect x="33" y="44" width="6" height="8" rx="3" fill="#f5c5a3"/>
-    <ellipse cx="36" cy="38" rx="14" ry="15" fill="#f5c5a3"/>
-    <ellipse cx="36" cy="26" rx="15" ry="10" fill="${c}"/>
-    <path d="M22 32 Q28 24 36 28 Q44 24 50 32 Q44 28 36 32 Q28 28 22 32Z" fill="${c}"/>
-    <ellipse cx="30" cy="39" rx="3" ry="3.5" fill="#1a0a2e"/>
-    <ellipse cx="42" cy="39" rx="3" ry="3.5" fill="#1a0a2e"/>
-    <circle cx="31.2" cy="37.8" r="1" fill="white"/>
-    <circle cx="43.2" cy="37.8" r="1" fill="white"/>
-    <ellipse cx="26" cy="43" rx="4" ry="2.5" fill="#ff8a9a" opacity="0.5"/>
-    <ellipse cx="46" cy="43" rx="4" ry="2.5" fill="#ff8a9a" opacity="0.5"/>
-    <path d="M32 46 Q36 50 40 46" stroke="#c0607a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-    <circle cx="36" cy="36" r="35" fill="none" stroke="${c}" stroke-width="1.5" opacity="0.5"/>
-  </svg>`;
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
 }
 
 // ─────────────────────────────────────────────
 // RESPONSE ENGINE
 // ─────────────────────────────────────────────
-
-// Returns subset of girl's interests found in the message (first-time only)
 function detectNewInterests(msg) {
   const lower = msg.toLowerCase();
   return girl.interests.filter(interest => {
     if (mentionedInterests.has(interest)) return false;
-    const keywords = INTEREST_KEYWORDS[interest] || [interest.toLowerCase()];
-    return keywords.some(kw => lower.includes(kw.toLowerCase()));
+    const kws = INTEREST_KEYWORDS[interest] || [interest.toLowerCase()];
+    return kws.some(kw => lower.includes(kw.toLowerCase()));
   });
 }
 
-// Returns quality delta: -1 (bad), 0 (neutral), +1 (good)
 function assessQuality(msg) {
+  if (msg.length < 8) return -1;
   const lower = msg.toLowerCase();
-  let score = 0;
 
-  // Length/effort
-  if (msg.length > 110) score++;
-  else if (msg.length < 12) score--;
+  // Questions are the primary curiosity signal
+  if (msg.includes('?')) return 1;
 
-  // Verse-like line breaks
-  if ((msg.match(/\n/g) || []).length >= 1) score++;
-
-  // Poetic vocabulary
-  const poeticWords = [
-    'âme','lumière','ombre','silence','écho','vent','vague','flamme','braise',
-    'étoile','cosmos','infini','mémoire','rêve','voix','soupir','nuit','aurore',
-    'brume','larme','rivière','horizon','abîme','vertige','frisson','murmure',
-    'douceur','tendresse','désir','ardeur','ivresse','aube','crépuscule','nuage',
+  // Curiosity / empathy markers
+  const curious = [
+    'tu aimes','t\'aimes','tu fais','t\'as déjà','raconte',
+    'j\'aimerais','pour toi','tu penses','parle-moi','tu connais',
+    'c\'est quoi','comment tu','qu\'est-ce','ça te ','ça t\'',
+    'tu vis','tu écoutes','tu lis','tu joues','tu pratiques',
   ];
-  const poeticHits = poeticWords.filter(w => lower.includes(w)).length;
-  if (poeticHits >= 2) score++;
-  else if (poeticHits === 1) score += 0.5;
+  if (curious.some(c => lower.includes(c))) return 1;
 
-  // Simile / metaphor markers
-  const metaphors = ['comme un','comme une','tel un','telle une','pareille à','pareil à',
-    'à travers','au-delà','sous les','entre les','dans l\'ombre','dans la lumière'];
-  if (metaphors.some(m => lower.includes(m))) score += 0.5;
+  // Long thoughtful message
+  if (msg.length > 80) return 1;
 
-  // Clichés (negative signal)
-  const cliches = [
-    "je t'aime","t'es belle","tu es belle","tu es magnifique","sors avec moi",
-    "tes yeux sont","tu es parfaite","t'es canon","t'es trop belle",
-  ];
-  if (cliches.some(c => lower.includes(c))) score--;
-
-  // All-caps lazy typing
-  if (msg.length > 5 && msg === msg.toUpperCase()) score--;
-
-  return Math.max(-1, Math.min(1, Math.round(score)));
+  return 0;
 }
 
-// Pick from pool without repeating within the same game
 function pickUnused(pool, key) {
   if (!usedResponses[key]) usedResponses[key] = new Set();
   const used = usedResponses[key];
-  let available = pool.map((_, i) => i).filter(i => !used.has(i));
-  if (available.length === 0) { used.clear(); available = pool.map((_, i) => i); }
+  let available = pool.map((_,i) => i).filter(i => !used.has(i));
+  if (!available.length) { used.clear(); available = pool.map((_,i) => i); }
   const idx = available[Math.floor(Math.random() * available.length)];
   used.add(idx);
   return pool[idx];
 }
 
-// Main response generator — returns { text, delta }
 function generateResponse(playerMsg) {
   const tid = girl.temperament.id;
   const pool = RESPONSES[tid];
@@ -943,21 +868,20 @@ function generateResponse(playerMsg) {
   const newInterests = detectNewInterests(playerMsg);
   const qualityDelta = assessQuality(playerMsg);
 
-  // Interest gives a bonus point on top of quality
-  let delta = qualityDelta;
+  let delta;
   if (newInterests.length > 0) {
     newInterests.forEach(i => mentionedInterests.add(i));
-    delta = Math.min(1, delta + 1);
+    delta = 1;
+    revealInterests(newInterests);
+  } else {
+    delta = qualityDelta;
   }
 
   const tier = delta > 0 ? 'positive' : delta < 0 ? 'negative' : 'neutral';
 
   let text;
-
-  // 55% chance to use an interest callout if a new interest was detected
-  if (newInterests.length > 0 && Math.random() < 0.55) {
-    const callout = pick(pool.interest).replace('{i}', newInterests[0]);
-    text = callout;
+  if (newInterests.length > 0 && Math.random() < 0.6) {
+    text = pick(pool.interest).replace('{i}', newInterests[0]);
   } else {
     text = pickUnused(pool[tier], `${tid}_${tier}`);
   }
@@ -965,37 +889,51 @@ function generateResponse(playerMsg) {
   return { text, delta };
 }
 
-// Generate final verdict text based on accumulated score
 function generateVerdict() {
   const tid = girl.temperament.id;
-  const pool = RESPONSES[tid];
+  const v   = RESPONSES[tid].verdict;
   let key;
-  if (seductionScore >= 4)      key = 'conquise';
-  else if (seductionScore >= 2) key = 'presque';
-  else                          key = 'fail';
-  return { text: pool.verdict[key], verdictKey: key.toUpperCase() };
+  if (connectionScore >= 4)      key = 'success';
+  else if (connectionScore >= 2) key = 'partial';
+  else                           key = 'fail';
+  return { text: v[key], key };
 }
 
 // ─────────────────────────────────────────────
-// HEARTS UI
+// INTEREST REVEAL
 // ─────────────────────────────────────────────
-function updateHearts() {
-  for (let i = 1; i <= 5; i++) {
-    const h = document.getElementById('h' + i);
-    h.classList.remove('filled', 'breaking');
-    if (i <= seductionScore) h.classList.add('filled');
+function revealInterests(newlyFound) {
+  const tags = document.querySelectorAll('#girl-tags .tag.hidden');
+  let idx = 0;
+  for (const interest of newlyFound) {
+    if (idx < tags.length) {
+      const tag = tags[idx];
+      tag.textContent = interest;
+      tag.classList.remove('hidden');
+      tag.classList.add('revealed');
+      discoveredCount++;
+      idx++;
+    }
   }
 }
 
-function animateHeart(delta) {
-  if (delta === 0) return;
-  const idx = delta > 0 ? seductionScore : seductionScore + 1;
-  const h = document.getElementById('h' + idx);
-  if (!h) return;
-  const cls = delta > 0 ? 'filled' : 'breaking';
-  h.classList.remove('filled', 'breaking');
-  void h.offsetWidth;
-  h.classList.add(cls);
+// ─────────────────────────────────────────────
+// DOTS / CONNEXION METER
+// ─────────────────────────────────────────────
+function updateDots() {
+  for (let i = 1; i <= 5; i++) {
+    const d = document.getElementById('d' + i);
+    d.classList.toggle('filled', i <= connectionScore);
+  }
+}
+
+function animateDot(delta) {
+  if (delta <= 0) return;
+  const d = document.getElementById('d' + connectionScore);
+  if (!d) return;
+  d.classList.remove('filled');
+  void d.offsetWidth;
+  d.classList.add('filled');
 }
 
 // ─────────────────────────────────────────────
@@ -1006,10 +944,19 @@ function appendBubble(who, text, sender) {
   const wrap = document.createElement('div');
   wrap.className = 'bubble-wrap ' + who;
   const inner = document.createElement('div');
+  inner.className = 'bubble-inner';
   inner.innerHTML = `<div class="bubble-sender">${sender}</div><div class="bubble">${escHtml(text)}</div>`;
   wrap.appendChild(inner);
   chat.appendChild(wrap);
   chat.scrollTop = chat.scrollHeight;
+}
+
+function appendSystem(text) {
+  const chat = document.getElementById('chat-window');
+  const div  = document.createElement('div');
+  div.className = 'system-msg';
+  div.textContent = text;
+  chat.appendChild(div);
 }
 
 function escHtml(s) {
@@ -1022,7 +969,8 @@ function showTyping() {
   const wrap = document.createElement('div');
   wrap.className = 'bubble-wrap npc';
   wrap.id = 'typing-bubble';
-  wrap.innerHTML = `<div><div class="bubble-sender">${girl.name}</div>
+  wrap.innerHTML = `<div class="bubble-inner">
+    <div class="bubble-sender">${girl.name}</div>
     <div class="bubble"><div class="typing-indicator">
       <div class="typing-dot"></div>
       <div class="typing-dot"></div>
@@ -1047,48 +995,54 @@ function startGame() {
     temperament: pick(TEMPERAMENTS),
   };
 
-  exchangeCount = 0;
-  seductionScore = 2;
-  gameActive = true;
-  usedResponses = {};
+  exchangeCount   = 0;
+  connectionScore = 0;
+  gameActive      = true;
+  usedResponses   = {};
   mentionedInterests = new Set();
+  discoveredCount = 0;
 
-  setAccent(girl.temperament.color, girl.temperament.glow);
+  setAccent(girl.temperament.color);
 
-  document.getElementById('avatar').innerHTML = buildAvatar(girl.temperament.color);
+  // Avatar — first letter
+  document.getElementById('avatar-circle').textContent = girl.name[0];
   document.getElementById('girl-name').textContent = girl.name;
+  document.getElementById('girl-temperament').textContent =
+    girl.temperament.emoji + '  ' + girl.temperament.label;
 
+  // Interest tags — hidden
   const tagsEl = document.getElementById('girl-tags');
   tagsEl.innerHTML = '';
-  for (const int of girl.interests) {
+  for (let i = 0; i < girl.interests.length; i++) {
     const span = document.createElement('span');
-    span.className = 'tag';
-    span.textContent = int;
+    span.className = 'tag hidden';
+    span.textContent = '???';
     tagsEl.appendChild(span);
   }
 
-  document.getElementById('girl-temperament').textContent =
-    girl.temperament.emoji + ' ' + girl.temperament.label;
-  document.getElementById('exchange-counter').textContent = '0/5';
-
+  document.getElementById('exchange-counter').textContent = '0 / 10';
   document.getElementById('chat-window').innerHTML = '';
-  updateHearts();
+  updateDots();
 
-  document.getElementById('start-screen').style.display = 'none';
+  // Screens
+  document.getElementById('start-screen').style.display   = 'none';
   document.getElementById('verdict-screen').style.display = 'none';
   const gs = document.getElementById('game-screen');
-  gs.style.display = 'flex';
-  gs.style.flexDirection = 'column';
+  gs.style.display        = 'flex';
+  gs.style.flexDirection  = 'column';
 
   const input = document.getElementById('msg-input');
   input.disabled = false;
+  input.placeholder = 'Commence la conversation...';
   document.getElementById('send-btn').disabled = false;
   input.value = '';
   input.style.height = 'auto';
 
+  // System message — player goes first
   setTimeout(() => {
-    appendBubble('npc', pick(OPENERS[girl.temperament.id]), girl.name);
-  }, 500);
+    appendSystem(`Vous êtes mis en contact avec ${girl.name}. Faites le premier pas.`);
+    input.focus();
+  }, 300);
 
   startAudio();
 }
@@ -1096,11 +1050,12 @@ function startGame() {
 function sendMessage() {
   if (!gameActive) return;
   const input = document.getElementById('msg-input');
-  const msg = input.value.trim();
+  const msg   = input.value.trim();
   if (!msg) return;
 
   exchangeCount++;
-  document.getElementById('exchange-counter').textContent = `${exchangeCount}/5`;
+  document.getElementById('exchange-counter').textContent = `${exchangeCount} / 10`;
+  input.placeholder = 'Réponds, pose une question...';
 
   input.value = '';
   input.style.height = 'auto';
@@ -1110,25 +1065,23 @@ function sendMessage() {
   input.disabled = true;
   showTyping();
 
-  // Typing delay: 700-1400ms for realistic feel
-  const delay = 700 + Math.random() * 700;
+  const delay = 700 + Math.random() * 800;
 
   setTimeout(() => {
     removeTyping();
 
-    if (exchangeCount === 5) {
-      // Final exchange — show verdict
-      const { text, verdictKey } = generateVerdict();
+    if (exchangeCount === 10) {
+      const { text, key } = generateVerdict();
       appendBubble('npc', text, girl.name);
-      setTimeout(() => showVerdictScreen(verdictKey, text), 1800);
+      setTimeout(() => showVerdictScreen(key, text), 1800);
       return;
     }
 
     const { text, delta } = generateResponse(msg);
-    const prev = seductionScore;
-    seductionScore = Math.max(0, Math.min(5, seductionScore + delta));
-    if (seductionScore !== prev) animateHeart(delta);
-    updateHearts();
+    const prev = connectionScore;
+    connectionScore = Math.max(0, Math.min(5, connectionScore + delta));
+    if (connectionScore > prev) animateDot(delta);
+    updateDots();
 
     appendBubble('npc', text, girl.name);
 
@@ -1138,85 +1091,80 @@ function sendMessage() {
   }, delay);
 }
 
-function showVerdictScreen(verdictKey, displayText) {
+function showVerdictScreen(key, text) {
   gameActive = false;
   stopAudio();
 
   document.getElementById('game-screen').style.display = 'none';
   const vs = document.getElementById('verdict-screen');
-  vs.style.display = 'flex';
+  vs.style.display       = 'flex';
   vs.style.flexDirection = 'column';
 
-  const cfgs = {
-    CONQUISE: { emoji: '❤️', title: 'CONQUISE !',  cls: 'win'  },
-    PRESQUE:  { emoji: '💛', title: 'PRESQUE...',  cls: 'mid'  },
-    FAIL:     { emoji: '💔', title: 'GAME OVER',   cls: 'fail' },
+  const titles = {
+    success: { label: 'Connexion établie.',      cls: 'win'  },
+    partial: { label: 'Le début de quelque chose.', cls: 'mid'  },
+    fail:    { label: 'Passé(e) à côté.',        cls: 'fail' },
   };
 
-  const cfg = cfgs[verdictKey] || cfgs.FAIL;
-  document.getElementById('verdict-emoji').textContent = cfg.emoji;
+  const cfg = titles[key] || titles.fail;
   const titleEl = document.getElementById('verdict-title');
-  titleEl.textContent = cfg.title;
-  titleEl.className = cfg.cls;
-  titleEl.id = 'verdict-title';
-  document.getElementById('verdict-text').textContent = displayText;
+  titleEl.textContent = cfg.label;
+  titleEl.className   = cfg.cls;
+  titleEl.id          = 'verdict-title';
+
+  document.getElementById('verdict-text').textContent = text;
+  document.getElementById('discovered-count').textContent = discoveredCount;
+  document.getElementById('total-count').textContent = girl.interests.length;
   document.getElementById('verdict-score').textContent =
-    `Score de séduction : ${seductionScore} / 5`;
+    `Score de connexion : ${connectionScore} / 5`;
 }
 
 // ─────────────────────────────────────────────
 // INPUT HELPERS
 // ─────────────────────────────────────────────
 function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 }
 
 function autoResize(el) {
   el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  el.style.height = Math.min(el.scrollHeight, 110) + 'px';
 }
 
 // ─────────────────────────────────────────────
-// WEB AUDIO — lo-fi ambient drone
+// WEB AUDIO — minimal ambient pad
 // ─────────────────────────────────────────────
 function startAudio() {
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    bgNodes = [];
+    bgNodes  = [];
 
-    // D minor drone: D2 F2 A2 D3
-    for (const freq of [73.42, 87.31, 110.00, 146.83]) {
+    for (const freq of [55, 73.42, 110]) {
       const osc    = audioCtx.createOscillator();
       const gain   = audioCtx.createGain();
       const filter = audioCtx.createBiquadFilter();
 
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      osc.detune.setValueAtTime(Math.random() * 10 - 5, audioCtx.currentTime);
+      osc.detune.setValueAtTime(Math.random() * 8 - 4, audioCtx.currentTime);
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+      filter.frequency.setValueAtTime(300, audioCtx.currentTime);
       gain.gain.setValueAtTime(0, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 2);
+      gain.gain.linearRampToValueAtTime(0.03, audioCtx.currentTime + 3);
 
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(audioCtx.destination);
+      osc.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
       osc.start();
       bgNodes.push({ osc, gain });
     }
 
-    // Slow LFO tremolo
-    const lfo     = audioCtx.createOscillator();
-    const lfoGain = audioCtx.createGain();
-    lfo.frequency.setValueAtTime(0.15, audioCtx.currentTime);
-    lfoGain.gain.setValueAtTime(0.01, audioCtx.currentTime);
-    lfo.connect(lfoGain);
-    for (const { gain } of bgNodes) lfoGain.connect(gain.gain);
+    const lfo = audioCtx.createOscillator();
+    const lg  = audioCtx.createGain();
+    lfo.frequency.setValueAtTime(0.1, audioCtx.currentTime);
+    lg.gain.setValueAtTime(0.008, audioCtx.currentTime);
+    lfo.connect(lg);
+    for (const { gain } of bgNodes) lg.connect(gain.gain);
     lfo.start();
-    bgNodes.push({ osc: lfo, gain: lfoGain });
+    bgNodes.push({ osc: lfo, gain: lg });
   } catch (_) {}
 }
 
