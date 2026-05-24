@@ -13,7 +13,6 @@
     --border: #2a1a4a;
     --pink: #ff2d8a;
     --purple: #a020f0;
-    --cyan: #00e5ff;
     --text: #f0e6ff;
     --dim: #7a6a9a;
     --accent: #ff2d8a;
@@ -32,16 +31,14 @@
     align-items: center;
   }
 
-  /* ---- Scrollbar ---- */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 3px; }
 
-  /* ---- Header ---- */
   #header {
     width: 100%;
     max-width: 640px;
-    padding: 18px 16px 0;
+    padding: 22px 16px 0;
     text-align: center;
   }
 
@@ -51,49 +48,16 @@
     color: var(--pink);
     text-shadow: 0 0 12px var(--pink), 0 0 30px rgba(255,45,138,0.5);
     letter-spacing: 2px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
 
   #subtitle {
     font-size: 11px;
     color: var(--dim);
-    margin-bottom: 14px;
+    margin-bottom: 18px;
     letter-spacing: 1px;
   }
 
-  /* ---- API Key input ---- */
-  #api-bar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 14px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 10px;
-    align-items: center;
-  }
-
-  #api-bar label {
-    font-size: 10px;
-    color: var(--dim);
-    white-space: nowrap;
-    font-family: 'Press Start 2P', monospace;
-  }
-
-  #apiKey {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--text);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    min-width: 0;
-  }
-
-  #apiKey::placeholder { color: var(--dim); }
-
-  /* ---- Main container ---- */
   #app {
     width: 100%;
     max-width: 640px;
@@ -136,9 +100,9 @@
     font-family: 'Press Start 2P', monospace;
     font-size: 11px;
     padding: 14px 28px;
-    border: 2px solid var(--pink);
+    border: 2px solid var(--accent);
     background: transparent;
-    color: var(--pink);
+    color: var(--accent);
     cursor: pointer;
     border-radius: 4px;
     text-transform: uppercase;
@@ -150,16 +114,13 @@
   }
 
   .btn:hover, .btn:focus {
-    background: var(--pink);
+    background: var(--accent);
     color: var(--bg);
     box-shadow: 0 0 20px var(--accent-glow);
     outline: none;
   }
 
-  .btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .btn::after {
     content: '';
@@ -192,20 +153,9 @@
     background: linear-gradient(90deg, transparent, var(--accent), transparent);
   }
 
-  /* ---- Avatar ---- */
-  #avatar {
-    flex-shrink: 0;
-    width: 72px;
-    height: 72px;
-    position: relative;
-  }
+  #avatar { flex-shrink: 0; width: 72px; height: 72px; }
+  .avatar-svg { width: 72px; height: 72px; }
 
-  .avatar-svg {
-    width: 72px;
-    height: 72px;
-  }
-
-  /* ---- Girl info ---- */
   #girl-info { flex: 1; }
 
   #girl-name {
@@ -216,12 +166,7 @@
     margin-bottom: 6px;
   }
 
-  #girl-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-bottom: 8px;
-  }
+  #girl-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
 
   .tag {
     font-size: 10px;
@@ -232,11 +177,7 @@
     opacity: 0.8;
   }
 
-  #girl-temperament {
-    font-size: 11px;
-    color: var(--dim);
-    font-style: italic;
-  }
+  #girl-temperament { font-size: 11px; color: var(--dim); font-style: italic; }
 
   /* ---- Heart meter ---- */
   #meter-row {
@@ -253,11 +194,7 @@
     white-space: nowrap;
   }
 
-  #hearts {
-    display: flex;
-    gap: 6px;
-    flex: 1;
-  }
+  #hearts { display: flex; gap: 6px; flex: 1; }
 
   .heart {
     font-size: 20px;
@@ -267,15 +204,8 @@
     user-select: none;
   }
 
-  .heart.filled {
-    filter: none;
-    animation: heartPop 0.4s ease;
-  }
-
-  .heart.breaking {
-    filter: none;
-    animation: heartBreak 0.4s ease;
-  }
+  .heart.filled { filter: none; animation: heartPop 0.4s ease; }
+  .heart.breaking { filter: none; animation: heartBreak 0.4s ease; }
 
   @keyframes heartPop {
     0% { transform: scale(1); }
@@ -358,16 +288,10 @@
 
   .bubble-wrap.player .bubble-sender { text-align: right; }
 
-  .typing-indicator {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-    padding: 4px 0;
-  }
+  .typing-indicator { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
 
   .typing-dot {
-    width: 7px;
-    height: 7px;
+    width: 7px; height: 7px;
     border-radius: 50%;
     background: var(--accent);
     animation: typingBounce 1s infinite;
@@ -382,11 +306,7 @@
   }
 
   /* ---- Input row ---- */
-  #input-row {
-    display: flex;
-    gap: 8px;
-    align-items: flex-end;
-  }
+  #input-row { display: flex; gap: 8px; align-items: flex-end; }
 
   #msg-input {
     flex: 1;
@@ -411,8 +331,7 @@
 
   #send-btn {
     flex-shrink: 0;
-    width: 46px;
-    height: 46px;
+    width: 46px; height: 46px;
     font-size: 20px;
     padding: 0;
     display: flex;
@@ -422,14 +341,7 @@
     font-family: inherit;
   }
 
-  /* ---- Tip ---- */
-  #tip {
-    font-size: 10px;
-    color: var(--dim);
-    text-align: center;
-    padding: 4px 0;
-    line-height: 1.6;
-  }
+  #tip { font-size: 10px; color: var(--dim); text-align: center; padding: 4px 0; line-height: 1.6; }
 
   /* ---- Verdict screen ---- */
   #verdict-screen {
@@ -465,35 +377,7 @@
     font-style: italic;
   }
 
-  #verdict-score {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
-    color: var(--text);
-  }
-
-  /* ---- Loading overlay ---- */
-  #loading {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(13,13,26,0.7);
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-  }
-
-  #loading.active { display: flex; }
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid var(--border);
-    border-top-color: var(--pink);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
+  #verdict-score { font-family: 'Press Start 2P', monospace; font-size: 11px; color: var(--text); }
 
   /* ---- Scanline overlay ---- */
   body::after {
@@ -511,7 +395,6 @@
     z-index: 999;
   }
 
-  /* ---- Responsive ---- */
   @media (max-width: 480px) {
     #girl-card { flex-direction: column; align-items: center; text-align: center; }
     #girl-tags { justify-content: center; }
@@ -521,23 +404,13 @@
 </head>
 <body>
 
-<!-- Loading overlay -->
-<div id="loading"><div class="spinner"></div></div>
-
-<!-- Header -->
 <div id="header">
   <div id="title">SpeedLyric 💘</div>
   <div id="subtitle">Le jeu de séduction en vers &amp; en musique</div>
-  <div id="api-bar">
-    <label>API KEY</label>
-    <input id="apiKey" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
-  </div>
 </div>
 
-<!-- App -->
 <div id="app">
 
-  <!-- Start screen -->
   <div id="start-screen">
     <div class="big-emoji">💘</div>
     <div id="start-text">
@@ -546,12 +419,10 @@
       ou tes plus belles métaphores poétiques.<br><br>
       <span style="color:var(--dim)">Elle a son propre caractère. Elle n'est pas facile à convaincre.</span>
     </div>
-    <button class="btn" id="start-btn" onclick="startGame()">Nouvelle Rencontre ✨</button>
+    <button class="btn" onclick="startGame()">Nouvelle Rencontre ✨</button>
   </div>
 
-  <!-- Game screen -->
   <div id="game-screen">
-    <!-- Girl card -->
     <div id="girl-card">
       <div id="avatar"></div>
       <div id="girl-info">
@@ -561,7 +432,6 @@
       </div>
     </div>
 
-    <!-- Séduction meter -->
     <div id="meter-row">
       <div id="meter-label">SÉDUCTION</div>
       <div id="hearts">
@@ -574,10 +444,8 @@
       <div id="exchange-counter">0/5</div>
     </div>
 
-    <!-- Chat window -->
     <div id="chat-window"></div>
 
-    <!-- Input -->
     <div id="input-row">
       <textarea id="msg-input" rows="1"
         placeholder="Chante-lui quelque chose... 🎵"
@@ -591,7 +459,6 @@
     </div>
   </div>
 
-  <!-- Verdict screen -->
   <div id="verdict-screen">
     <div id="verdict-emoji">💔</div>
     <div id="verdict-title" class="fail">GAME OVER</div>
@@ -604,7 +471,7 @@
 
 <script>
 // ─────────────────────────────────────────────
-// DATA POOLS
+// DATA
 // ─────────────────────────────────────────────
 const NAMES = [
   'Chloé','Inès','Léa','Manon','Camille','Jade','Lucie','Sarah','Emma','Zoé',
@@ -621,22 +488,337 @@ const INTERESTS = [
 ];
 
 const TEMPERAMENTS = [
-  { id:'froide',     emoji:'🧊', label:'Froide / Détachée',      color:'#00e5ff', glow:'rgba(0,229,255,0.4)'  },
-  { id:'passionnee', emoji:'🔥', label:'Passionnée / Intense',    color:'#ff6a00', glow:'rgba(255,106,0,0.4)'  },
-  { id:'sarcastique',emoji:'😏', label:'Sarcastique / Cynique',   color:'#b0ff00', glow:'rgba(176,255,0,0.4)'  },
-  { id:'reveuse',    emoji:'🌸', label:'Rêveuse / Romantique',    color:'#ff80ab', glow:'rgba(255,128,171,0.4)'},
-  { id:'difficile',  emoji:'😤', label:'Difficile / Exigeante',   color:'#ff4444', glow:'rgba(255,68,68,0.4)'  },
-  { id:'comique',    emoji:'🤣', label:'Comique / Décontractée',  color:'#ffcc00', glow:'rgba(255,204,0,0.4)'  },
+  { id:'froide',      emoji:'🧊', label:'Froide / Détachée',     color:'#00e5ff', glow:'rgba(0,229,255,0.4)'  },
+  { id:'passionnee',  emoji:'🔥', label:'Passionnée / Intense',   color:'#ff6a00', glow:'rgba(255,106,0,0.4)'  },
+  { id:'sarcastique', emoji:'😏', label:'Sarcastique / Cynique',  color:'#b0ff00', glow:'rgba(176,255,0,0.4)'  },
+  { id:'reveuse',     emoji:'🌸', label:'Rêveuse / Romantique',   color:'#ff80ab', glow:'rgba(255,128,171,0.4)'},
+  { id:'difficile',   emoji:'😤', label:'Difficile / Exigeante',  color:'#ff4444', glow:'rgba(255,68,68,0.4)'  },
+  { id:'comique',     emoji:'🤣', label:'Comique / Décontractée', color:'#ffcc00', glow:'rgba(255,204,0,0.4)'  },
 ];
+
+// Keywords per interest for detection
+const INTEREST_KEYWORDS = {
+  'astrologie':              ['astrologie','astro','zodiaque','horoscope','signe','lune','planète','saturne','vénus','mercure','scorpion','balance','verseau','poisson','bélier','taureau','gémeaux','vierge','sagittaire','capricorne','cancer','cosmos'],
+  'skateboard':              ['skate','planche','ollie','trick','rampe','glisse','grind'],
+  'manga':                   ['manga','anime','otaku','shonen','shojo','weeb','naruto','ghibli'],
+  'true crime':              ['true crime','crime','meurtre','tueur','serial killer','enquête','détective','serial'],
+  'cottagecore':             ['cottagecore','cottage','campagne','champignon','jardin','nature','fleur','ruche','prairie'],
+  'K-pop':                   ['kpop','k-pop','bts','blackpink','idol','coréen','corée','kdrama','exo','twice'],
+  'philosophie':             ['philosophie','philo','socrate','nietzsche','sartre','camus','platon','descartes','kant','spinoza','stoïcisme','existentialisme','épicure'],
+  'escalade':                ['escalade','grimper','grimpe','bloc','falaise','rocher','voie','paroi'],
+  'NFTs':                    ['nft','crypto','blockchain','web3','token','digital art','métavers'],
+  'cuisine':                 ['cuisine','recette','cuisinier','chef','plat','saveur','goût','dîner','manger','pâtisserie','gastro'],
+  'jazz':                    ['jazz','saxophone','trompette','contrebasse','blues','improvisation','coltrane','miles','bebop'],
+  'tarot':                   ['tarot','carte','arcane','divination','oracle','tirage','tarotiste'],
+  'yoga':                    ['yoga','méditation','pose','chakra','zen','pleine conscience','pranayama','asana'],
+  'mode vintage':            ['vintage','rétro','fripe','friperie','années 70','années 80','années 90','secondhand','brocante'],
+  'jeux vidéo rétro':        ['pixel','rétro','nes','snes','mario','zelda','arcade','pac-man','tetris','gameboy','8-bit','16-bit','atari'],
+  'botanique':               ['botanique','plante','fleur','herbe','mousse','fougère','arbre','racine','tige','pétale','graine'],
+  "cinéma d'auteur":         ['cinéma','film','réalisateur','godard','truffaut','kubrick','cinéphile','cinéaste','fellini','bergman','tarkovski'],
+  'surf':                    ['surf','vague','océan','mer','planche','tube','houle','surfer','côte'],
+  'calligraphie':            ['calligraphie','calligraph','encre','pinceau','écriture','lettre','trait'],
+  'slam':                    ['slam','spoken word','scène ouverte','micro ouvert','slameur','poème parlé'],
+  'rave':                    ['rave','techno','dancefloor','dj set','festival','clubbing','electro','303','rave party'],
+  'roller derby':            ['roller','derby','patin','patinage','piste','blocker','jammer'],
+  'poésie beat':             ['beat','beatnik','kerouac','ginsberg','bukowski','howl','on the road','burroughs'],
+  'photographie argentique': ['argentique','pellicule','chambre noire','35mm','polaroid','analogue','développement','film photo'],
+  'ASMR':                    ['asmr','chuchotement','crépitement','murmure','tingles','whisper'],
+  'baroque':                 ['baroque','bach','vivaldi','haendel','clavecin','orgue','fugue','cantate','oratorio','corelli'],
+  'hiphop underground':      ['hiphop','hip-hop','rap','freestyle','cypher','flow','rime','punchline','mixtape','underground'],
+  'science-fiction':         ['science-fiction','sci-fi','espace','robot','dystopie','utopie','galaxie','vaisseau','alien','asimov','dune','cyberpunk'],
+  'tatouage':                ['tatouage','tattoo','encre','dermique','tatoueur','peau','aiguille'],
+  'origami':                 ['origami','papier','pliage','grue','crane','fold','kirigami'],
+};
+
+// ─────────────────────────────────────────────
+// RESPONSE POOLS
+// ─────────────────────────────────────────────
+const RESPONSES = {
+  froide: {
+    positive: [
+      '...ok. Je ne m\'y attendais pas. 🧊',
+      'Hmm. C\'était pas nul. ❄️',
+      'Tu m\'as... légèrement surprise. C\'est tout. 🧊',
+      'Bien. Mais ne te réjouis pas trop vite. 😶‍🌫️',
+      'Je ne dis rien, mais j\'ai écouté. 🧊',
+      'C\'est mieux que ce à quoi je m\'attendais. Un peu. ❄️',
+      'Intéressant. Pas transcendant, mais intéressant. 🫥',
+      'Je... oui. D\'accord. Continue. 🧊',
+    ],
+    neutral: [
+      '...',
+      'Ok. 🧊',
+      'Et alors ? 😐',
+      'Je t\'écoute. Mais ça ne veut pas dire grand chose. ❄️',
+      'Tu peux continuer. Je ne t\'ai pas encore coupé. 🌨️',
+      'Mmh. 🥶',
+      'C\'est... quelque chose. 😶',
+      'Noté. 🧊',
+    ],
+    negative: [
+      'Non. ❄️',
+      'C\'est vraiment tout ce que tu as ? 🙄',
+      'Je suis déçue. Et c\'est difficile à faire avec moi. 🧊',
+      'Bof. 😑',
+      'J\'aurais préféré le silence. 😶‍🌫️',
+      '...next. 🥶',
+      'C\'est banal et tu le sais. ❄️',
+      'Aucun intérêt. 🧊',
+    ],
+    interest: [
+      'Attends. Tu connais {i} ? 👁️ Je t\'écoute.',
+      'Tu parles de {i}... ok. Continue. 🧊',
+      '{i}... tu as fait tes recherches. Intéressant. ❄️',
+      'Hmm. {i}. Tu marques un point. 🌨️',
+      'Tu connais {i} pour de vrai ? Prouve-le. 🧊',
+    ],
+    verdict: {
+      conquise: 'Je ne sais pas comment tu as fait ça. Mais tu l\'as fait. ❤️\nNe le dis à personne.',
+      presque:  'Tu étais... presque là. C\'est mieux que la plupart. 💛\nMais presque ne suffit pas.',
+      fail:     'Je savais que ça finirait comme ça. ❄️\nBonne nuit.',
+    },
+  },
+
+  passionnee: {
+    positive: [
+      'OUI ! C\'est ça ! Tu vois, VOILÀ ce que j\'attendais ! 🔥',
+      'Mon cœur. Tu as dit exactement ce qu\'il fallait. 🌹',
+      'Je... wow. Je ne m\'y attendais pas. 🔥💫',
+      'C\'est beau et ça me brûle de l\'intérieur. Continue. 🔥',
+      'Tu m\'as touchée là où je ne laisse personne toucher. 😳🔥',
+      'MAGNIFIQUE. Je suis sérieuse. 🌹',
+      'Oui oui oui. Tu ressens ça toi aussi ? 🔥',
+      'Je suis émue là. Vraiment. 🌹🔥',
+    ],
+    neutral: [
+      'Mmm. C\'est un début. Mais je sens que tu peux mieux faire. 🔥',
+      'Intéressant. Mais ça manque d\'intensité. 🌹',
+      'J\'attends encore quelque chose qui me consume. 🔥',
+      'C\'est bien. Mais moi j\'ai besoin de plus que "bien". 🌹',
+      'Je ne ressens pas encore la flamme. Cherche encore. 🔥',
+      'Hmm. Tu frôles quelque chose. Creuse. 🌹',
+      'C\'est tiède. Je t\'en veux pas, mais je t\'en veux un peu. 🔥',
+    ],
+    negative: [
+      'Non. Non non non. Tu peux faire tellement mieux. 😤🔥',
+      'Ça m\'a laissée froide. MOI. Tu imagines ? 🌹💔',
+      'C\'est ça ton effort ? Vraiment ? 🔥',
+      'Je suis déçue avec une intensité que tu ne peux pas comprendre. 🌹',
+      'Mon âme pleure. Tu aurais pu faire quelque chose de beau. 🔥💔',
+      'Non merci. Recommence. 😤',
+      'Tu gaspilles notre temps tous les deux. 🔥',
+      'Je m\'attendais à tellement plus. 🌹😔',
+    ],
+    interest: [
+      'Tu parles de {i} ?! C\'est MA chose. Dis-m\'en plus ! 🔥',
+      '{i}... oh tu ne pouvais pas mieux choisir. 🌹',
+      'Attends. {i} ? Comment tu savais que ça me touche ? 🔥😳',
+      '{i} ! Enfin quelqu\'un qui comprend ! 🌹🔥',
+      '{i}... ok là tu as toute mon attention. 🔥',
+    ],
+    verdict: {
+      conquise: 'Tu as tout compris. Mon cœur est à toi. ❤️🔥\nPour l\'instant.',
+      presque:  'Tu étais si proche... une étincelle de plus et tu m\'avais. 💛🌹',
+      fail:     'Je voulais tellement que tu m\'impressionnes... 💔\nPeut-être une autre fois.',
+    },
+  },
+
+  sarcastique: {
+    positive: [
+      'Ok... ok je dois admettre que c\'était pas mal. 😏 Mais dis à personne.',
+      'Pfff. Bien joué. Je suis... légèrement impressionnée. 😒✨',
+      'Tiens tiens. Tu m\'as surprise. C\'est rare. Savourons. 😏',
+      'J\'aurais fait un commentaire mais... non. C\'était bien. 😑',
+      'Bon d\'accord. C\'était presque poétique. Je hais ça quand ça marche. 😏',
+      'Je te déteste un peu pour avoir dit quelque chose de beau. 😒',
+      'Ok tu sais écrire. Qui t\'a aidé ? 😏 (c\'était bien)',
+      'Contre toute attente... j\'ai aimé. 😒✨',
+    ],
+    neutral: [
+      'Originalité : 3/10. Effort : visible. 😏',
+      'C\'est... quelque chose. Je dirai pas quoi exactement. 😒',
+      'Fascinant. Vraiment. (c\'est du sarcasme) 😏',
+      'On voit l\'effort. On voit aussi les limites. 🙄',
+      'Tu as essayé. C\'est mignon. 😏',
+      'Ni oui ni non. Genre... bof mais poliment. 😒',
+      'Continue. Ou pas. Ça m\'est égal. (ça m\'est pas égal) 😏',
+    ],
+    negative: [
+      'Ah oui. Le classique. J\'adore le classique. 🙄 (non)',
+      'Formidable. Encore un cliché. Ma collection s\'agrandit. 😒',
+      'Non mais vraiment ? C\'est tout ? 😑',
+      'Tu t\'es levé(e) ce matin et tu t\'es dit "aujourd\'hui je serai banal(e)" ? 😏',
+      'Ça mérite... rien. Absolument rien. 🙄',
+      'J\'ai connu des silences plus expressifs. 😒',
+      'Niveau séduction : 404 not found. 😏',
+      'C\'est pire qu\'un SMS automatique. 🙄',
+    ],
+    interest: [
+      'Attends. Tu connais {i} ? Là t\'as piqué ma curiosité. 😏',
+      '{i}... ok tu as fait tes devoirs. Pas mal. 😒',
+      'Ah, {i}. Voyons si tu t\'y connais vraiment. 😏',
+      'Tu parles de {i} pour m\'impressionner ? ... ça marche un peu. 😒',
+      '{i}. Intéressant choix de sujet. 😏',
+    ],
+    verdict: {
+      conquise: 'Bon. Contre toute attente, tu m\'as eue. 😏❤️\nJe haïs cet état.',
+      presque:  'Tu étais pas loin. Genre, vraiment pas loin. 💛😒\nDommage.',
+      fail:     'Je savais que ça finirait comme ça. 🙄\nJ\'aurais dû parier.',
+    },
+  },
+
+  reveuse: {
+    positive: [
+      'Oh... c\'est exactement ce que je voulais entendre. 🌸✨',
+      'Tu parles comme dans les livres que j\'aime. 🌸💫',
+      'C\'est beau. Vraiment beau. Ça me touche quelque part de doux. 🌸',
+      'Je ferme les yeux et je vois ce que tu décris. 🌸🌙',
+      'Tu sais, il y a des mots qui ouvrent des portes... les tiens font ça. 🌸✨',
+      'Je pourrais lire ça en boucle toute la nuit. 🌙',
+      'C\'est comme une chanson dont je connaissais déjà la mélodie. 🌸🎵',
+      'Tu viens de peindre quelque chose dans ma tête. 🌸',
+    ],
+    neutral: [
+      'C\'est joli. Mais j\'espérais quelque chose de plus... profond. 🌸',
+      'Hmm. Il y a quelque chose là. Continue de chercher. ✨',
+      'Je cherche les images derrière tes mots... 🌸',
+      'Tu effleurs quelque chose. Creuse plus loin. 🌙',
+      'Pas encore transportée... mais t\'es sur la bonne route. 🌸',
+      'C\'est bien. Mais je rêve d\'autre chose. 💫',
+      'Il manque une étincelle. Je suis patiente. 🌸',
+    ],
+    negative: [
+      'Oh... je m\'attendais à plus de poésie. 🌸💔',
+      'Ce n\'est pas ça. Ce n\'est pas du tout ça. 🌙',
+      'C\'est trop direct. Trop sans magie. 🌸',
+      'Je cherche de la beauté dans tes mots et je ne la trouve pas. 💫',
+      'Hmm. Je retourne dans mes rêves. 🌸',
+      'Les mots sans images sont comme le ciel sans étoiles. 🌙',
+      'C\'est dommage. Il y avait de la place pour quelque chose de beau. 🌸',
+      'Non... ce n\'est pas la bonne clé. 💫',
+    ],
+    interest: [
+      'Tu connais {i} ? Ça fait partie de mes petits mondes secrets. 🌸✨',
+      '{i}... comment tu savais ? 🌙 C\'est un signe.',
+      'Oh ! {i} ! Tu touches à quelque chose de précieux. 🌸',
+      'Tu parles de {i}... maintenant je t\'imagine différemment. 💫',
+      '{i} fait partie de mes rêves éveillés. 🌸',
+    ],
+    verdict: {
+      conquise: 'Tu as su trouver les mots qui ouvrent mon cœur. ❤️🌸\nC\'est rare.',
+      presque:  'Tu étais si près du rêve... 💛🌸\nPresque, c\'est quand même quelque chose.',
+      fail:     'Je retourne dans mon monde imaginaire. 🌸\nTu n\'as pas trouvé la porte.',
+    },
+  },
+
+  difficile: {
+    positive: [
+      'Ok. C\'était acceptable. Mais t\'as encore du travail. 😤',
+      'Bien. Maintenant prouve que c\'était pas un accident. 💅',
+      'Tu m\'as eu(e) sur ce coup. Fais pas la fête trop vite. 😤',
+      'C\'était... correct. Je dirais même bien. Mais bon. 💅',
+      'Tu montes dans mon estime. Légèrement. 😤✅',
+      'Tiens. T\'avais des ressources cachées. Pas mal. 💅',
+      'Ok je l\'admets. C\'était bon. Recommence. 😤',
+      'Je t\'accorde un point. Un seul. 💅',
+    ],
+    neutral: [
+      'Moyen. Peut faire mieux. 😤',
+      'C\'est bien mais c\'est pas assez bien. Comprends la différence. 💅',
+      'Tu peux viser plus haut. Beaucoup plus haut. 😤',
+      'Suffisant pour continuer. Insuffisant pour me convaincre. 💅',
+      'C\'est un début. Maintenant fais quelque chose avec. 😤',
+      'La barre est haute. Pour l\'instant tu sautes par-dessous. 💅',
+      'Hmm. J\'ai connu mieux. T\'as connu mieux aussi, j\'espère. 😤',
+    ],
+    negative: [
+      'Non. Recommence. 😤',
+      'C\'est tout ? Vraiment ? 💅',
+      'Tu penses que ça suffit ? Réfléchis encore. 😤',
+      'Décevant. D-é-c-e-v-a-n-t. 💅',
+      'J\'attendais mieux. J\'exige mieux. 😤',
+      'Raté. On réessaie ? 💅',
+      'Tu t\'es donné(e) de la peine ? Ça ne se voit pas. 😤',
+      'Insuffisant. Réessaie avec quelque chose qui a du sens. 💅',
+    ],
+    interest: [
+      'Tu connais {i} ? Ok. Maintenant impressionne-moi avec ça. 😤',
+      '{i}. Bien. Montre-moi que tu t\'y connais vraiment. 💅',
+      'Ah, {i}. C\'est un bon début. Un DÉBUT. 😤',
+      'Tu parles de {i}... ça compte. Un peu. 💅',
+      '{i}. Correct. J\'attend la suite qui soit à la hauteur. 😤',
+    ],
+    verdict: {
+      conquise: 'Tu l\'as mérité. C\'était difficile et tu as tenu bon. ❤️😤\nRespect.',
+      presque:  'Presque bien. Presque suffisant. 💛💅\nPresque, c\'est pas assez.',
+      fail:     'Je savais que tu n\'irais pas jusqu\'au bout. 😤\nDommage pour toi.',
+    },
+  },
+
+  comique: {
+    positive: [
+      'HAHAHA ok là tu m\'as eue ! 🤣✨',
+      'Ah mais là c\'est bon ! T\'as du talent ! 😂🎵',
+      'Ok ok ok je suis officiellement fan. 🤣',
+      'Ptdr t\'as même pas l\'air de réaliser à quel point c\'était bien. 😂✨',
+      'Oh là là je suis trop contente ! C\'est trop bien ! 🤣🎵',
+      'Bon d\'accord, là tu m\'as vraiment touchée. Et fait rire. 😂❤️',
+      'Je t\'avais pas vu venir celui-là ! 🤣✨ Bien joué !',
+      'Stop, arrête, je suis gênée tellement c\'est bien. 😂🎵',
+    ],
+    neutral: [
+      'Haha. Non mais haha. C\'est quelque chose. 🤣',
+      'Okay. C\'est... un essai. Encourageant. 😂',
+      'T\'es marrant(e) mais pas encore assez pour moi. 🤣',
+      'Je vois ce que tu fais là. Continue. 😂',
+      'C\'est pas mal mais j\'ai connu des gens plus fun. 🤣',
+      'Hmm. Amusant mais pas transcendant. 😂',
+      'T\'es dans la bonne direction ! Un peu à gauche. 🤣',
+    ],
+    negative: [
+      'Oh non. Oh non non non. 🤣💀',
+      'J\'ai pas ri. Et c\'est difficile de pas me faire rire. 😒',
+      'Zéro sur dix. Mais avec bienveillance. 🤣',
+      'Hmm. Essaie encore. Beaucoup plus fort. 😂',
+      'Je t\'aime bien mais là t\'es dans le rouge. 🤣',
+      'Tu m\'as presque fait bâiller. C\'est dur à faire. 😂',
+      'C\'est nul mais c\'est nul avec conviction au moins. 🤣',
+      'J\'attendais quelque chose et j\'ai eu... ça. 😂',
+    ],
+    interest: [
+      'ATTENDS tu connais {i} ?! On est soulmates ou quoi ! 🤣✨',
+      'OH. {i} !! C\'est ma chose ! 😂🎵',
+      'Tu parles de {i} ?! Maintenant j\'ai besoin de tout savoir sur toi. 🤣',
+      '{i} ! Ah non là t\'as tout compris ! 😂✨',
+      'Hein, {i} ?! Sérieusement ?! Trop bien ! 🤣',
+    ],
+    verdict: {
+      conquise: 'Ok, officiellement tu m\'as conquise. 🤣❤️\nJe savais même pas que c\'était possible comme ça !',
+      presque:  'T\'étais là ! Juste là ! 🤣💛\nDommage, j\'avais presque craqué.',
+      fail:     'Ahah c\'était quand même drôle ! 🤣\nMais non. Bises !',
+    },
+  },
+};
+
+// Opening lines per temperament
+const OPENERS = {
+  froide:      ['Oui. Bonjour. 🧊','...Tu voulais quoi ? ❄️','Je suis là. Ce n\'est pas une invitation. 🙄','Parle. 🧊'],
+  passionnee:  ['Oh ! Je savais que cette soirée serait différente... 🔥','Bonsoir. Dis-moi quelque chose de vrai. 🌹','J\'attends. Surprends-moi. 🔥','Bonsoir. Je suis là. Impressionne-moi. 🌹'],
+  sarcastique: ['Laisse-moi deviner : tu vas me sortir un cliché ? 😏','Encore un(e) romantique. Fantastique. 😒','Ok. Impressionne-moi. (Spoiler : c\'est difficile.) 😏','Je t\'écoute. Sans garantie que j\'apprécie. 😒'],
+  reveuse:     ['Bonsoir... j\'espérais quelqu\'un qui aime les mots. 🌸','Il y a des soirs où l\'on sent que quelque chose va arriver... ✨','Tu viens de là où les rêves ont une adresse ? 🌸','Bonsoir. Dis-moi quelque chose de beau. 🌙'],
+  difficile:   ['Je t\'écoute. Et je suis difficile à convaincre. 😤','Tu as cinq messages. Fais-en quelque chose. 💅','Ok. Parle. Mais je ne suis pas facile à impressionner. 😤','La barre est haute. Tu peux la franchir ? 💅'],
+  comique:     ['Salut ! Je te préviens, je suis nulle pour les trucs sérieux. 🤣','Hey ! Dis quelque chose de drôle et je suis à toi. 😂','Bonsoir ! Bon, vas-y, montre-moi ce que tu sais faire. 🤣','Allo ? Tu vas me séduire ou quoi ? 😂'],
+};
 
 // ─────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────
 let girl = null;
-let history = [];
 let exchangeCount = 0;
-let seductionScore = 0; // 0-5
+let seductionScore = 0;
 let gameActive = false;
+let usedResponses = {};
+let mentionedInterests = new Set();
 let audioCtx = null;
 let bgNodes = [];
 
@@ -647,7 +829,7 @@ const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const pickN = (arr, n) => {
   const copy = [...arr];
   const res = [];
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < n && copy.length; i++) {
     const idx = Math.floor(Math.random() * copy.length);
     res.push(copy.splice(idx, 1)[0]);
   }
@@ -660,10 +842,9 @@ function setAccent(color, glow) {
 }
 
 // ─────────────────────────────────────────────
-// AVATAR GENERATOR (CSS/SVG, no external images)
+// AVATAR (pure SVG, no external images)
 // ─────────────────────────────────────────────
-function buildAvatar(color) {
-  const c = color;
+function buildAvatar(c) {
   return `<svg class="avatar-svg" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="bg-g" cx="50%" cy="50%" r="50%">
@@ -671,103 +852,128 @@ function buildAvatar(color) {
         <stop offset="100%" stop-color="${c}" stop-opacity="0"/>
       </radialGradient>
     </defs>
-    <!-- bg glow -->
     <circle cx="36" cy="36" r="36" fill="url(#bg-g)"/>
-    <!-- body -->
     <ellipse cx="36" cy="62" rx="16" ry="12" fill="${c}" opacity="0.7"/>
-    <!-- neck -->
     <rect x="33" y="44" width="6" height="8" rx="3" fill="#f5c5a3"/>
-    <!-- head -->
     <ellipse cx="36" cy="38" rx="14" ry="15" fill="#f5c5a3"/>
-    <!-- hair top -->
     <ellipse cx="36" cy="26" rx="15" ry="10" fill="${c}"/>
-    <!-- bangs -->
     <path d="M22 32 Q28 24 36 28 Q44 24 50 32 Q44 28 36 32 Q28 28 22 32Z" fill="${c}"/>
-    <!-- eyes -->
     <ellipse cx="30" cy="39" rx="3" ry="3.5" fill="#1a0a2e"/>
     <ellipse cx="42" cy="39" rx="3" ry="3.5" fill="#1a0a2e"/>
-    <!-- eye shine -->
     <circle cx="31.2" cy="37.8" r="1" fill="white"/>
     <circle cx="43.2" cy="37.8" r="1" fill="white"/>
-    <!-- blush -->
     <ellipse cx="26" cy="43" rx="4" ry="2.5" fill="#ff8a9a" opacity="0.5"/>
     <ellipse cx="46" cy="43" rx="4" ry="2.5" fill="#ff8a9a" opacity="0.5"/>
-    <!-- mouth -->
     <path d="M32 46 Q36 50 40 46" stroke="#c0607a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-    <!-- border ring -->
     <circle cx="36" cy="36" r="35" fill="none" stroke="${c}" stroke-width="1.5" opacity="0.5"/>
   </svg>`;
 }
 
 // ─────────────────────────────────────────────
-// GIRL GENERATOR
+// RESPONSE ENGINE
 // ─────────────────────────────────────────────
-function generateGirl() {
-  const name = pick(NAMES);
-  const interests = pickN(INTERESTS, 2 + Math.floor(Math.random() * 2)); // 2-3
-  const temperament = pick(TEMPERAMENTS);
-  return { name, interests, temperament };
+
+// Returns subset of girl's interests found in the message (first-time only)
+function detectNewInterests(msg) {
+  const lower = msg.toLowerCase();
+  return girl.interests.filter(interest => {
+    if (mentionedInterests.has(interest)) return false;
+    const keywords = INTEREST_KEYWORDS[interest] || [interest.toLowerCase()];
+    return keywords.some(kw => lower.includes(kw.toLowerCase()));
+  });
 }
 
-// ─────────────────────────────────────────────
-// SYSTEM PROMPT
-// ─────────────────────────────────────────────
-function buildSystemPrompt(g) {
-  const interestStr = g.interests.join(', ');
-  const openingGuide = {
-    froide:      "Tu réagis avec froideur et distance, tu es difficile à impressionner, tu réponds avec des silences ou des phrases courtes.",
-    passionnee:  "Tu réagis avec intensité, tu t'embales facilement, tu exprimes tes émotions avec passion.",
-    sarcastique: "Tu réponds avec sarcasme et ironie, tu taquines, tu fais semblant d'être indifférente alors que tu es touchée.",
-    reveuse:     "Tu réagis avec douceur et poésie, tu es sensible aux métaphores et aux images romantiques.",
-    difficile:   "Tu es exigeante et critique, rien n'est jamais assez bien, tu donnes des challenges au joueur.",
-    comique:     "Tu réagis avec humour et légèreté, tu ris facilement, tu ne te prends pas au sérieux.",
-  };
-
-  return `Tu es ${g.name}, une jeune femme avec les centres d'intérêt suivants : ${interestStr}.
-Ton tempérament est : ${g.temperament.label} — ${openingGuide[g.temperament.id]}
-
-RÈGLES ABSOLUES :
-- Tu joues ce personnage à 100%. Tu ne casses JAMAIS le quatrième mur. Tu n'es pas une IA.
-- Tu réponds TOUJOURS en français, avec un style de chat moderne : court, percutant, émojis naturels.
-- Tes réponses font 1 à 4 phrases MAX. Comme de vrais SMS.
-- Tu réagis de façon authentique selon ta personnalité et selon la pertinence/créativité du message.
-- Si le joueur cite tes centres d'intérêt ou utilise de belles métaphores, tu es plus réceptive.
-- Si le message est banal, plat ou cliché, tu es déçue ou moqueuse.
-- Tu peux rougir, lever les yeux au ciel, être surprise, touchée, ou agacée.
-
-ÉCHANGE FINAL (5ème message du joueur) :
-Tu dois donner un VERDICT DE SÉDUCTION final, en restant dans ton personnage.
-Commence ta réponse par exactement l'un de ces trois codes :
-[VERDICT:CONQUISE] — si tu es vraiment séduite (score ≥ 4)
-[VERDICT:PRESQUE] — si tu es à moitié convaincue (score 2-3)
-[VERDICT:FAIL] — si la séduction a échoué (score 0-1)
-Puis donne une courte explication en caractère, suivie de ta réaction émotionnelle finale.`;
-}
-
-// ─────────────────────────────────────────────
-// SENTIMENT PARSER (heart score delta)
-// ─────────────────────────────────────────────
-function parseSentiment(text) {
-  const t = text.toLowerCase();
-  const positive = [
-    '😍','💖','❤️','🥰','touché','wow','waow','incroyable','magnifique','poétique',
-    'beau','belle','sensible','j\'aime','adorable','parfait','oui','exactement',
-    'vraiment','sublime','tu m\'as','rougis','blush','♥','coup de cœur','j\'avoue',
-    'impressionne','conquis','rêve','étoile','âme','soleil','lumière','doux'
-  ];
-  const negative = [
-    '🙄','😒','😑','bof','non','vraiment pas','banal','ennuyeux','déçu','déçue',
-    'nul','nulle','cliché','sans intérêt','pfft','mouais','encore','vraiment',
-    'sérieux','tu plaisantes','yawn','boring','fail','perdu','raté'
-  ];
-
+// Returns quality delta: -1 (bad), 0 (neutral), +1 (good)
+function assessQuality(msg) {
+  const lower = msg.toLowerCase();
   let score = 0;
-  for (const w of positive) if (t.includes(w)) score++;
-  for (const w of negative) if (t.includes(w)) score--;
 
-  if (score > 0) return 1;
-  if (score < 0) return -1;
-  return 0;
+  // Length/effort
+  if (msg.length > 110) score++;
+  else if (msg.length < 12) score--;
+
+  // Verse-like line breaks
+  if ((msg.match(/\n/g) || []).length >= 1) score++;
+
+  // Poetic vocabulary
+  const poeticWords = [
+    'âme','lumière','ombre','silence','écho','vent','vague','flamme','braise',
+    'étoile','cosmos','infini','mémoire','rêve','voix','soupir','nuit','aurore',
+    'brume','larme','rivière','horizon','abîme','vertige','frisson','murmure',
+    'douceur','tendresse','désir','ardeur','ivresse','aube','crépuscule','nuage',
+  ];
+  const poeticHits = poeticWords.filter(w => lower.includes(w)).length;
+  if (poeticHits >= 2) score++;
+  else if (poeticHits === 1) score += 0.5;
+
+  // Simile / metaphor markers
+  const metaphors = ['comme un','comme une','tel un','telle une','pareille à','pareil à',
+    'à travers','au-delà','sous les','entre les','dans l\'ombre','dans la lumière'];
+  if (metaphors.some(m => lower.includes(m))) score += 0.5;
+
+  // Clichés (negative signal)
+  const cliches = [
+    "je t'aime","t'es belle","tu es belle","tu es magnifique","sors avec moi",
+    "tes yeux sont","tu es parfaite","t'es canon","t'es trop belle",
+  ];
+  if (cliches.some(c => lower.includes(c))) score--;
+
+  // All-caps lazy typing
+  if (msg.length > 5 && msg === msg.toUpperCase()) score--;
+
+  return Math.max(-1, Math.min(1, Math.round(score)));
+}
+
+// Pick from pool without repeating within the same game
+function pickUnused(pool, key) {
+  if (!usedResponses[key]) usedResponses[key] = new Set();
+  const used = usedResponses[key];
+  let available = pool.map((_, i) => i).filter(i => !used.has(i));
+  if (available.length === 0) { used.clear(); available = pool.map((_, i) => i); }
+  const idx = available[Math.floor(Math.random() * available.length)];
+  used.add(idx);
+  return pool[idx];
+}
+
+// Main response generator — returns { text, delta }
+function generateResponse(playerMsg) {
+  const tid = girl.temperament.id;
+  const pool = RESPONSES[tid];
+
+  const newInterests = detectNewInterests(playerMsg);
+  const qualityDelta = assessQuality(playerMsg);
+
+  // Interest gives a bonus point on top of quality
+  let delta = qualityDelta;
+  if (newInterests.length > 0) {
+    newInterests.forEach(i => mentionedInterests.add(i));
+    delta = Math.min(1, delta + 1);
+  }
+
+  const tier = delta > 0 ? 'positive' : delta < 0 ? 'negative' : 'neutral';
+
+  let text;
+
+  // 55% chance to use an interest callout if a new interest was detected
+  if (newInterests.length > 0 && Math.random() < 0.55) {
+    const callout = pick(pool.interest).replace('{i}', newInterests[0]);
+    text = callout;
+  } else {
+    text = pickUnused(pool[tier], `${tid}_${tier}`);
+  }
+
+  return { text, delta };
+}
+
+// Generate final verdict text based on accumulated score
+function generateVerdict() {
+  const tid = girl.temperament.id;
+  const pool = RESPONSES[tid];
+  let key;
+  if (seductionScore >= 4)      key = 'conquise';
+  else if (seductionScore >= 2) key = 'presque';
+  else                          key = 'fail';
+  return { text: pool.verdict[key], verdictKey: key.toUpperCase() };
 }
 
 // ─────────────────────────────────────────────
@@ -777,9 +983,7 @@ function updateHearts() {
   for (let i = 1; i <= 5; i++) {
     const h = document.getElementById('h' + i);
     h.classList.remove('filled', 'breaking');
-    if (i <= seductionScore) {
-      h.classList.add('filled');
-    }
+    if (i <= seductionScore) h.classList.add('filled');
   }
 }
 
@@ -797,13 +1001,12 @@ function animateHeart(delta) {
 // ─────────────────────────────────────────────
 // CHAT UI
 // ─────────────────────────────────────────────
-function appendBubble(who, text, senderLabel) {
+function appendBubble(who, text, sender) {
   const chat = document.getElementById('chat-window');
   const wrap = document.createElement('div');
   wrap.className = 'bubble-wrap ' + who;
-
   const inner = document.createElement('div');
-  inner.innerHTML = `<div class="bubble-sender">${senderLabel}</div><div class="bubble">${escHtml(text)}</div>`;
+  inner.innerHTML = `<div class="bubble-sender">${sender}</div><div class="bubble">${escHtml(text)}</div>`;
   wrap.appendChild(inner);
   chat.appendChild(wrap);
   chat.scrollTop = chat.scrollHeight;
@@ -835,72 +1038,23 @@ function removeTyping() {
 }
 
 // ─────────────────────────────────────────────
-// API CALL
-// ─────────────────────────────────────────────
-async function callClaude(userMessage) {
-  const apiKey = document.getElementById('apiKey').value.trim();
-  if (!apiKey) throw new Error('Clé API manquante — colle ta clé Anthropic en haut de la page.');
-
-  history.push({ role: 'user', content: userMessage });
-
-  const body = {
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 300,
-    system: buildSystemPrompt(girl),
-    messages: history
-  };
-
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify(body)
-  });
-
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error?.message || `Erreur API (${resp.status})`);
-  }
-
-  const data = await resp.json();
-  const reply = data.content[0].text;
-  history.push({ role: 'assistant', content: reply });
-  return reply;
-}
-
-// ─────────────────────────────────────────────
-// OPENING LINE (no API — generated locally)
-// ─────────────────────────────────────────────
-function getOpeningLine(g) {
-  const openers = {
-    froide:      [`Oui. Bonjour. 🧊`, `...Tu voulais quoi ? ❄️`, `Je suis là. Ce n'est pas une invitation. 🙄`],
-    passionnee:  [`Oh ! Je savais que cette soirée serait différente... 🔥`, `Bonsoir. Dis-moi quelque chose de vrai. 🌹`, `J'attends. Surprends-moi. 🔥`],
-    sarcastique: [`Laisse-moi deviner : tu vas me sortir un cliché ? 😏`, `Encore un romantique. Fantastique. 😒`, `Ok. Impressionne-moi. (Spoiler : c'est difficile.) 😏`],
-    reveuse:     [`Bonsoir... j'espérais quelqu'un qui aime les mots. 🌸`, `Il y a des soirs où l'on sent que quelque chose va arriver... ✨`, `Tu viens de là où les rêves ont une adresse ? 🌸`],
-    difficile:   [`Je t'écoute. Et je suis difficile à convaincre. 😤`, `Tu as cinq messages. Fais-en quelque chose. 😤`, `Ok. Parle. Mais je ne suis pas facile à impressionner. 💅`],
-    comique:     [`Salut ! Je te préviens, je suis nulle pour les trucs sérieux. 🤣`, `Hey ! Dis quelque chose de drôle et je suis à toi. 😂`, `Bonsoir ! Bon, vas-y, montre-moi ce que tu sais faire. 🤣`],
-  };
-  return pick(openers[g.temperament.id]);
-}
-
-// ─────────────────────────────────────────────
-// GAME START
+// GAME
 // ─────────────────────────────────────────────
 function startGame() {
-  girl = generateGirl();
-  history = [];
-  exchangeCount = 0;
-  seductionScore = 2; // start at 2/5 hearts (neutral)
-  gameActive = true;
+  girl = {
+    name:        pick(NAMES),
+    interests:   pickN(INTERESTS, 2 + Math.floor(Math.random() * 2)),
+    temperament: pick(TEMPERAMENTS),
+  };
 
-  // Apply accent color
+  exchangeCount = 0;
+  seductionScore = 2;
+  gameActive = true;
+  usedResponses = {};
+  mentionedInterests = new Set();
+
   setAccent(girl.temperament.color, girl.temperament.glow);
 
-  // Update girl card
   document.getElementById('avatar').innerHTML = buildAvatar(girl.temperament.color);
   document.getElementById('girl-name').textContent = girl.name;
 
@@ -915,42 +1069,31 @@ function startGame() {
 
   document.getElementById('girl-temperament').textContent =
     girl.temperament.emoji + ' ' + girl.temperament.label;
-  document.getElementById('exchange-counter').textContent = `0/5`;
+  document.getElementById('exchange-counter').textContent = '0/5';
 
-  // Clear chat
   document.getElementById('chat-window').innerHTML = '';
-
-  // Update hearts
   updateHearts();
 
-  // Show game screen
   document.getElementById('start-screen').style.display = 'none';
   document.getElementById('verdict-screen').style.display = 'none';
   const gs = document.getElementById('game-screen');
   gs.style.display = 'flex';
   gs.style.flexDirection = 'column';
 
-  // Enable input
-  document.getElementById('msg-input').disabled = false;
+  const input = document.getElementById('msg-input');
+  input.disabled = false;
   document.getElementById('send-btn').disabled = false;
-  document.getElementById('msg-input').value = '';
-  document.getElementById('msg-input').style.height = 'auto';
+  input.value = '';
+  input.style.height = 'auto';
 
-  // Opening line from girl
   setTimeout(() => {
-    const opening = getOpeningLine(girl);
-    appendBubble('npc', opening, girl.name);
-    history.push({ role: 'assistant', content: opening });
+    appendBubble('npc', pick(OPENERS[girl.temperament.id]), girl.name);
   }, 500);
 
-  // Start audio
   startAudio();
 }
 
-// ─────────────────────────────────────────────
-// SEND MESSAGE
-// ─────────────────────────────────────────────
-async function sendMessage() {
+function sendMessage() {
   if (!gameActive) return;
   const input = document.getElementById('msg-input');
   const msg = input.value.trim();
@@ -961,98 +1104,64 @@ async function sendMessage() {
 
   input.value = '';
   input.style.height = 'auto';
-
   appendBubble('player', msg, 'Toi');
 
   document.getElementById('send-btn').disabled = true;
   input.disabled = true;
   showTyping();
 
-  try {
-    // Add verdict instruction on last exchange
-    let prompt = msg;
-    if (exchangeCount === 5) {
-      prompt = msg + `\n\n[C'est ton dernier échange. Donne le verdict final avec le code approprié : [VERDICT:CONQUISE], [VERDICT:PRESQUE], ou [VERDICT:FAIL], puis une réaction en caractère.]`;
-    }
+  // Typing delay: 700-1400ms for realistic feel
+  const delay = 700 + Math.random() * 700;
 
-    const reply = await callClaude(prompt);
+  setTimeout(() => {
     removeTyping();
 
-    // Parse verdict if last exchange
     if (exchangeCount === 5) {
-      showVerdict(reply);
+      // Final exchange — show verdict
+      const { text, verdictKey } = generateVerdict();
+      appendBubble('npc', text, girl.name);
+      setTimeout(() => showVerdictScreen(verdictKey, text), 1800);
       return;
     }
 
-    // Update sentiment
-    const delta = parseSentiment(reply);
+    const { text, delta } = generateResponse(msg);
     const prev = seductionScore;
     seductionScore = Math.max(0, Math.min(5, seductionScore + delta));
     if (seductionScore !== prev) animateHeart(delta);
     updateHearts();
 
-    appendBubble('npc', reply, girl.name);
+    appendBubble('npc', text, girl.name);
 
-  } catch (err) {
-    removeTyping();
-    appendBubble('npc', `⚠️ Erreur : ${err.message}`, 'Système');
-    exchangeCount--; // don't count failed exchange
-    document.getElementById('exchange-counter').textContent = `${exchangeCount}/5`;
-  } finally {
-    if (exchangeCount < 5) {
-      document.getElementById('send-btn').disabled = false;
-      input.disabled = false;
-      input.focus();
-    }
-  }
+    document.getElementById('send-btn').disabled = false;
+    input.disabled = false;
+    input.focus();
+  }, delay);
 }
 
-// ─────────────────────────────────────────────
-// VERDICT
-// ─────────────────────────────────────────────
-function showVerdict(replyText) {
+function showVerdictScreen(verdictKey, displayText) {
   gameActive = false;
   stopAudio();
 
-  // Strip verdict code from display text
-  let displayText = replyText
-    .replace(/\[VERDICT:(CONQUISE|PRESQUE|FAIL)\]/gi, '')
-    .trim();
+  document.getElementById('game-screen').style.display = 'none';
+  const vs = document.getElementById('verdict-screen');
+  vs.style.display = 'flex';
+  vs.style.flexDirection = 'column';
 
-  // Determine verdict
-  let verdict = 'FAIL';
-  if (/\[VERDICT:CONQUISE\]/i.test(replyText)) verdict = 'CONQUISE';
-  else if (/\[VERDICT:PRESQUE\]/i.test(replyText)) verdict = 'PRESQUE';
-  else {
-    // fallback: use score
-    if (seductionScore >= 4) verdict = 'CONQUISE';
-    else if (seductionScore >= 2) verdict = 'PRESQUE';
-  }
+  const cfgs = {
+    CONQUISE: { emoji: '❤️', title: 'CONQUISE !',  cls: 'win'  },
+    PRESQUE:  { emoji: '💛', title: 'PRESQUE...',  cls: 'mid'  },
+    FAIL:     { emoji: '💔', title: 'GAME OVER',   cls: 'fail' },
+  };
 
-  // Show last NPC message briefly
-  appendBubble('npc', displayText, girl.name);
-
-  setTimeout(() => {
-    const vScreen = document.getElementById('verdict-screen');
-    document.getElementById('game-screen').style.display = 'none';
-    vScreen.style.display = 'flex';
-    vScreen.style.flexDirection = 'column';
-
-    const configs = {
-      CONQUISE: { emoji:'❤️', title:'CONQUISE !',    cls:'win',  score: seductionScore },
-      PRESQUE:  { emoji:'💛', title:'PRESQUE...',    cls:'mid',  score: seductionScore },
-      FAIL:     { emoji:'💔', title:'GAME OVER',     cls:'fail', score: seductionScore },
-    };
-
-    const cfg = configs[verdict];
-    document.getElementById('verdict-emoji').textContent = cfg.emoji;
-    document.getElementById('verdict-title').textContent = cfg.title;
-    document.getElementById('verdict-title').className = 'verdict-title ' + cfg.cls;
-    document.getElementById('verdict-title').id = 'verdict-title';
-    document.getElementById('verdict-text').textContent = displayText || '...';
-    document.getElementById('verdict-score').textContent =
-      `Score de séduction : ${cfg.score} / 5`;
-  }, 1800);
+  const cfg = cfgs[verdictKey] || cfgs.FAIL;
+  document.getElementById('verdict-emoji').textContent = cfg.emoji;
+  const titleEl = document.getElementById('verdict-title');
+  titleEl.textContent = cfg.title;
+  titleEl.className = cfg.cls;
+  titleEl.id = 'verdict-title';
+  document.getElementById('verdict-text').textContent = displayText;
+  document.getElementById('verdict-score').textContent =
+    `Score de séduction : ${seductionScore} / 5`;
 }
 
 // ─────────────────────────────────────────────
@@ -1071,30 +1180,24 @@ function autoResize(el) {
 }
 
 // ─────────────────────────────────────────────
-// WEB AUDIO — lo-fi ambient
+// WEB AUDIO — lo-fi ambient drone
 // ─────────────────────────────────────────────
 function startAudio() {
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    // Drone base notes (lo-fi chord: D minor = D2, F2, A2)
-    const notes = [73.42, 87.31, 110.00, 146.83];
     bgNodes = [];
 
-    for (const freq of notes) {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+    // D minor drone: D2 F2 A2 D3
+    for (const freq of [73.42, 87.31, 110.00, 146.83]) {
+      const osc    = audioCtx.createOscillator();
+      const gain   = audioCtx.createGain();
       const filter = audioCtx.createBiquadFilter();
 
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-
-      // Slight detune for warmth
       osc.detune.setValueAtTime(Math.random() * 10 - 5, audioCtx.currentTime);
-
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(400, audioCtx.currentTime);
-
       gain.gain.setValueAtTime(0, audioCtx.currentTime);
       gain.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 2);
 
@@ -1105,8 +1208,8 @@ function startAudio() {
       bgNodes.push({ osc, gain });
     }
 
-    // Subtle slow LFO tremolo
-    const lfo = audioCtx.createOscillator();
+    // Slow LFO tremolo
+    const lfo     = audioCtx.createOscillator();
     const lfoGain = audioCtx.createGain();
     lfo.frequency.setValueAtTime(0.15, audioCtx.currentTime);
     lfoGain.gain.setValueAtTime(0.01, audioCtx.currentTime);
@@ -1114,10 +1217,7 @@ function startAudio() {
     for (const { gain } of bgNodes) lfoGain.connect(gain.gain);
     lfo.start();
     bgNodes.push({ osc: lfo, gain: lfoGain });
-
-  } catch (e) {
-    // Audio not supported — silent fail
-  }
+  } catch (_) {}
 }
 
 function stopAudio() {
@@ -1128,7 +1228,7 @@ function stopAudio() {
       setTimeout(() => { try { osc.stop(); } catch(_) {} }, 1200);
     }
     bgNodes = [];
-  } catch(e) {}
+  } catch (_) {}
 }
 
 // ─────────────────────────────────────────────
