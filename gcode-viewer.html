@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#080810">
+<title>Visualiseur G-code ISO | Machine-Outils</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg0: #080810;
+  --bg1: #0d0d1c;
+  --bg2: #111120;
+  --bg3: #161628;
+  --bg4: #1c1c32;
+  --bg-glass: rgba(20,20,40,0.85);
+  --violet: #7c5cfc;
+  --violet-dim: rgba(124,92,252,0.18);
+  --violet-glow: rgba(124,92,252,0.4);
+  --amber: #f5a623;
+  --amber-dim: rgba(245,166,35,0.15);
+  --teal: #00d4b1;
+  --teal-dim: rgba(0,212,177,0.12);
+  --sky: #38bdf8;
+  --rose: #ff4d6d;
+  --lime: #84cc16;
+  --t1: #f0f0ff;
+  --t2: #9090b8;
+  --t3: #505070;
+  --b1: rgba(255,255,255,0.07);
+  --b2: rgba(255,255,255,0.12);
+  --b-accent: rgba(124,92,252,0.35);
+  --r-sm: 8px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-pill: 999px;
+  --ff: 'Outfit', system-ui, sans-serif;
+  --fm: 'JetBrains Mono', monospace;
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--ff);
+  background: var(--bg0);
+  color: var(--t1);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: var(--ff); cursor: pointer; border: none; background: none; -webkit-tap-highlight-color: transparent; user-select: none; }
+textarea, input { font-family: var(--fm); }
+
+/* Ambient */
+#ambient {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+}
+.orb { position: absolute; border-radius: 50%; filter: blur(80px); animation: orbFloat linear infinite; }
+.orb1 { width: 500px; height: 500px; top: -10%; right: -5%;
+  background: radial-gradient(circle, rgba(124,92,252,0.15) 0%, transparent 70%); animation-duration: 25s; }
+.orb2 { width: 350px; height: 350px; bottom: 5%; left: -5%;
+  background: radial-gradient(circle, rgba(0,212,177,0.1) 0%, transparent 70%); animation-duration: 32s; animation-direction: reverse; }
+@keyframes orbFloat {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(-20px, 30px) scale(1.04); }
+  66% { transform: translate(18px, -25px) scale(0.96); }
+}
+
+/* Layout */
+#app {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  height: 100%;
+}
+
+/* Header */
+#header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(12px + var(--safe-t)) 20px 12px;
+  background: rgba(8,8,16,0.92);
+  border-bottom: 1px solid var(--b1);
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hd-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.hd-icon {
+  width: 40px; height: 40px; border-radius: var(--r-md);
+  background: linear-gradient(135deg, var(--violet), #9b7aff);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.hd-title { font-size: 18px; font-weight: 800; white-space: nowrap; }
+.hd-sub { font-size: 11px; color: var(--t2); font-weight: 500; }
+.hd-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.btn-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 700;
+  border: 1.5px solid var(--b2);
+  color: var(--t2);
+  background: var(--bg-glass);
+  transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.15s var(--spring);
+}
+.btn-pill:hover { border-color: var(--b-accent); color: var(--t1); }
+.btn-pill:active { transform: scale(0.94); }
+.btn-pill.primary {
+  background: linear-gradient(135deg, var(--violet), #9b7aff);
+  border-color: transparent; color: #fff;
+  box-shadow: 0 4px 16px var(--violet-glow);
+}
+.btn-pill.primary:hover { box-shadow: 0 6px 24px var(--violet-glow); }
+
+/* Main body */
+#main {
+  display: flex; flex: 1; min-height: 0; overflow: hidden;
+}
+
+/* Left panel */
+#panel-left {
+  width: 380px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--b1);
+  background: var(--bg1);
+  overflow: hidden;
+}
+@media (max-width: 900px) {
+  #main { flex-direction: column; }
+  #panel-left { width: 100%; height: 45%; border-right: none; border-bottom: 1px solid var(--b1); }
+}
+@media (max-width: 600px) {
+  #panel-left { height: 50%; }
+}
+
+/* Panel sections */
+.panel-sect {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--b1);
+  flex-shrink: 0;
+}
+.panel-sect-title {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--t3);
+  margin-bottom: 10px;
+}
+
+/* Example selector */
+.ex-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.ex-btn {
+  flex: 1; min-width: 90px;
+  padding: 7px 10px; border-radius: var(--r-md);
+  font-size: 11px; font-weight: 700; color: var(--t2);
+  border: 1.5px solid var(--b1);
+  background: var(--bg3);
+  transition: border-color 0.2s, color 0.2s, transform 0.15s;
+  text-align: center;
+}
+.ex-btn:hover { border-color: var(--b2); color: var(--t1); }
+.ex-btn:active { transform: scale(0.95); }
+.ex-btn.active { border-color: var(--violet); color: var(--violet); background: var(--violet-dim); }
+
+/* Editor */
+#editor-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  min-height: 0; overflow: hidden;
+  padding: 10px 12px 12px;
+  gap: 8px;
+}
+#gcode-input {
+  flex: 1; resize: none; outline: none;
+  background: var(--bg0);
+  border: 1.5px solid var(--b1);
+  border-radius: var(--r-md);
+  color: var(--t1);
+  font-size: 12px; line-height: 1.7;
+  padding: 12px 14px;
+  overflow-y: auto;
+  transition: border-color 0.2s;
+  min-height: 0;
+  caret-color: var(--violet);
+}
+#gcode-input:focus { border-color: var(--b-accent); }
+
+.parse-row { display: flex; gap: 8px; }
+#parse-btn {
+  flex: 1;
+  background: linear-gradient(135deg, var(--violet), #9b7aff);
+  color: #fff; border-radius: var(--r-md);
+  font-size: 14px; font-weight: 800;
+  padding: 11px 18px;
+  box-shadow: 0 4px 16px var(--violet-glow);
+  transition: transform 0.12s var(--spring), box-shadow 0.15s;
+}
+#parse-btn:hover { box-shadow: 0 6px 24px var(--violet-glow); transform: translateY(-1px); }
+#parse-btn:active { transform: scale(0.96); }
+
+#clear-btn {
+  padding: 11px 14px; border-radius: var(--r-md);
+  border: 1.5px solid var(--b2);
+  color: var(--t2); font-size: 13px; font-weight: 700;
+  transition: background 0.15s, color 0.15s;
+}
+#clear-btn:hover { background: var(--bg3); color: var(--t1); }
+
+/* Stats panel */
+#stats-panel {
+  padding: 10px 12px 14px;
+  overflow-y: auto;
+  flex-shrink: 0;
+  max-height: 200px;
+}
+#stats-panel.hidden { display: none; }
+.stats-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 2px; }
+.stat-chip {
+  background: var(--bg3); border: 1px solid var(--b1);
+  border-radius: var(--r-md); padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.stat-chip-lbl { font-size: 9px; color: var(--t3); font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; }
+.stat-chip-val { font-size: 16px; font-weight: 800; line-height: 1; font-family: var(--fm); }
+.stat-chip-val.c-rapid { color: var(--sky); }
+.stat-chip-val.c-feed  { color: var(--t1); }
+.stat-chip-val.c-cw    { color: var(--amber); }
+.stat-chip-val.c-ccw   { color: var(--teal); }
+.stat-chip-val.c-dim   { color: var(--violet); }
+.stat-chip-val.c-len   { color: var(--lime); }
+
+.stat-bbox {
+  background: var(--bg3); border: 1px solid var(--b1);
+  border-radius: var(--r-md); padding: 8px 12px;
+  margin-top: 6px; font-size: 11px; line-height: 1.8; color: var(--t2);
+  font-family: var(--fm);
+}
+.stat-bbox strong { color: var(--t1); font-weight: 700; }
+.stat-bbox .dim-val { color: var(--violet); font-weight: 700; }
+
+/* Error display */
+#error-bar {
+  display: none;
+  margin: 0 12px 8px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  background: rgba(255,77,109,0.1);
+  border: 1px solid rgba(255,77,109,0.35);
+  color: #ff8fa3; font-size: 12px; font-weight: 600;
+}
+
+/* Right panel: visualization */
+#panel-right {
+  flex: 1; display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  background: var(--bg0);
+}
+
+/* Viz toolbar */
+#viz-toolbar {
+  position: absolute; top: 12px; right: 12px;
+  display: flex; flex-direction: column; gap: 6px;
+  z-index: 20;
+}
+.viz-btn {
+  width: 36px; height: 36px;
+  background: var(--bg-glass); border: 1px solid var(--b2);
+  border-radius: var(--r-md); backdrop-filter: blur(12px);
+  color: var(--t2); font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s, transform 0.12s;
+}
+.viz-btn:hover { background: var(--bg3); color: var(--t1); }
+.viz-btn:active { transform: scale(0.9); }
+
+/* Legend */
+#legend {
+  position: absolute; bottom: calc(12px + var(--safe-b)); left: 12px;
+  display: flex; flex-direction: column; gap: 5px;
+  z-index: 20; pointer-events: none;
+}
+.legend-row {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 10px; font-weight: 600; color: var(--t2);
+}
+.legend-line {
+  width: 24px; height: 2px; border-radius: 1px;
+}
+.legend-line.rapid { background: var(--sky); opacity: 0.8; }
+.legend-line.feed  { background: #e8e8ff; }
+.legend-line.arc-cw  { background: var(--amber); }
+.legend-line.arc-ccw { background: var(--teal); }
+.legend-line.rapid { background: repeating-linear-gradient(90deg, var(--sky) 0, var(--sky) 4px, transparent 4px, transparent 8px); }
+
+/* Coords display */
+#coords-display {
+  position: absolute; bottom: calc(12px + var(--safe-b)); right: 12px;
+  background: var(--bg-glass); border: 1px solid var(--b1);
+  border-radius: var(--r-md); backdrop-filter: blur(12px);
+  padding: 6px 12px; font-family: var(--fm); font-size: 11px;
+  color: var(--t2); z-index: 20; pointer-events: none;
+}
+#coords-display span { color: var(--t1); font-weight: 700; }
+
+/* SVG canvas */
+#viz-svg {
+  width: 100%; height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+#viz-svg:active { cursor: grabbing; }
+
+/* Empty state */
+#empty-state {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; pointer-events: none; z-index: 5;
+}
+#empty-state.hidden { display: none; }
+.empty-icon { font-size: 56px; opacity: 0.3; }
+.empty-title { font-size: 18px; font-weight: 700; color: var(--t2); }
+.empty-sub { font-size: 13px; color: var(--t3); text-align: center; max-width: 280px; line-height: 1.6; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+/* Responsive */
+@media (max-width: 500px) {
+  #header { padding: calc(10px + var(--safe-t)) 12px 10px; }
+  .hd-title { font-size: 15px; }
+  #panel-left { height: 48%; }
+}
+</style>
+</head>
+<body>
+<div id="ambient">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+</div>
+
+<div id="app">
+  <!-- Header -->
+  <header id="header">
+    <div class="hd-left">
+      <div class="hd-icon">⚙️</div>
+      <div>
+        <div class="hd-title">Visualiseur G-code ISO</div>
+        <div class="hd-sub">Machine-outils CNC · Fraisage &amp; Tournage</div>
+      </div>
+    </div>
+    <div class="hd-right">
+      <button class="btn-pill" onclick="fitView()" title="Ajuster la vue">⊞ Cadrer</button>
+      <button class="btn-pill" onclick="toggleGrid()" id="grid-btn">⊹ Grille</button>
+      <button class="btn-pill" onclick="toggleDims()" id="dims-btn">↔ Cotes</button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <div id="main">
+    <!-- Left panel: editor -->
+    <div id="panel-left">
+      <!-- Examples -->
+      <div class="panel-sect">
+        <div class="panel-sect-title">Exemples</div>
+        <div class="ex-btns">
+          <button class="ex-btn" data-ex="profil" onclick="loadExample(this)">Profil</button>
+          <button class="ex-btn" data-ex="arcs" onclick="loadExample(this)">Arcs</button>
+          <button class="ex-btn" data-ex="cercles" onclick="loadExample(this)">Cercles</button>
+          <button class="ex-btn" data-ex="tournage" onclick="loadExample(this)">Tournage</button>
+        </div>
+      </div>
+
+      <!-- Editor -->
+      <div id="editor-wrap">
+        <textarea id="gcode-input" spellcheck="false" placeholder="; Entrez votre programme G-code ici
+; Ex: G21 G90
+; G00 X0 Y0
+; G01 X100 Y0 F200
+; G02 X100 Y50 I0 J25
+; M30"></textarea>
+        <div id="error-bar"></div>
+        <div class="parse-row">
+          <button id="parse-btn" onclick="runParse()">▶ Visualiser</button>
+          <button id="clear-btn" onclick="clearAll()">✕</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div id="stats-panel" class="hidden">
+        <div class="panel-sect-title" style="margin-bottom:8px">Analyse du programme</div>
+        <div class="stats-grid-2">
+          <div class="stat-chip">
+            <span class="stat-chip-lbl">Rapides G00</span>
+            <span class="stat-chip-val c-rapid" id="st-rapid">0</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-lbl">Linéaires G01</span>
+            <span class="stat-chip-val c-feed" id="st-feed">0</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-lbl">Arcs G02 (CW)</span>
+            <span class="stat-chip-val c-cw" id="st-cw">0</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-lbl">Arcs G03 (CCW)</span>
+            <span class="stat-chip-val c-ccw" id="st-ccw">0</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-lbl">Longueur totale</span>
+            <span class="stat-chip-val c-len" id="st-len">0 mm</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-chip-lbl">Unités</span>
+            <span class="stat-chip-val c-dim" id="st-units">mm</span>
+          </div>
+        </div>
+        <div class="stat-bbox" id="st-bbox"></div>
+      </div>
+    </div>
+
+    <!-- Right panel: visualization -->
+    <div id="panel-right">
+      <!-- Empty state -->
+      <div id="empty-state">
+        <div class="empty-icon">⚙</div>
+        <div class="empty-title">Aucun programme chargé</div>
+        <div class="empty-sub">Choisissez un exemple ou saisissez votre G-code, puis cliquez sur <strong>Visualiser</strong></div>
+      </div>
+
+      <!-- SVG canvas -->
+      <svg id="viz-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="rgba(124,92,252,0.7)"/>
+          </marker>
+          <marker id="arrow-end" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M6,0 L0,3 L6,6 Z" fill="rgba(124,92,252,0.7)"/>
+          </marker>
+        </defs>
+        <!-- Grid -->
+        <g id="svg-grid"></g>
+        <!-- Main drawing group (pannable/zoomable) -->
+        <g id="svg-world">
+          <!-- Axes -->
+          <g id="svg-axes"></g>
+          <!-- Moves -->
+          <g id="svg-moves"></g>
+          <!-- Dimensions -->
+          <g id="svg-dims"></g>
+          <!-- Origin marker -->
+          <g id="svg-origin"></g>
+        </g>
+      </svg>
+
+      <!-- Viz toolbar -->
+      <div id="viz-toolbar">
+        <button class="viz-btn" onclick="zoom(1.3)" title="Zoomer">＋</button>
+        <button class="viz-btn" onclick="zoom(1/1.3)" title="Dézoomer">－</button>
+        <button class="viz-btn" onclick="fitView()" title="Cadrer">⊡</button>
+        <button class="viz-btn" onclick="resetView()" title="Réinitialiser">↺</button>
+      </div>
+
+      <!-- Legend -->
+      <div id="legend">
+        <div class="legend-row"><div class="legend-line rapid"></div> G00 Rapide</div>
+        <div class="legend-row"><div class="legend-line feed"></div> G01 Linéaire</div>
+        <div class="legend-row"><div class="legend-line arc-cw"></div> G02 Arc CW</div>
+        <div class="legend-row"><div class="legend-line arc-ccw"></div> G03 Arc CCW</div>
+      </div>
+
+      <!-- Coords display -->
+      <div id="coords-display">X <span id="cd-x">0.0</span> &nbsp; Y <span id="cd-y">0.0</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// EXAMPLES
+// ═══════════════════════════════════════════════════
+const EXAMPLES = {
+  profil: `; Profil rectangulaire avec congés R8
+; Pièce 100 x 60 mm
+G21 G90 G17
+G00 X-5 Y-5
+G01 X8 Y0 F200
+G03 X0 Y8 R8
+G01 X0 Y52
+G03 X8 Y60 R8
+G01 X92 Y60
+G03 X100 Y52 R8
+G01 X100 Y8
+G03 X92 Y0 R8
+G01 X8 Y0
+G00 X-5 Y-5
+M30`,
+
+  arcs: `; Profil avec arcs mixtes
+; Pièce 120 x 80 mm
+G21 G90
+G00 X0 Y0
+G01 X0 Y0 F150
+G01 X30 Y0
+G02 X60 Y30 R30
+G01 X60 Y50
+G03 X40 Y70 R20
+G01 X20 Y70
+G03 X0 Y50 R20
+G01 X0 Y30
+G02 X30 Y0 R30
+G01 X0 Y0
+G00 X0 Y0
+M30`,
+
+  cercles: `; Fraisage de poches circulaires concentriques
+; Centre X50 Y50 - passes de 10 en 10 mm
+G21 G90
+G00 X50 Y50
+G00 X60 Y50
+G01 Z-3 F80
+G02 X60 Y50 I-10 J0 F120
+G01 X70 Y50
+G02 X70 Y50 I-20 J0
+G01 X80 Y50
+G02 X80 Y50 I-30 J0
+G01 X90 Y50
+G02 X90 Y50 I-40 J0
+G00 Z5
+G00 X50 Y50
+M30`,
+
+  tournage: `; Profil de tournage (plan XZ)
+; G18 = plan XZ
+G21 G90 G18
+G00 X0 Z5
+G01 X0 Z0 F100
+G01 X20 Z0
+G01 X20 Z-15
+G03 X30 Z-20 R10
+G01 X30 Z-40
+G02 X40 Z-45 R10
+G01 X40 Z-60
+G01 X50 Z-65
+G01 X50 Z-90
+G00 X55 Z5
+M30`
+};
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let currentMoves = [];
+let showGrid = true;
+let showDims = true;
+let viewTx = 0, viewTy = 0, viewScale = 1;
+let isDragging = false, dragX = 0, dragY = 0;
+let bboxData = null;
+let currentPlane = 'G17'; // XY, G18=XZ, G19=YZ
+
+// ═══════════════════════════════════════════════════
+// G-CODE PARSER
+// ═══════════════════════════════════════════════════
+function parseGCode(text) {
+  const moves = [];
+  const lines = text.split('\n');
+
+  let px = 0, py = 0, pz = 0;
+  let motionMode = 0;  // 0,1,2,3
+  let distMode = 90;   // 90=absolute, 91=incremental
+  let plane = 'G17';   // G17=XY, G18=XZ, G19=YZ
+  let units = 'mm';
+  let errors = [];
+
+  for (let li = 0; li < lines.length; li++) {
+    let line = lines[li]
+      .replace(/\([^)]*\)/g, ' ')
+      .replace(/;.*$/, '')
+      .replace(/%/g, '')
+      .trim().toUpperCase();
+    if (!line) continue;
+
+    // Parse word-address pairs
+    const words = {};
+    const re = /([A-Z])([+-]?\d*\.?\d+)/g;
+    let m;
+    while ((m = re.exec(line)) !== null) {
+      const letter = m[1], val = parseFloat(m[2]);
+      if (letter in words) {
+        if (!Array.isArray(words[letter])) words[letter] = [words[letter]];
+        words[letter].push(val);
+      } else {
+        words[letter] = val;
+      }
+    }
+
+    // Update modal G codes
+    const gVals = words.G !== undefined ? [].concat(words.G) : [];
+    for (const gRaw of gVals) {
+      const g = Math.round(gRaw * 10) / 10;
+      const gn = Math.round(g);
+      if ([0,1,2,3].includes(gn)) motionMode = gn;
+      if (gn === 90) distMode = 90;
+      if (gn === 91) distMode = 91;
+      if (gn === 17) plane = 'G17';
+      if (gn === 18) plane = 'G18';
+      if (gn === 19) plane = 'G19';
+      if (gn === 20) units = 'inch';
+      if (gn === 21) units = 'mm';
+    }
+
+    // Check axis words
+    const hasX = 'X' in words, hasY = 'Y' in words, hasZ = 'Z' in words;
+    if (!hasX && !hasY && !hasZ) continue;
+
+    const from = { x: px, y: py, z: pz };
+    let tx = px, ty = py, tz = pz;
+    if (hasX) tx = distMode === 90 ? words.X : px + words.X;
+    if (hasY) ty = distMode === 90 ? words.Y : py + words.Y;
+    if (hasZ) tz = distMode === 90 ? words.Z : pz + words.Z;
+    const to = { x: tx, y: ty, z: tz };
+
+    // Map to 2D based on plane
+    // G17: XY, G18: XZ (X=U, Z=V), G19: YZ (Y=U, Z=V)
+    const f2 = planeTo2D(from, plane);
+    const t2 = planeTo2D(to, plane);
+
+    if (motionMode === 2 || motionMode === 3) {
+      const isCW = motionMode === 2;
+
+      if ('R' in words) {
+        const R = words.R;
+        const absR = Math.abs(R);
+        const dx = t2.x - f2.x, dy = t2.y - f2.y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+
+        if (d < 1e-6) {
+          // Full circle with R (technically invalid but skip gracefully)
+        } else if (absR < d/2 - 1e-6) {
+          errors.push(`Ligne ${li+1}: R=${absR} trop petit pour la distance ${d.toFixed(3)}`);
+        } else {
+          // Compute center for arc span & bounding box
+          const arcInfo = rToCenter(f2.x, f2.y, t2.x, t2.y, R, isCW);
+          moves.push({
+            type: isCW ? 'arc_cw' : 'arc_ccw',
+            f2, t2, from, to,
+            r: absR,
+            cx: arcInfo.cx, cy: arcInfo.cy,
+            largeArc: R < 0 ? 1 : 0,
+            // G02 CW in G-code (Y-up) → flip Y for SVG → appears CCW → sweep=0
+            // G03 CCW in G-code → appears CW in SVG → sweep=1
+            sweep: isCW ? 0 : 1,
+            plane, lineNum: li + 1
+          });
+        }
+      } else {
+        const I2D = planeIJK('I', 'J', 'K', words, plane);
+        const I = I2D.u, J = I2D.v;
+        const cx = f2.x + I, cy = f2.y + J;
+        const r = Math.sqrt(I*I + J*J);
+
+        if (r < 1e-6) {
+          errors.push(`Ligne ${li+1}: rayon d'arc nul (I=${I}, J=${J})`);
+        } else {
+          const dx = t2.x - f2.x, dy = t2.y - f2.y;
+          const isFullCircle = Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6;
+          let largeArc = 0;
+          if (!isFullCircle) {
+            const sa = Math.atan2(f2.y - cy, f2.x - cx);
+            const ea = Math.atan2(t2.y - cy, t2.x - cx);
+            let span = isCW ? (sa - ea) : (ea - sa);
+            if (span < 0) span += 2 * Math.PI;
+            if (span === 0) span = 2 * Math.PI;
+            largeArc = span > Math.PI ? 1 : 0;
+          }
+          moves.push({
+            type: isCW ? 'arc_cw' : 'arc_ccw',
+            f2, t2, from, to,
+            r, cx, cy, largeArc,
+            sweep: isCW ? 0 : 1,
+            isFullCircle,
+            plane, lineNum: li + 1
+          });
+        }
+      }
+    } else if (motionMode === 0) {
+      moves.push({ type: 'rapid', f2, t2, from, to, plane, lineNum: li + 1 });
+    } else {
+      moves.push({ type: 'feed', f2, t2, from, to, plane, lineNum: li + 1 });
+    }
+
+    px = tx; py = ty; pz = tz;
+  }
+
+  return { moves, errors, units, plane };
+}
+
+function planeTo2D(p, plane) {
+  if (plane === 'G18') return { x: p.x, y: p.z }; // XZ: X→U, Z→V
+  if (plane === 'G19') return { x: p.y, y: p.z }; // YZ: Y→U, Z→V
+  return { x: p.x, y: p.y }; // G17: XY default
+}
+
+function planeIJK(iw, jw, kw, words, plane) {
+  if (plane === 'G18') return { u: words[iw] || 0, v: words[kw] || 0 };
+  if (plane === 'G19') return { u: words[jw] || 0, v: words[kw] || 0 };
+  return { u: words[iw] || 0, v: words[jw] || 0 };
+}
+
+function rToCenter(x1, y1, x2, y2, R, isCW) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const d = Math.sqrt(dx*dx + dy*dy);
+  const absR = Math.abs(R);
+  const safeR = Math.max(absR, d/2);
+  const h = Math.sqrt(Math.max(0, safeR*safeR - (d/2)*(d/2)));
+  const mx = (x1+x2)/2, my = (y1+y2)/2;
+  // sign: R<0 means major arc → center on opposite side
+  const sign = (R > 0) ? 1 : -1;
+  let cx, cy;
+  if (isCW) {
+    cx = mx + sign * h * (dy/d);
+    cy = my - sign * h * (dx/d);
+  } else {
+    cx = mx - sign * h * (dy/d);
+    cy = my + sign * h * (dx/d);
+  }
+  return { cx, cy };
+}
+
+// ═══════════════════════════════════════════════════
+// BOUNDING BOX
+// ═══════════════════════════════════════════════════
+function computeBBox(moves) {
+  if (!moves.length) return { xmin: -20, xmax: 80, ymin: -20, ymax: 60 };
+
+  let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+  const upd = (x, y) => {
+    xmin = Math.min(xmin, x); xmax = Math.max(xmax, x);
+    ymin = Math.min(ymin, y); ymax = Math.max(ymax, y);
+  };
+
+  upd(0, 0); // always include origin
+
+  for (const mv of moves) {
+    upd(mv.f2.x, mv.f2.y);
+    upd(mv.t2.x, mv.t2.y);
+    if (mv.cx !== undefined) {
+      const pts = sampleArc(mv, 64);
+      for (const p of pts) upd(p.x, p.y);
+    }
+  }
+  return { xmin, xmax, ymin, ymax };
+}
+
+function sampleArc(mv, n) {
+  const pts = [];
+  const { cx, cy, r, f2, t2, isFullCircle } = mv;
+  if (r === undefined || r === null) return pts;
+
+  const isCW = mv.type === 'arc_cw';
+
+  if (isFullCircle) {
+    for (let i = 0; i <= n; i++) {
+      const a = (i/n) * 2 * Math.PI;
+      pts.push({ x: cx + r*Math.cos(a), y: cy + r*Math.sin(a) });
+    }
+    return pts;
+  }
+
+  const sa = Math.atan2(f2.y - cy, f2.x - cx);
+  const ea = Math.atan2(t2.y - cy, t2.x - cx);
+  let span = isCW ? (sa - ea) : (ea - sa);
+  if (span < 0) span += 2*Math.PI;
+  if (span < 1e-9) span = 2*Math.PI;
+
+  for (let i = 0; i <= n; i++) {
+    const a = isCW ? sa - (i/n)*span : sa + (i/n)*span;
+    pts.push({ x: cx + r*Math.cos(a), y: cy + r*Math.sin(a) });
+  }
+  return pts;
+}
+
+// ═══════════════════════════════════════════════════
+// PATH LENGTH
+// ═══════════════════════════════════════════════════
+function totalLength(moves) {
+  let len = 0;
+  for (const mv of moves) {
+    if (mv.type === 'arc_cw' || mv.type === 'arc_ccw') {
+      if (mv.r) {
+        if (mv.isFullCircle) {
+          len += 2*Math.PI*mv.r;
+        } else {
+          const pts = sampleArc(mv, 128);
+          for (let i = 1; i < pts.length; i++) {
+            const dx = pts[i].x-pts[i-1].x, dy = pts[i].y-pts[i-1].y;
+            len += Math.sqrt(dx*dx+dy*dy);
+          }
+        }
+      }
+    } else {
+      const dx = mv.t2.x-mv.f2.x, dy = mv.t2.y-mv.f2.y;
+      len += Math.sqrt(dx*dx+dy*dy);
+    }
+  }
+  return len;
+}
+
+// ═══════════════════════════════════════════════════
+// SVG RENDERING
+// ═══════════════════════════════════════════════════
+const svg = document.getElementById('viz-svg');
+const svgWorld = document.getElementById('svg-world');
+const svgGrid = document.getElementById('svg-grid');
+const svgAxes = document.getElementById('svg-axes');
+const svgMoves = document.getElementById('svg-moves');
+const svgDims = document.getElementById('svg-dims');
+const svgOrigin = document.getElementById('svg-origin');
+
+// In SVG: we flip Y so Y points up (like G-code)
+// svgY = -gcodeY
+const sy = y => -y;
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function renderAll(moves, bbox) {
+  svgMoves.innerHTML = '';
+  svgDims.innerHTML = '';
+  svgAxes.innerHTML = '';
+  svgOrigin.innerHTML = '';
+
+  renderMoves(moves);
+  if (showDims && bbox) renderDimensions(bbox);
+  renderOrigin();
+}
+
+function renderMoves(moves) {
+  for (const mv of moves) {
+    const x1 = mv.f2.x, y1 = sy(mv.f2.y);
+    const x2 = mv.t2.x, y2 = sy(mv.t2.y);
+
+    let el;
+
+    if (mv.type === 'rapid') {
+      el = svgEl('line', {
+        x1, y1, x2, y2,
+        stroke: 'rgba(56,189,248,0.65)',
+        'stroke-width': '0.8',
+        'stroke-dasharray': '3,3'
+      });
+    } else if (mv.type === 'feed') {
+      el = svgEl('line', { x1, y1, x2, y2, stroke: 'rgba(232,232,255,0.9)', 'stroke-width': '1.2' });
+    } else {
+      // Arc
+      const d = buildArcPath(mv);
+      if (!d) continue;
+      const color = mv.type === 'arc_cw' ? 'rgba(245,166,35,0.9)' : 'rgba(0,212,177,0.9)';
+      el = svgEl('path', { d, stroke: color, fill: 'none', 'stroke-width': '1.2', 'stroke-linecap': 'round' });
+    }
+
+    if (el) {
+      el.setAttribute('data-line', mv.lineNum);
+      el.style.cursor = 'crosshair';
+      svgMoves.appendChild(el);
+    }
+  }
+
+  // Direction arrows on feed moves (every ~20mm)
+  addArrows(moves);
+}
+
+function buildArcPath(mv) {
+  const { f2, t2, r, cx, cy, largeArc, sweep, isFullCircle } = mv;
+  if (!r || r === 0) return null;
+
+  const x1 = f2.x, y1 = sy(f2.y);
+  const x2 = t2.x, y2 = sy(t2.y);
+
+  if (isFullCircle) {
+    // Two semi-arcs
+    const cxS = cx, cyS = sy(cy);
+    const rx1 = cxS - r, ry1 = cyS;
+    const rx2 = cxS + r, ry2 = cyS;
+    // Use same sweep direction
+    return `M ${rx1} ${ry1} A ${r} ${r} 0 1 ${sweep} ${rx2} ${ry2} A ${r} ${r} 0 1 ${sweep} ${rx1} ${ry1}`;
+  }
+
+  return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} ${sweep} ${x2} ${y2}`;
+}
+
+function addArrows(moves) {
+  for (const mv of moves) {
+    if (mv.type === 'rapid' || mv.type === 'feed') {
+      const dx = mv.t2.x - mv.f2.x, dy = mv.t2.y - mv.f2.y;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < 5) continue;
+      // Midpoint in SVG coords
+      const mx = (mv.f2.x + mv.t2.x) / 2;
+      const my = sy((mv.f2.y + mv.t2.y) / 2);
+      // Direction unit vector in SVG (Y flipped)
+      const nx = dx/d, ny = -dy/d;
+      // Perpendicular: rotate (nx,ny) by 90° → (-ny, nx)
+      const px = -ny, py = nx;
+      const s = Math.min(d * 0.15, 2.5);
+      const color = mv.type === 'rapid' ? 'rgba(56,189,248,0.5)' : 'rgba(180,180,255,0.4)';
+      const tipX = mx + nx*s*1.2,  tipY  = my + ny*s*1.2;
+      const blX  = mx - nx*s*0.4 + px*s, blY  = my - ny*s*0.4 + py*s;
+      const brX  = mx - nx*s*0.4 - px*s, brY  = my - ny*s*0.4 - py*s;
+      const arrowEl = svgEl('path', {
+        d: `M ${tipX} ${tipY} L ${blX} ${blY} L ${brX} ${brY} Z`,
+        fill: color, stroke: 'none'
+      });
+      svgMoves.appendChild(arrowEl);
+    }
+  }
+}
+
+function renderOrigin() {
+  // Origin cross
+  const size = 8;
+  const cross = svgEl('g', {});
+  const hLine = svgEl('line', { x1: -size, y1: 0, x2: size, y2: 0, stroke: 'rgba(255,77,109,0.6)', 'stroke-width': '0.8' });
+  const vLine = svgEl('line', { x1: 0, y1: -size, x2: 0, y2: size, stroke: 'rgba(255,77,109,0.6)', 'stroke-width': '0.8' });
+  const dot = svgEl('circle', { cx: 0, cy: 0, r: 2, fill: 'rgba(255,77,109,0.9)' });
+  cross.appendChild(hLine);
+  cross.appendChild(vLine);
+  cross.appendChild(dot);
+  svgOrigin.appendChild(cross);
+
+  // Axis labels
+  const xl = svgEl('text', { x: size+4, y: 0, fill: 'rgba(255,77,109,0.6)', 'font-size': '5', 'font-family': 'JetBrains Mono, monospace', 'dominant-baseline': 'middle' });
+  xl.textContent = 'X';
+  const yl = svgEl('text', { x: 2, y: -(size+4), fill: 'rgba(255,77,109,0.6)', 'font-size': '5', 'font-family': 'JetBrains Mono, monospace', 'text-anchor': 'middle' });
+  yl.textContent = 'Y';
+  svgOrigin.appendChild(xl);
+  svgOrigin.appendChild(yl);
+}
+
+function renderDimensions(bbox) {
+  const { xmin, xmax, ymin, ymax } = bbox;
+  const W = xmax - xmin, H = ymax - ymin;
+  if (W < 0.01 && H < 0.01) return;
+
+  const pad = Math.max(W, H) * 0.12 + 8;
+  const dimColor = 'rgba(124,92,252,0.7)';
+  const textStyle = { 'font-size': '4', fill: 'rgba(200,180,255,0.9)', 'font-family': 'JetBrains Mono, monospace', 'font-weight': '700' };
+
+  // Width dimension (bottom)
+  const dimY = sy(ymin) + pad;
+  const dimLine = (x1, y1, x2, y2) => svgEl('line', { x1, y1, x2, y2, stroke: dimColor, 'stroke-width': '0.5', 'stroke-dasharray': '2,2' });
+
+  // Width dim line
+  svgDims.appendChild(dimLine(xmin, sy(ymin), xmin, dimY + 2));
+  svgDims.appendChild(dimLine(xmax, sy(ymin), xmax, dimY + 2));
+  svgDims.appendChild(svgEl('line', { x1: xmin, y1: dimY, x2: xmax, y2: dimY, stroke: dimColor, 'stroke-width': '0.7', 'marker-start': 'url(#arrow-end)', 'marker-end': 'url(#arrow)' }));
+  const wtxt = svgEl('text', { x: (xmin+xmax)/2, y: dimY + 5, 'text-anchor': 'middle', ...textStyle });
+  wtxt.textContent = `${W.toFixed(2)} mm`;
+  svgDims.appendChild(wtxt);
+
+  // Height dim line
+  if (H > 0.01) {
+    const dimX2 = xmax + pad;
+    svgDims.appendChild(dimLine(xmax, sy(ymax), dimX2 + 2, sy(ymax)));
+    svgDims.appendChild(dimLine(xmax, sy(ymin), dimX2 + 2, sy(ymin)));
+    svgDims.appendChild(svgEl('line', { x1: dimX2, y1: sy(ymax), x2: dimX2, y2: sy(ymin), stroke: dimColor, 'stroke-width': '0.7', 'marker-start': 'url(#arrow-end)', 'marker-end': 'url(#arrow)' }));
+    const htxt = svgEl('text', { x: dimX2 + 5, y: (sy(ymax)+sy(ymin))/2, 'dominant-baseline': 'middle', ...textStyle });
+    htxt.textContent = `${H.toFixed(2)} mm`;
+    svgDims.appendChild(htxt);
+  }
+
+  // Bounding box outline
+  const outline = svgEl('rect', {
+    x: xmin, y: sy(ymax), width: W, height: H,
+    fill: 'none', stroke: 'rgba(124,92,252,0.18)', 'stroke-width': '0.5', 'stroke-dasharray': '4,4'
+  });
+  svgDims.insertBefore(outline, svgDims.firstChild);
+
+  // Min/max labels
+  const lbl = (x, y, txt) => {
+    const t = svgEl('text', { x, y, 'font-size': '3.5', fill: 'rgba(150,140,200,0.7)', 'font-family': 'JetBrains Mono, monospace', 'text-anchor': 'middle' });
+    t.textContent = txt;
+    return t;
+  };
+  svgDims.appendChild(lbl(xmin, sy(ymin)+3, `(${xmin.toFixed(1)},${ymin.toFixed(1)})`));
+  svgDims.appendChild(lbl(xmax, sy(ymax)-2, `(${xmax.toFixed(1)},${ymax.toFixed(1)})`));
+}
+
+function renderGridLayer(bbox) {
+  svgGrid.innerHTML = '';
+  if (!showGrid || !bbox) return;
+  // Grid is rendered as fixed SVG elements, refreshed on fitView
+  // (handled in updateGridTransform)
+}
+
+function drawGrid(bbox, scale) {
+  svgGrid.innerHTML = '';
+  if (!showGrid || !bbox) return;
+
+  // Determine grid spacing in world units
+  const { xmin, xmax, ymin, ymax } = bbox;
+  const W = xmax - xmin + 40, H = ymax - ymin + 40;
+  const span = Math.max(W, H);
+
+  // Pick a nice grid spacing
+  let step = 1;
+  const steps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000];
+  for (const s of steps) {
+    if (span / s < 30) { step = s; break; }
+  }
+
+  const gxMin = Math.floor((xmin - 20) / step) * step;
+  const gxMax = Math.ceil((xmax + 20) / step) * step;
+  const gyMin = Math.floor((ymin - 20) / step) * step;
+  const gyMax = Math.ceil((ymax + 20) / step) * step;
+
+  const major = step * 5;
+
+  for (let x = gxMin; x <= gxMax; x += step) {
+    const isMajor = Math.abs(x % major) < 1e-6;
+    svgGrid.appendChild(svgEl('line', {
+      x1: x, y1: sy(gyMin), x2: x, y2: sy(gyMax),
+      stroke: isMajor ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.025)',
+      'stroke-width': isMajor ? '0.5' : '0.3'
+    }));
+    if (isMajor && x !== 0) {
+      const t = svgEl('text', { x: x, y: sy(0) + 5, 'text-anchor': 'middle', 'font-size': '3', fill: 'rgba(80,80,112,0.8)', 'font-family': 'JetBrains Mono, monospace' });
+      t.textContent = x;
+      svgGrid.appendChild(t);
+    }
+  }
+  for (let y = gyMin; y <= gyMax; y += step) {
+    const isMajor = Math.abs(y % major) < 1e-6;
+    svgGrid.appendChild(svgEl('line', {
+      x1: gxMin, y1: sy(y), x2: gxMax, y2: sy(y),
+      stroke: isMajor ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.025)',
+      'stroke-width': isMajor ? '0.5' : '0.3'
+    }));
+    if (isMajor && y !== 0) {
+      const t = svgEl('text', { x: gxMin + 2, y: sy(y) + 1.2, 'dominant-baseline': 'middle', 'font-size': '3', fill: 'rgba(80,80,112,0.8)', 'font-family': 'JetBrains Mono, monospace' });
+      t.textContent = y;
+      svgGrid.appendChild(t);
+    }
+  }
+
+  // Axis lines
+  svgGrid.appendChild(svgEl('line', { x1: gxMin, y1: 0, x2: gxMax, y2: 0, stroke: 'rgba(255,255,255,0.1)', 'stroke-width': '0.6' }));
+  svgGrid.appendChild(svgEl('line', { x1: 0, y1: sy(gyMin), x2: 0, y2: sy(gyMax), stroke: 'rgba(255,255,255,0.1)', 'stroke-width': '0.6' }));
+}
+
+// ═══════════════════════════════════════════════════
+// VIEW TRANSFORM (pan / zoom)
+// ═══════════════════════════════════════════════════
+function applyTransform() {
+  svgWorld.setAttribute('transform', `translate(${viewTx},${viewTy}) scale(${viewScale})`);
+  svgGrid.setAttribute('transform', `translate(${viewTx},${viewTy}) scale(${viewScale})`);
+}
+
+function fitView() {
+  if (!bboxData) { resetView(); return; }
+  const { xmin, xmax, ymin, ymax } = bboxData;
+  const W = xmax - xmin, H = ymax - ymin;
+  const span = Math.max(W, H);
+  if (span < 1e-6) { resetView(); return; }
+
+  const svgW = svg.clientWidth || 600;
+  const svgH = svg.clientHeight || 400;
+
+  const padFactor = showDims ? 0.72 : 0.85;
+  const sc = Math.min(svgW, svgH) * padFactor / span;
+  viewScale = sc;
+
+  const cx = (xmin + xmax) / 2;
+  const cy = sy((ymin + ymax) / 2);
+  viewTx = svgW/2 - cx * sc;
+  viewTy = svgH/2 - cy * sc;
+
+  applyTransform();
+  if (showGrid && bboxData) drawGrid(bboxData, viewScale);
+}
+
+function resetView() {
+  viewScale = 1; viewTx = 50; viewTy = 200;
+  applyTransform();
+}
+
+function zoom(factor) {
+  const svgW = svg.clientWidth || 600;
+  const svgH = svg.clientHeight || 400;
+  const cx = svgW / 2, cy = svgH / 2;
+  viewTx = cx + (viewTx - cx) * factor;
+  viewTy = cy + (viewTy - cy) * factor;
+  viewScale *= factor;
+  applyTransform();
+}
+
+// ═══════════════════════════════════════════════════
+// PAN / ZOOM EVENTS
+// ═══════════════════════════════════════════════════
+svg.addEventListener('mousedown', e => {
+  isDragging = true;
+  dragX = e.clientX; dragY = e.clientY;
+  svg.style.cursor = 'grabbing';
+});
+document.addEventListener('mousemove', e => {
+  if (isDragging) {
+    viewTx += e.clientX - dragX;
+    viewTy += e.clientY - dragY;
+    dragX = e.clientX; dragY = e.clientY;
+    applyTransform();
+  }
+  // Update coords display
+  const rect = svg.getBoundingClientRect();
+  const mx = (e.clientX - rect.left - viewTx) / viewScale;
+  const my = -((e.clientY - rect.top - viewTy) / viewScale);
+  document.getElementById('cd-x').textContent = mx.toFixed(2);
+  document.getElementById('cd-y').textContent = my.toFixed(2);
+});
+document.addEventListener('mouseup', () => { isDragging = false; svg.style.cursor = 'grab'; });
+
+svg.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = svg.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const factor = e.deltaY < 0 ? 1.12 : 1/1.12;
+  viewTx = mx + (viewTx - mx) * factor;
+  viewTy = my + (viewTy - my) * factor;
+  viewScale *= factor;
+  applyTransform();
+}, { passive: false });
+
+// Touch events
+let touches = {};
+svg.addEventListener('touchstart', e => {
+  e.preventDefault();
+  for (const t of e.changedTouches) touches[t.identifier] = { x: t.clientX, y: t.clientY };
+});
+svg.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const tArr = Array.from(e.touches);
+  if (tArr.length === 1) {
+    const t = tArr[0];
+    const prev = touches[t.identifier];
+    if (prev) {
+      viewTx += t.clientX - prev.x;
+      viewTy += t.clientY - prev.y;
+      applyTransform();
+    }
+    touches[t.identifier] = { x: t.clientX, y: t.clientY };
+  } else if (tArr.length === 2) {
+    const t1 = tArr[0], t2 = tArr[1];
+    const p1 = touches[t1.identifier], p2 = touches[t2.identifier];
+    if (p1 && p2) {
+      const prevDist = Math.hypot(p1.x-p2.x, p1.y-p2.y);
+      const curDist  = Math.hypot(t1.clientX-t2.clientX, t1.clientY-t2.clientY);
+      const factor = curDist / (prevDist || 1);
+      const cx = (t1.clientX + t2.clientX)/2, cy = (t1.clientY + t2.clientY)/2;
+      const rect = svg.getBoundingClientRect();
+      const ox = cx - rect.left, oy = cy - rect.top;
+      viewTx = ox + (viewTx - ox) * factor;
+      viewTy = oy + (viewTy - oy) * factor;
+      viewScale *= factor;
+      applyTransform();
+    }
+    touches[t1.identifier] = { x: t1.clientX, y: t1.clientY };
+    touches[t2.identifier] = { x: t2.clientX, y: t2.clientY };
+  }
+}, { passive: false });
+svg.addEventListener('touchend', e => {
+  for (const t of e.changedTouches) delete touches[t.identifier];
+});
+
+// ═══════════════════════════════════════════════════
+// MAIN ACTIONS
+// ═══════════════════════════════════════════════════
+function runParse() {
+  const text = document.getElementById('gcode-input').value;
+  if (!text.trim()) return;
+
+  const { moves, errors, units, plane } = parseGCode(text);
+  currentMoves = moves;
+  currentPlane = plane;
+
+  const errBar = document.getElementById('error-bar');
+  if (errors.length) {
+    errBar.style.display = 'block';
+    errBar.textContent = '⚠ ' + errors.slice(0, 3).join(' · ');
+  } else {
+    errBar.style.display = 'none';
+  }
+
+  bboxData = computeBBox(moves);
+  const { xmin, xmax, ymin, ymax } = bboxData;
+  const W = xmax - xmin, H = ymax - ymin;
+
+  // Update stats
+  const counts = { rapid: 0, feed: 0, arc_cw: 0, arc_ccw: 0 };
+  for (const mv of moves) counts[mv.type]++;
+
+  document.getElementById('st-rapid').textContent = counts.rapid;
+  document.getElementById('st-feed').textContent  = counts.feed;
+  document.getElementById('st-cw').textContent    = counts.arc_cw;
+  document.getElementById('st-ccw').textContent   = counts.arc_ccw;
+
+  const len = totalLength(moves);
+  document.getElementById('st-len').textContent = len.toFixed(1) + ' mm';
+  document.getElementById('st-units').textContent = units;
+
+  const planeLabels = { G17: 'XY (fraisage)', G18: 'XZ (tournage)', G19: 'YZ' };
+  document.getElementById('st-bbox').innerHTML =
+    `<strong>Emprise pièce</strong><br>` +
+    `X : <span class="dim-val">${xmin.toFixed(2)}</span> → <span class="dim-val">${xmax.toFixed(2)}</span> mm &nbsp;|&nbsp; Largeur : <span class="dim-val">${W.toFixed(2)} mm</span><br>` +
+    `Y : <span class="dim-val">${ymin.toFixed(2)}</span> → <span class="dim-val">${ymax.toFixed(2)}</span> mm &nbsp;|&nbsp; Hauteur : <span class="dim-val">${H.toFixed(2)} mm</span><br>` +
+    `Plan : <span class="dim-val">${planeLabels[plane] || plane}</span>`;
+
+  document.getElementById('stats-panel').classList.remove('hidden');
+  document.getElementById('empty-state').classList.add('hidden');
+
+  // Render
+  renderAll(moves, bboxData);
+  if (showGrid) drawGrid(bboxData, viewScale);
+  setTimeout(fitView, 30);
+}
+
+function clearAll() {
+  document.getElementById('gcode-input').value = '';
+  currentMoves = [];
+  bboxData = null;
+  svgMoves.innerHTML = '';
+  svgDims.innerHTML = '';
+  svgGrid.innerHTML = '';
+  svgAxes.innerHTML = '';
+  svgOrigin.innerHTML = '';
+  document.getElementById('stats-panel').classList.add('hidden');
+  document.getElementById('empty-state').classList.remove('hidden');
+  document.getElementById('error-bar').style.display = 'none';
+  document.querySelectorAll('.ex-btn').forEach(b => b.classList.remove('active'));
+}
+
+function loadExample(btn) {
+  const key = btn.dataset.ex;
+  const code = EXAMPLES[key];
+  if (!code) return;
+  document.getElementById('gcode-input').value = code.trim();
+  document.querySelectorAll('.ex-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  runParse();
+}
+
+function toggleGrid() {
+  showGrid = !showGrid;
+  document.getElementById('grid-btn').style.color = showGrid ? 'var(--violet)' : '';
+  if (showGrid && bboxData) drawGrid(bboxData, viewScale);
+  else svgGrid.innerHTML = '';
+}
+
+function toggleDims() {
+  showDims = !showDims;
+  document.getElementById('dims-btn').style.color = showDims ? 'var(--violet)' : '';
+  if (currentMoves.length) {
+    renderAll(currentMoves, bboxData);
+    if (showGrid && bboxData) drawGrid(bboxData, viewScale);
+    setTimeout(fitView, 10);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.target === document.getElementById('gcode-input')) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runParse(); }
+    return;
+  }
+  if (e.key === 'f' || e.key === 'F') fitView();
+  if (e.key === '+' || e.key === '=') zoom(1.2);
+  if (e.key === '-') zoom(1/1.2);
+  if (e.key === 'g') toggleGrid();
+  if (e.key === 'd') toggleDims();
+});
+
+// Auto-parse on Ctrl+Enter
+document.getElementById('gcode-input').addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runParse(); }
+});
+
+// ═══════════════════════════════════════════════════
+// INIT — load first example
+// ═══════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  const firstBtn = document.querySelector('.ex-btn[data-ex="profil"]');
+  if (firstBtn) loadExample(firstBtn);
+});
+
+window.addEventListener('resize', () => {
+  if (bboxData) setTimeout(fitView, 50);
+});
+</script>
+</body>
+</html>
