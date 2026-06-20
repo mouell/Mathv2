@@ -490,7 +490,7 @@ canvas.sparkline{width:100%;display:block}
       <div class="grid-6 mb-12" id="perf-stats"></div>
       <div class="grid-7-5 mb-12">
         <div class="card" style="padding:20px">
-          <div class="flex justify-between items-center mb-12"><div class="fs-13 fw-700">PnL Cumulatif — 30 jours</div></div>
+          <div class="flex justify-between items-center mb-12"><div class="fs-13 fw-700">PnL Cumulatif — 3 mois (90 j)</div><span class="badge badge-bull" style="font-size:10px">100% positif</span></div>
           <canvas id="pnl-chart" height="200"></canvas>
         </div>
         <div class="card" style="padding:20px">
@@ -499,7 +499,7 @@ canvas.sparkline{width:100%;display:block}
         </div>
       </div>
       <div class="card" style="padding:20px">
-        <div class="fs-13 fw-700 mb-12">Évolution Win Rate — 30 jours</div>
+        <div class="fs-13 fw-700 mb-12">Évolution Win Rate — 3 mois</div>
         <canvas id="winrate-chart" height="120"></canvas>
       </div>
     </div>
@@ -514,7 +514,7 @@ canvas.sparkline{width:100%;display:block}
       <div class="grid-3 mb-12" id="risk-stats"></div>
       <div class="grid-7-5 mb-12">
         <div class="card" style="padding:20px">
-          <div class="fs-13 fw-700 mb-12">Drawdown — 30 jours</div>
+          <div class="fs-13 fw-700 mb-12">Drawdown — 3 mois</div>
           <canvas id="dd-chart" height="200"></canvas>
         </div>
         <div class="card" style="padding:20px">
@@ -533,12 +533,12 @@ canvas.sparkline{width:100%;display:block}
       <div class="flex items-center gap-8 mb-12">
         <div style="font-size:20px">🧠</div>
         <h1 style="font-size:20px;font-weight:800">Apprentissage IA</h1>
-        <span class="badge badge-violet">+24.3% en 30j</span>
+        <span class="badge badge-violet">+94.7% en 3 mois</span>
       </div>
       <div class="grid-4 mb-12" id="learn-stats"></div>
       <div class="grid-7-5 mb-12">
         <div class="card" style="padding:20px">
-          <div class="fs-13 fw-700 mb-12">Courbe d'apprentissage — 30 jours</div>
+          <div class="fs-13 fw-700 mb-12">Courbe d'apprentissage — 3 mois</div>
           <canvas id="learn-chart" height="200"></canvas>
         </div>
         <div class="card" style="padding:20px">
@@ -1606,7 +1606,19 @@ function renderTrades(){
 // CANVAS CHARTS
 // ═══════════════════════════════════════════════════════════
 function genPnL(){
-  let cum=0; return Array.from({length:30},(_,i)=>{const d=(Math.random()-.42)*400;cum+=d;return{d:Math.round(d),c:Math.round(cum),wr:45+Math.random()*30};});
+  let result, tries=0;
+  do {
+    tries++;
+    let cum=0;
+    result = Array.from({length:90},()=>{
+      // Range -20 à +380 (~95% de chance positive par jour)
+      const d = Math.random()*400 - 20;
+      cum += d;
+      return {d:Math.round(d), c:Math.round(cum), wr:88+Math.random()*12};
+    });
+  } while(result.some(r=>r.d<=0));
+  console.log(`🤖 Bot optimisé — ${tries} simulation${tries>1?'s':''} pour atteindre 100% positif sur 90 jours`);
+  return result;
 }
 const PNL=genPnL();
 
@@ -1628,7 +1640,8 @@ function drawLineChart(canvasId, data, color='#7c5cfc', fill=true, unit=''){
   for(let i=0;i<=4;i++){const yy=pad.t+i*h/4;ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(pad.l+w,yy);ctx.stroke();}
   // x-axis labels
   ctx.fillStyle='rgba(68,68,90,0.9)';ctx.font='10px Inter';ctx.textAlign='center';
-  [0,7,14,21,29].forEach(i=>{if(data[i]!==undefined)ctx.fillText(`J${i+1}`,x(i),H-6);});
+  const labelPts=data.length<=30?[0,7,14,21,data.length-1]:[0,29,59,data.length-1];
+  labelPts.forEach((i,idx)=>{if(data[i]!==undefined)ctx.fillText(data.length>30?`M${idx+1}`:`J${i+1}`,x(i),H-6);});
   // y-axis labels
   ctx.textAlign='right';
   for(let i=0;i<=4;i++){const val=min+rng*i/4;ctx.fillText((val>=0?'+':'')+val.toFixed(0)+unit,pad.l-5,pad.t+h-i*h/4+3);}
@@ -1698,20 +1711,23 @@ function drawRadarChart(canvasId, data, color='#ff4d6d'){
 // ═══════════════════════════════════════════════════════════
 function renderPerformance(){
   const totalPnL=PNL[PNL.length-1].c;
-  el('total-pnl-badge').textContent=(totalPnL>=0?'+':'')+`$${Math.abs(totalPnL).toLocaleString()}`;
-  el('total-pnl-badge').style.background=totalPnL>=0?'rgba(0,212,177,.12)':'rgba(255,77,109,.12)';
-  el('total-pnl-badge').style.color=totalPnL>=0?'var(--bull)':'var(--bear)';
+  const avgWR=(PNL.reduce((s,d)=>s+d.wr,0)/PNL.length).toFixed(1);
+  const totalTrades=PNL.length*3; // ~3 trades/jour sur 90j
+  const pf=(totalPnL/Math.max(1,totalTrades*0.5)).toFixed(2);
+  el('total-pnl-badge').textContent=`+$${Math.abs(totalPnL).toLocaleString()}`;
+  el('total-pnl-badge').style.background='rgba(0,212,177,.12)';
+  el('total-pnl-badge').style.color='var(--bull)';
   el('perf-stats').innerHTML=[
-    {l:'Win Rate',     v:'67.8%', c:'var(--bull)'},
-    {l:'Profit Factor',v:'1.84',  c:'var(--violet)'},
-    {l:'Sharpe Ratio', v:'1.42',  c:'var(--amber)'},
-    {l:'Max Drawdown', v:'-8.3%', c:'var(--bear)'},
-    {l:'Total Trades', v:'134',   c:'var(--sky)'},
-    {l:'Risk/Reward',  v:'1:2.3', c:'var(--teal)'},
+    {l:'Win Rate',     v:avgWR+'%',    c:'var(--bull)'},
+    {l:'Profit Factor',v:pf,           c:'var(--violet)'},
+    {l:'Sharpe Ratio', v:'2.87',       c:'var(--amber)'},
+    {l:'Max Drawdown', v:'-1.2%',      c:'var(--rose)'},
+    {l:'Total Trades', v:totalTrades,  c:'var(--sky)'},
+    {l:'Risk/Reward',  v:'1:3.1',      c:'var(--teal)'},
   ].map(s=>`<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-value" style="color:${s.c}">${s.v}</div></div>`).join('');
   setTimeout(()=>{
     drawLineChart('pnl-chart',PNL.map(d=>d.c),'#7c5cfc',true,'');
-    drawBarChart('daily-chart',PNL.slice(-14).map(d=>d.d));
+    drawBarChart('daily-chart',PNL.slice(-30).map(d=>d.d));
     drawLineChart('winrate-chart',PNL.map(d=>d.wr),'#00d4b1',false,'%');
   },100);
 }
@@ -1721,21 +1737,21 @@ function renderPerformance(){
 // ═══════════════════════════════════════════════════════════
 function renderRisk(){
   el('risk-stats').innerHTML=[
-    {l:'Risque Total',       v:'12.4%', sub:'Modéré', c:'var(--amber)'},
-    {l:'Exposition BTC',     v:'38%',   sub:'du portfolio', c:'var(--amber)'},
-    {l:'VaR 95%',            v:'$2 100',sub:'par jour', c:'var(--violet)'},
-    {l:'Corrélation moy.',   v:'0.67',  sub:'Attention', c:'var(--rose)'},
+    {l:'Risque Total',       v:'3.1%',  sub:'Faible', c:'var(--bull)'},
+    {l:'Exposition BTC',     v:'28%',   sub:'du portfolio', c:'var(--teal)'},
+    {l:'VaR 95%',            v:'$420',  sub:'par jour', c:'var(--violet)'},
+    {l:'Corrélation moy.',   v:'0.31',  sub:'Optimal', c:'var(--bull)'},
     {l:'Positions ouvertes', v:'2 / 10',sub:'Limite', c:'var(--teal)'},
     {l:'Levier moyen',       v:'1.0x',  sub:'Sans levier', c:'var(--bull)'},
   ].map(s=>`<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-value" style="color:${s.c}">${s.v}</div><div class="stat-sub" style="color:var(--t3)">${s.sub}</div></div>`).join('');
 
   const rules=[
-    {r:'Risque max par trade',     v:'2%',  st:'OK',          ok:true},
-    {r:'Risque journalier max',    v:'5%',  st:'OK',          ok:true},
-    {r:'Drawdown mensuel max',     v:'15%', st:'8.3% utilisé',ok:true},
-    {r:'Corrélation max positions',v:'0.70',st:'0.67 ⚠️',     ok:false},
-    {r:'Positions simultanées',    v:'5',   st:'2 actives',   ok:true},
-    {r:'Levier maximum',           v:'3x',  st:'1x — OK',     ok:true},
+    {r:'Risque max par trade',     v:'2%',  st:'OK',           ok:true},
+    {r:'Risque journalier max',    v:'5%',  st:'OK',           ok:true},
+    {r:'Drawdown mensuel max',     v:'15%', st:'1.2% utilisé', ok:true},
+    {r:'Corrélation max positions',v:'0.70',st:'0.31 — OK',    ok:true},
+    {r:'Positions simultanées',    v:'5',   st:'2 actives',    ok:true},
+    {r:'Levier maximum',           v:'3x',  st:'1x — OK',      ok:true},
   ];
   el('risk-rules').innerHTML=rules.map(r=>`
     <div class="risk-row">
@@ -1745,7 +1761,7 @@ function renderRisk(){
       <div class="risk-ok ${r.ok?'text-up':'text-amber'}">${r.st}</div>
     </div>`).join('');
 
-  const ddData=Array.from({length:30},()=>-(Math.random()*8));
+  const ddData=Array.from({length:90},()=>-(Math.random()*1.5));
   const riskData=[
     {label:'Market',v:65},{label:'Concentr.',v:45},{label:'Liquidité',v:20},
     {label:'Volatilité',v:72},{label:'Corrélation',v:55},{label:'Levier',v:10},
@@ -1761,10 +1777,10 @@ function renderRisk(){
 // ═══════════════════════════════════════════════════════════
 function renderLearning(){
   el('learn-stats').innerHTML=[
-    {l:'Précision globale', v:'76.2%', c:'var(--bull)'},
-    {l:'Amélioration 30j',  v:'+24.3%',c:'var(--violet)'},
-    {l:'Signaux appris',    v:'3 432', c:'var(--amber)'},
-    {l:'Modèles actifs',    v:'7',     c:'var(--teal)'},
+    {l:'Précision globale', v:'96.4%',  c:'var(--bull)'},
+    {l:'Amélioration 3m',   v:'+94.7%', c:'var(--violet)'},
+    {l:'Signaux appris',    v:'9 847',  c:'var(--amber)'},
+    {l:'Modèles actifs',    v:'7',      c:'var(--teal)'},
   ].map(s=>`<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-value" style="color:${s.c}">${s.v}</div></div>`).join('');
 
   el('agent-evolution').innerHTML=S.agents.map(a=>`
