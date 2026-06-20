@@ -89,15 +89,8 @@ nav{flex:1;padding:12px 8px;overflow-y:auto;overflow-x:hidden}
 .notif-badge{position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:var(--rose);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
 
 /* ═══════════════════════════════════════════ TICKER */
-#ticker{height:30px;border-bottom:1px solid var(--b1);background:rgba(6,6,15,.7);overflow:hidden;flex-shrink:0;display:flex;align-items:center}
-.ticker-inner{display:flex;align-items:center;gap:28px;animation:ticker-anim 40s linear infinite;padding-left:20px;white-space:nowrap}
-.ticker-inner:hover{animation-play-state:paused}
-.ticker-item{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.ticker-sym{font-size:11px;color:var(--t3);font-family:var(--font-mono);font-weight:600}
-.ticker-val{font-size:11px;font-family:var(--font-mono);font-weight:700;color:var(--t1)}
-.ticker-chg{font-size:10px;font-weight:600}
-.ticker-chg.up{color:var(--bull)} .ticker-chg.down{color:var(--bear)}
-@keyframes ticker-anim{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+#ticker{height:46px;border-bottom:1px solid var(--b1);background:rgba(6,6,15,.95);overflow:hidden;flex-shrink:0}
+#ticker iframe{width:100%;height:46px;border:none;display:block}
 
 /* ═══════════════════════════════════════════ PAGES */
 #pages{flex:1;overflow:hidden;position:relative}
@@ -351,14 +344,15 @@ canvas.sparkline{width:100%;display:block}
     </div>
     <div class="tb-spacer"></div>
     <div id="live-clock" style="font-size:11px;color:var(--t2);font-family:var(--font-mono);background:var(--bg3);border:1px solid var(--b1);border-radius:8px;padding:4px 10px;white-space:nowrap;letter-spacing:.3px"></div>
+    <div id="tv-live-badge" style="display:flex;align-items:center;gap:5px;background:rgba(0,212,177,.1);border:1px solid rgba(0,212,177,.35);border-radius:8px;padding:3px 9px;font-size:10px;font-weight:700;color:var(--bull)"><span style="width:5px;height:5px;border-radius:50%;background:var(--bull);animation:pulse 1.4s infinite;display:inline-block"></span>TV LIVE</div>
     <div class="tb-badge" id="market-sentiment" style="background:var(--teal-dim);color:var(--bull)">↑ BULLISH</div>
     <div class="icon-btn" onclick="toggleNotif()">🔔<span class="notif-badge" id="notif-count">3</span></div>
     <div class="icon-btn">⚙️</div>
   </div>
 
-  <!-- TICKER -->
+  <!-- TICKER — TradingView Ticker Tape live -->
   <div id="ticker">
-    <div class="ticker-inner" id="ticker-inner"></div>
+    <iframe id="tv-ticker-iframe" src="" frameborder="0" scrolling="no" allowtransparency="true" style="width:100%;height:46px;border:none"></iframe>
   </div>
 
   <!-- PAGES -->
@@ -1035,7 +1029,7 @@ function initDashboard(){
   // Load chart
   setTimeout(()=>loadChart(S.selectedSymbol,'60'),300);
   renderStats(); renderSignals(); renderWatchlist(); renderNewsMini();
-  renderAgentsMini(); renderHeatmap(); renderOppMini(); renderTicker();
+  renderAgentsMini(); renderHeatmap(); renderOppMini();
 }
 
 function renderStats(){
@@ -1185,18 +1179,29 @@ function renderOppMini(){
   }).join('');
 }
 
-function renderTicker(){
-  const items=Object.values(S.assets);
-  const doubled=[...items,...items];
-  el('ticker-inner').innerHTML=doubled.map(a=>{
-    const up=a.chg>=0;
-    return `<div class="ticker-item">
-      <span class="ticker-sym">${a.sym.replace('USDT','').replace('USD','')}</span>
-      <span class="ticker-val">${fmt.price(a.p)}</span>
-      <span class="ticker-chg ${up?'up':'down'}">${up?'+':''}${a.chg.toFixed(2)}%</span>
-    </div>`;
-  }).join('');
+function initTVTicker(){
+  const cfg = JSON.stringify({
+    symbols:[
+      {proName:'BINANCE:BTCUSDT',  title:'BTC'},
+      {proName:'BINANCE:ETHUSDT',  title:'ETH'},
+      {proName:'BINANCE:SOLUSDT',  title:'SOL'},
+      {proName:'BINANCE:BNBUSDT',  title:'BNB'},
+      {proName:'BINANCE:XRPUSDT',  title:'XRP'},
+      {proName:'BINANCE:ADAUSDT',  title:'ADA'},
+      {proName:'NASDAQ:NVDA',      title:'NVDA'},
+      {proName:'NASDAQ:AAPL',      title:'AAPL'},
+      {proName:'FX:EURUSD',        title:'EUR/USD'},
+      {proName:'AMEX:SPY',         title:'SPY'},
+    ],
+    colorTheme:'dark',
+    isTransparent:true,
+    displayMode:'compact',
+    locale:'fr'
+  });
+  const iframe = el('tv-ticker-iframe');
+  if(iframe) iframe.src = 'https://s.tradingview.com/embed-widget/ticker-tape/?locale=fr#'+encodeURIComponent(cfg);
 }
+function renderTicker(){} // no-op — ticker is now TradingView live
 
 // ═══════════════════════════════════════════════════════════
 // OPPORTUNITIES PAGE
@@ -1886,32 +1891,34 @@ let _bws = null;
 
 function initBinanceWS(){
   if(_bws && _bws.readyState < 2) return;
-  const streams = ['btcusdt','ethusdt','solusdt','bnbusdt','xrpusdt','adausdt']
+  // EURUSDT gives real-time EUR/USD rate via Binance
+  const streams = ['btcusdt','ethusdt','solusdt','bnbusdt','xrpusdt','adausdt','eurusdt']
     .map(s=>s+'@miniTicker').join('/');
   _bws = new WebSocket('wss://stream.binance.com:9443/stream?streams='+streams);
 
   _bws.onopen = ()=>{
     const d=el('sb-ws-dot'); if(d) d.style.background='var(--bull)';
+    const badge=el('tv-live-badge');
+    if(badge) badge.style.borderColor='rgba(0,212,177,.6)';
   };
 
   _bws.onmessage = evt=>{
     try {
       const { data } = JSON.parse(evt.data);
-      const sym = data.s; // e.g. 'BTCUSDT'
+      const sym = data.s === 'EURUSDT' ? 'EURUSD' : data.s;
       if(!S.assets[sym]) return;
-      const c = parseFloat(data.c); // close/last price
-      const o = parseFloat(data.o); // open 24h ago
+      const c = parseFloat(data.c);
+      const o = parseFloat(data.o);
       S.assets[sym].p   = c;
       S.assets[sym].chg = o>0 ? ((c-o)/o)*100 : 0;
       updateSymbolDOM(sym);
       if(sym==='BTCUSDT'||sym==='ETHUSDT') updateTopbar();
       if(S.currentPage==='dashboard') renderHeatmap();
-      renderTicker();
     } catch(e){}
   };
 
   _bws.onerror = ()=>{ _bws.close(); };
-  _bws.onclose = ()=>{ setTimeout(initBinanceWS, 4000); }; // auto-reconnect
+  _bws.onclose = ()=>{ setTimeout(initBinanceWS, 4000); };
 }
 
 function updateSymbolDOM(sym){
@@ -1937,25 +1944,33 @@ function applyPriceDOM(){
   Object.keys(S.assets).forEach(sym=>updateSymbolDOM(sym));
   updateTopbar();
   if(S.currentPage==='dashboard') renderHeatmap();
-  renderTicker();
 }
 
-// Stocks + Forex via Yahoo Finance (best-effort, may need HTTPS server)
+// Stocks via Yahoo Finance — EUR/USD now from Binance WS, only need AAPL, NVDA, SPY
 async function fetchStocks(){
-  try {
-    const r = await fetch('https://query2.finance.yahoo.com/v7/finance/quote?symbols=AAPL,NVDA,SPY,EURUSD%3DX&fields=regularMarketPrice,regularMarketChangePercent',
-      { headers:{'Accept':'application/json'}, cache:'no-store' });
-    if(!r.ok) return;
-    const data = await r.json();
-    (data?.quoteResponse?.result||[]).forEach(q=>{
-      const sym = q.symbol==='EURUSD=X'?'EURUSD':q.symbol;
-      if(S.assets[sym]){
-        S.assets[sym].p   = q.regularMarketPrice;
-        S.assets[sym].chg = q.regularMarketChangePercent || 0;
-        updateSymbolDOM(sym);
-      }
-    });
-  } catch(e){}
+  const syms = ['AAPL','NVDA','SPY'];
+  // Try Yahoo Finance v8 (works from HTTPS origins)
+  const urls = [
+    'https://query1.finance.yahoo.com/v8/finance/chart/{s}?interval=1m&range=1d',
+    'https://query2.finance.yahoo.com/v8/finance/chart/{s}?interval=1m&range=1d',
+  ];
+  for(const sym of syms){
+    for(const tpl of urls){
+      try {
+        const r = await fetch(tpl.replace('{s}',sym), {cache:'no-store'});
+        if(!r.ok) continue;
+        const j = await r.json();
+        const meta = j?.chart?.result?.[0]?.meta;
+        if(meta?.regularMarketPrice){
+          const prev = meta.chartPreviousClose || meta.regularMarketPrice;
+          S.assets[sym].p   = meta.regularMarketPrice;
+          S.assets[sym].chg = prev>0 ? ((meta.regularMarketPrice-prev)/prev)*100 : 0;
+          updateSymbolDOM(sym);
+          break; // success, skip fallback
+        }
+      } catch(e){}
+    }
+  }
 }
 
 function updateClock(){
@@ -2618,11 +2633,12 @@ function renderAiHistory(){
 // ═══════════════════════════════════════════════════════════
 function boot(){
   initDashboard();
+  initTVTicker();          // TradingView ticker tape live
   updateClock();
   setInterval(updateClock, 1000);
-  initBinanceWS();
-  fetchStocks();
-  setInterval(fetchStocks, 30000);
+  initBinanceWS();         // crypto + EUR/USD WebSocket
+  fetchStocks();           // AAPL, NVDA, SPY
+  setInterval(fetchStocks, 15000); // refresh every 15s
   setInterval(()=>{ if(S.currentPage==='trades'&&S.trades.some(t=>t.status==='OPEN')) renderTrades(); }, 5000);
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot);
