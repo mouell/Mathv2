@@ -5,7 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TradingAI">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#06060f">
+<link rel="manifest" href="/Mathv2/manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%2306060f'/%3E%3Ctext x='90' y='130' font-size='110' text-anchor='middle'%3E🤖%3C/text%3E%3C/svg%3E">
 <title>TradingAI — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2651,6 +2655,15 @@ setInterval(()=>{
     el('notif-count').style.display='flex';
   }
 },90000);
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/Mathv2/sw.js')
+      .then(()=>console.log('TradingAI PWA ready'))
+      .catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
