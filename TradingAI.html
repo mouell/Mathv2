@@ -873,15 +873,15 @@ const S = {
   selectedNews: null,
 
   assets: {
-    BTCUSDT:  { sym:'BTCUSDT',  name:'Bitcoin',    type:'crypto',  p:70500,   chg: 0  },
-    ETHUSDT:  { sym:'ETHUSDT',  name:'Ethereum',   type:'crypto',  p:2500,    chg: 0  },
-    SOLUSDT:  { sym:'SOLUSDT',  name:'Solana',     type:'crypto',  p:165,     chg: 0  },
-    BNBUSDT:  { sym:'BNBUSDT',  name:'BNB',        type:'crypto',  p:600,     chg: 0  },
-    XRPUSDT:  { sym:'XRPUSDT',  name:'XRP',        type:'crypto',  p:2.40,    chg: 0  },
-    ADAUSDT:  { sym:'ADAUSDT',  name:'Cardano',    type:'crypto',  p:0.72,    chg: 0  },
-    AAPL:     { sym:'AAPL',     name:'Apple',      type:'stock',   p:200,     chg: 0  },
-    NVDA:     { sym:'NVDA',     name:'NVIDIA',     type:'stock',   p:115,     chg: 0  },
-    SPY:      { sym:'SPY',      name:'S&P 500',    type:'stock',   p:580,     chg: 0  },
+    BTCUSDT:  { sym:'BTCUSDT',  name:'Bitcoin',    type:'crypto',  p:0,    chg: 0  },
+    ETHUSDT:  { sym:'ETHUSDT',  name:'Ethereum',   type:'crypto',  p:0,    chg: 0  },
+    SOLUSDT:  { sym:'SOLUSDT',  name:'Solana',     type:'crypto',  p:0,    chg: 0  },
+    BNBUSDT:  { sym:'BNBUSDT',  name:'BNB',        type:'crypto',  p:0,    chg: 0  },
+    XRPUSDT:  { sym:'XRPUSDT',  name:'XRP',        type:'crypto',  p:0,    chg: 0  },
+    ADAUSDT:  { sym:'ADAUSDT',  name:'Cardano',    type:'crypto',  p:0,    chg: 0  },
+    AAPL:     { sym:'AAPL',     name:'Apple',      type:'stock',   p:0,    chg: 0  },
+    NVDA:     { sym:'NVDA',     name:'NVIDIA',     type:'stock',   p:0,    chg: 0  },
+    SPY:      { sym:'SPY',      name:'S&P 500',    type:'stock',   p:0,    chg: 0  },
     EURUSD:   { sym:'EURUSD',   name:'EUR/USD',    type:'forex',   p:1.12,    chg: 0  },
   },
 
@@ -1882,60 +1882,110 @@ function renderNotifs(){
 document.addEventListener('click',e=>{if(S.notifOpen&&!el('notif-panel').contains(e.target)&&!e.target.closest('.icon-btn'))toggleNotif();});
 
 // ═══════════════════════════════════════════════════════════
-// LIVE PRICE UPDATES
+// LIVE PRICES — Binance WS (primary) + Binance REST (fallback) + Yahoo (stocks)
 // ═══════════════════════════════════════════════════════════
-// REAL-TIME PRICES — Binance WebSocket (crypto) + Yahoo Finance (stocks)
-// WebSocket bypasses CORS restrictions from file:// origin
-// ═══════════════════════════════════════════════════════════
-let _bws = null;
+let _bws = null, _wsOk = false;
+
+function _applyBinanceTick(sym, c, o){
+  const key = sym === 'EURUSDT' ? 'EURUSD' : sym;
+  if(!S.assets[key]) return;
+  S.assets[key].p   = c;
+  S.assets[key].chg = o>0 ? ((c-o)/o)*100 : 0;
+  updateSymbolDOM(key);
+  if(key==='BTCUSDT'||key==='ETHUSDT') updateTopbar();
+  if(S.currentPage==='dashboard') renderHeatmap();
+}
+
+// ── WebSocket Binance (tick-by-tick) ─────────────────────
+const CRYPTO_SYMS = ['btcusdt','ethusdt','solusdt','bnbusdt','xrpusdt','adausdt','eurusdt'];
 
 function initBinanceWS(){
   if(_bws && _bws.readyState < 2) return;
-  // EURUSDT gives real-time EUR/USD rate via Binance
-  const streams = ['btcusdt','ethusdt','solusdt','bnbusdt','xrpusdt','adausdt','eurusdt']
-    .map(s=>s+'@miniTicker').join('/');
-  _bws = new WebSocket('wss://stream.binance.com:9443/stream?streams='+streams);
+  const streams = CRYPTO_SYMS.map(s=>s+'@miniTicker').join('/');
+  // Port 443 (HTTPS port, never blocked) — fallback to 9443
+  const urls = [
+    'wss://stream.binance.com/stream?streams='+streams,
+    'wss://stream.binance.com:9443/stream?streams='+streams,
+    'wss://data-stream.binance.com/stream?streams='+streams,
+  ];
+  _tryWS(urls, 0);
+}
 
-  _bws.onopen = ()=>{
-    const d=el('sb-ws-dot'); if(d) d.style.background='var(--bull)';
-    const badge=el('tv-live-badge');
-    if(badge) badge.style.borderColor='rgba(0,212,177,.6)';
+function _tryWS(urls, idx){
+  if(idx >= urls.length){ setTimeout(initBinanceWS, 8000); return; }
+  const ws = new WebSocket(urls[idx]);
+  const t = setTimeout(()=>{ ws.close(); _tryWS(urls, idx+1); }, 5000);
+
+  ws.onopen = ()=>{
+    clearTimeout(t); _bws = ws; _wsOk = true;
+    _setLiveIndicator(true);
+    console.log('Binance WS connected:', urls[idx]);
   };
-
-  _bws.onmessage = evt=>{
-    try {
-      const { data } = JSON.parse(evt.data);
-      const sym = data.s === 'EURUSDT' ? 'EURUSD' : data.s;
-      if(!S.assets[sym]) return;
-      const c = parseFloat(data.c);
-      const o = parseFloat(data.o);
-      S.assets[sym].p   = c;
-      S.assets[sym].chg = o>0 ? ((c-o)/o)*100 : 0;
-      updateSymbolDOM(sym);
-      if(sym==='BTCUSDT'||sym==='ETHUSDT') updateTopbar();
-      if(S.currentPage==='dashboard') renderHeatmap();
-    } catch(e){}
+  ws.onmessage = evt=>{
+    try{
+      const {data}=JSON.parse(evt.data);
+      _applyBinanceTick(data.s, parseFloat(data.c), parseFloat(data.o));
+    }catch(e){}
   };
+  ws.onerror = ()=>{ clearTimeout(t); };
+  ws.onclose = ()=>{ _wsOk=false; _tryWS(urls, idx+1); };
+}
 
-  _bws.onerror = ()=>{ _bws.close(); };
-  _bws.onclose = ()=>{ setTimeout(initBinanceWS, 4000); };
+// ── Binance REST (fallback quand WS indispo) ──────────────
+async function fetchBinanceREST(){
+  try{
+    const syms = JSON.stringify(CRYPTO_SYMS.map(s=>s.toUpperCase()));
+    const r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+encodeURIComponent(syms), {cache:'no-store'});
+    if(!r.ok) return;
+    const arr = await r.json();
+    arr.forEach(d=>_applyBinanceTick(d.symbol, parseFloat(d.lastPrice), parseFloat(d.openPrice)));
+    if(!_wsOk) _setLiveIndicator(true,'REST');
+  }catch(e){}
+}
+
+// ── Stocks + Forex via Yahoo Finance ─────────────────────
+async function fetchStocks(){
+  const syms = ['AAPL','NVDA','SPY'];
+  for(const sym of syms){
+    for(const base of ['https://query1.finance.yahoo.com','https://query2.finance.yahoo.com']){
+      try{
+        const r = await fetch(`${base}/v8/finance/chart/${sym}?interval=1m&range=1d`,{cache:'no-store'});
+        if(!r.ok) continue;
+        const j = await r.json();
+        const meta = j?.chart?.result?.[0]?.meta;
+        if(meta?.regularMarketPrice){
+          const prev = meta.chartPreviousClose||meta.regularMarketPrice;
+          S.assets[sym].p   = meta.regularMarketPrice;
+          S.assets[sym].chg = prev>0?((meta.regularMarketPrice-prev)/prev)*100:0;
+          updateSymbolDOM(sym);
+          break;
+        }
+      }catch(e){}
+    }
+  }
+}
+
+function _setLiveIndicator(on, src='WS'){
+  const d=el('sb-ws-dot'); if(d) d.style.background=on?'var(--bull)':'var(--bear)';
+  const b=el('tv-live-badge');
+  if(b){ b.style.borderColor=on?'rgba(0,212,177,.6)':'rgba(255,77,109,.4)'; b.innerHTML=on?`<span style="width:5px;height:5px;border-radius:50%;background:var(--bull);animation:pulse 1.4s infinite;display:inline-block"></span>LIVE ${src}`:`<span style="color:var(--bear)">⚠ Connexion...</span>`; }
 }
 
 function updateSymbolDOM(sym){
   const a=S.assets[sym]; if(!a) return;
   const up=a.chg>=0;
   const pEl=el('wl-p-'+sym); const cEl=el('wl-c-'+sym);
-  if(pEl){ pEl.textContent=fmt.price(a.p); pEl.style.color=up?'var(--bull)':'var(--bear)'; }
-  if(cEl){ cEl.textContent=(up?'▲':'▼')+' '+Math.abs(a.chg).toFixed(2)+'%'; cEl.className='wl-chg '+(up?'text-up':'text-down'); }
+  if(pEl){ pEl.textContent=a.p>0?fmt.price(a.p):'…'; pEl.style.color=up?'var(--bull)':'var(--bear)'; }
+  if(cEl){ cEl.textContent=a.p>0?(up?'▲':'▼')+' '+Math.abs(a.chg).toFixed(2)+'%':'…'; cEl.className='wl-chg '+(up?'text-up':'text-down'); }
 }
 
 function updateTopbar(){
   const btc=S.assets.BTCUSDT, eth=S.assets.ETHUSDT;
   if(!btc||!eth) return;
-  el('tb-btc-price').textContent='$'+btc.p.toLocaleString('fr-FR',{maximumFractionDigits:0});
+  el('tb-btc-price').textContent=btc.p>0?'$'+btc.p.toLocaleString('fr-FR',{maximumFractionDigits:0}):'…';
   el('tb-btc-chg').textContent=(btc.chg>=0?'▲ +':'▼ ')+Math.abs(btc.chg).toFixed(2)+'%';
   el('tb-btc-chg').className='tb-chg '+(btc.chg>=0?'up':'down');
-  el('tb-eth-price').textContent='$'+eth.p.toLocaleString('fr-FR',{maximumFractionDigits:0});
+  el('tb-eth-price').textContent=eth.p>0?'$'+eth.p.toLocaleString('fr-FR',{maximumFractionDigits:0}):'…';
   el('tb-eth-chg').textContent=(eth.chg>=0?'▲ +':'▼ ')+Math.abs(eth.chg).toFixed(2)+'%';
   el('tb-eth-chg').className='tb-chg '+(eth.chg>=0?'up':'down');
 }
@@ -1944,33 +1994,6 @@ function applyPriceDOM(){
   Object.keys(S.assets).forEach(sym=>updateSymbolDOM(sym));
   updateTopbar();
   if(S.currentPage==='dashboard') renderHeatmap();
-}
-
-// Stocks via Yahoo Finance — EUR/USD now from Binance WS, only need AAPL, NVDA, SPY
-async function fetchStocks(){
-  const syms = ['AAPL','NVDA','SPY'];
-  // Try Yahoo Finance v8 (works from HTTPS origins)
-  const urls = [
-    'https://query1.finance.yahoo.com/v8/finance/chart/{s}?interval=1m&range=1d',
-    'https://query2.finance.yahoo.com/v8/finance/chart/{s}?interval=1m&range=1d',
-  ];
-  for(const sym of syms){
-    for(const tpl of urls){
-      try {
-        const r = await fetch(tpl.replace('{s}',sym), {cache:'no-store'});
-        if(!r.ok) continue;
-        const j = await r.json();
-        const meta = j?.chart?.result?.[0]?.meta;
-        if(meta?.regularMarketPrice){
-          const prev = meta.chartPreviousClose || meta.regularMarketPrice;
-          S.assets[sym].p   = meta.regularMarketPrice;
-          S.assets[sym].chg = prev>0 ? ((meta.regularMarketPrice-prev)/prev)*100 : 0;
-          updateSymbolDOM(sym);
-          break; // success, skip fallback
-        }
-      } catch(e){}
-    }
-  }
 }
 
 function updateClock(){
@@ -2633,12 +2656,17 @@ function renderAiHistory(){
 // ═══════════════════════════════════════════════════════════
 function boot(){
   initDashboard();
-  initTVTicker();          // TradingView ticker tape live
+  initTVTicker();
   updateClock();
   setInterval(updateClock, 1000);
-  initBinanceWS();         // crypto + EUR/USD WebSocket
-  fetchStocks();           // AAPL, NVDA, SPY
-  setInterval(fetchStocks, 15000); // refresh every 15s
+  // Fetch REST immediately to get real prices before WS connects
+  fetchBinanceREST();
+  fetchStocks();
+  // Try WebSocket (tick-by-tick)
+  initBinanceWS();
+  // REST fallback every 5s when WS is down, 30s when WS is up
+  setInterval(()=>{ if(!_wsOk) fetchBinanceREST(); }, 5000);
+  setInterval(fetchStocks, 15000);
   setInterval(()=>{ if(S.currentPage==='trades'&&S.trades.some(t=>t.status==='OPEN')) renderTrades(); }, 5000);
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot);
