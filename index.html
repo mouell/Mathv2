@@ -88,6 +88,7 @@ nav{flex:1;padding:12px 8px;overflow-y:auto;overflow-x:hidden}
 .icon-btn:hover{color:var(--t1);border-color:var(--b2)}
 .notif-badge{position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:var(--rose);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
 
+@keyframes oto-flash{0%{color:var(--bull);text-shadow:0 0 8px rgba(0,212,177,.8)}100%{color:inherit;text-shadow:none}}
 /* ═══════════════════════════════════════════ TICKER */
 #ticker{height:46px;border-bottom:1px solid var(--b1);background:rgba(6,6,15,.95);overflow:hidden;flex-shrink:0}
 #ticker iframe{width:100%;height:46px;border:none;display:block}
@@ -1886,6 +1887,7 @@ document.addEventListener('click',e=>{if(S.notifOpen&&!el('notif-panel').contain
 // ═══════════════════════════════════════════════════════════
 let _bws = null, _wsOk = false;
 
+let _otoThrottle=null;
 function _applyBinanceTick(sym, c, o){
   const key = sym === 'EURUSDT' ? 'EURUSD' : sym;
   if(!S.assets[key]) return;
@@ -1894,9 +1896,14 @@ function _applyBinanceTick(sym, c, o){
   updateSymbolDOM(key);
   if(key==='BTCUSDT'||key==='ETHUSDT'){
     updateTopbar();
-    if(S.currentPage==='dashboard') renderStats(); // update main price cards
+    if(S.currentPage==='dashboard') renderStats();
   }
   if(S.currentPage==='dashboard') renderHeatmap();
+  // OTO: refresh at most every 2s when on OTO page
+  if(S.currentPage==='oto'){
+    clearTimeout(_otoThrottle);
+    _otoThrottle=setTimeout(()=>_renderOTOLive(), 2000);
+  }
 }
 
 // ── WebSocket Binance (tick-by-tick) ─────────────────────
@@ -2049,10 +2056,24 @@ const OTO_POOL = [
   { sym:'SOLUSDT', name:'Solana',    icon:'◎',  color:'#9945ff', dir:'LONG',  tf:'1h', slPct:0.032, tpPct:0.078, conf:92.0, reason:'Accumulation zone $155-160 + cross MA20/MA50 + signal MACD positif',      session:'Europe',  hour:11, min:0  },
 ];
 
+function _otoCalc(t){
+  // Always reads current live price from S.assets
+  const liveP = S.assets[t.sym]?.p || 0;
+  const entry = liveP > 0 ? liveP : (t.sym==='NVDA'?130:t.sym==='AAPL'?215:1000);
+  const sl    = entry*(1-t.slPct);
+  const tp    = entry*(1+t.tpPct);
+  const slDist= entry-sl;
+  const qty   = slDist>0 ? Math.min(20/slDist,(1000*.3)/entry) : 0;
+  const rr    = slDist>0 ? (Math.abs(tp-entry)/slDist).toFixed(1) : '—';
+  const gain  = ((tp-entry)/entry*100).toFixed(2);
+  const d     = entry>100?2:entry>1?4:6;
+  return { liveP:entry, entry:entry.toFixed(d), sl:sl.toFixed(d), tp:tp.toFixed(d),
+           qty:qty.toFixed(qty<0.001?6:qty<1?4:2), rr, gain };
+}
+
 function _otoSignals(){
   const base = new Date(); base.setSeconds(0,0);
-  const sigs=[];
-  let day=0, used=new Set();
+  const sigs=[]; let day=0, used=new Set();
   for(let i=0;i<OTO_POOL.length && sigs.length<8;i++){
     const t=OTO_POOL[i];
     const key=t.sym+day;
@@ -2061,17 +2082,24 @@ function _otoSignals(){
     const dt=new Date(base);
     dt.setDate(dt.getDate()+day);
     dt.setHours(t.hour,t.min,0,0);
-    // if signal would be in the past today, push to tomorrow
-    if(dt<=base){dt.setDate(dt.getDate()+1);}
-    const entry=S.assets[t.sym]?.p||(t.sym==='NVDA'?130:t.sym==='AAPL'?215:1000);
-    const sl=entry*(1-t.slPct); const tp=entry*(1+t.tpPct);
-    const slDist=entry-sl; const qty=Math.min(20/slDist,(1000*.3)/entry);
-    const rr=(Math.abs(tp-entry)/slDist).toFixed(1);
-    const gain=((tp-entry)/entry*100).toFixed(1);
-    sigs.push({...t,dt,entry:entry.toFixed(entry>100?2:entry>1?4:6),sl:sl.toFixed(entry>100?2:entry>1?4:6),tp:tp.toFixed(entry>100?2:entry>1?4:6),qty:qty.toFixed(qty<0.01?6:qty<1?4:2),rr,gain});
+    if(dt<=base) dt.setDate(dt.getDate()+1);
+    sigs.push({...t, dt, ..._otoCalc(t)});
     if(i%3===2) day++;
   }
   return sigs.sort((a,b)=>a.dt-b.dt);
+}
+
+// Light update: only refresh price/sl/tp/qty numbers inside existing cards
+function _renderOTOLive(){
+  OTO_POOL.forEach(t=>{
+    const c=_otoCalc(t);
+    const peEl=el('oto-entry-'+t.sym+t.hour); if(peEl) peEl.textContent=c.entry;
+    const slEl=el('oto-sl-'+t.sym+t.hour);    if(slEl) slEl.textContent=c.sl;
+    const tpEl=el('oto-tp-'+t.sym+t.hour);    if(tpEl) tpEl.textContent=c.tp;
+    const gEl=el('oto-gain-'+t.sym+t.hour);   if(gEl)  gEl.textContent='+'+c.gain+'%';
+    const rrEl=el('oto-rr-'+t.sym+t.hour);    if(rrEl) rrEl.textContent='1:'+c.rr;
+    const tsEl=el('oto-ts-'+t.sym+t.hour);    if(tsEl){ tsEl.textContent=fmt.price(c.liveP); tsEl.style.animation='none'; void tsEl.offsetWidth; tsEl.style.animation='oto-flash .4s ease'; }
+  });
 }
 
 function _countdown(dt){
@@ -2119,10 +2147,12 @@ function renderOTO(){
 
   el('oto-signals-list').innerHTML=sigs.map((t,idx)=>{
     const cd=_countdown(t.dt); const isHot=cd.pulse;
-    const dateStr=_fmtDate(t.dt);
+    const uid=t.sym+''+t.hour; // unique id per signal
     return `<div class="card mb-12" style="border-color:${isHot?'rgba(0,212,177,.4)':'rgba(124,92,252,.2)'};position:relative;overflow:hidden">
       ${isHot?`<div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bull),var(--teal));"></div>`:''}
       <div style="padding:14px 16px">
+
+        <!-- Header -->
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px">
           <div style="display:flex;align-items:center;gap:10px">
             <div style="width:42px;height:42px;border-radius:13px;background:${t.color}20;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:1px solid ${t.color}40">${t.icon}</div>
@@ -2140,40 +2170,46 @@ function renderOTO(){
               ${cd.pulse?`<span style="width:6px;height:6px;border-radius:50%;background:${cd.color};animation:pulse 1s infinite;display:inline-block"></span>`:''}
               ${cd.label}
             </div>
-            <div style="font-size:10px;color:var(--t3);margin-top:2px;white-space:nowrap">Confiance : <span style="color:var(--violet);font-weight:700">${t.conf}%</span></div>
+            <div style="font-size:10px;color:var(--t3);margin-top:2px">Conf. <span style="color:var(--violet);font-weight:700">${t.conf}%</span></div>
           </div>
         </div>
 
-        <!-- Date & heure -->
-        <div style="background:var(--bg0);border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;border:1px solid var(--b1)">
-          <span style="font-size:16px">📅</span>
+        <!-- PRIX LIVE BINANCE -->
+        <div style="background:rgba(0,212,177,.07);border:1px solid rgba(0,212,177,.3);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
           <div>
-            <div style="font-size:10px;color:var(--t3)">Date & heure exacte d'entrée</div>
-            <div style="font-size:13px;font-weight:800;color:var(--t1)">${dateStr}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+              <span style="width:6px;height:6px;border-radius:50%;background:var(--bull);animation:pulse 1.4s infinite;display:inline-block"></span>
+              <span style="font-size:10px;font-weight:700;color:var(--bull)">PRIX LIVE BINANCE</span>
+            </div>
+            <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--t1)" id="oto-ts-${uid}">${fmt.price(t.liveP)}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:10px;color:var(--t3)">Date d'entrée</div>
+            <div style="font-size:12px;font-weight:700;color:var(--t1)">${_fmtDate(t.dt)}</div>
           </div>
         </div>
 
-        <!-- Prix -->
+        <!-- Grille SL/TP/Qty/Gain — IDs pour mise à jour live -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px">
           <div style="background:var(--bg3);border-radius:9px;padding:8px;text-align:center">
             <div style="font-size:9px;color:var(--t3);margin-bottom:2px">Entrée</div>
-            <div style="font-size:12px;font-weight:700;font-family:var(--font-mono)">${t.entry}</div>
+            <div style="font-size:12px;font-weight:700;font-family:var(--font-mono)" id="oto-entry-${uid}">${t.entry}</div>
           </div>
           <div style="background:rgba(255,77,109,.07);border:1px solid rgba(255,77,109,.25);border-radius:9px;padding:8px;text-align:center">
             <div style="font-size:9px;color:var(--bear);margin-bottom:2px">Stop Loss</div>
-            <div style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--bear)">${t.sl}</div>
+            <div style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--bear)" id="oto-sl-${uid}">${t.sl}</div>
           </div>
           <div style="background:rgba(0,212,177,.07);border:1px solid rgba(0,212,177,.25);border-radius:9px;padding:8px;text-align:center">
             <div style="font-size:9px;color:var(--bull);margin-bottom:2px">Take Profit</div>
-            <div style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--bull)">${t.tp}</div>
+            <div style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--bull)" id="oto-tp-${uid}">${t.tp}</div>
           </div>
           <div style="background:rgba(124,92,252,.07);border:1px solid rgba(124,92,252,.25);border-radius:9px;padding:8px;text-align:center">
             <div style="font-size:9px;color:var(--violet);margin-bottom:2px">Gain prédit</div>
-            <div style="font-size:13px;font-weight:800;color:var(--bull)">+${t.gain}%</div>
+            <div style="font-size:13px;font-weight:800;color:var(--bull)" id="oto-gain-${uid}">+${t.gain}%</div>
           </div>
         </div>
 
-        <!-- Prédiction IA -->
+        <!-- Prédiction IA + R:R -->
         <div style="background:rgba(124,92,252,.08);border:1px solid rgba(124,92,252,.2);border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:flex-start;gap:8px">
           <span style="font-size:14px">🧠</span>
           <div style="flex:1">
@@ -2182,12 +2218,15 @@ function renderOTO(){
           </div>
           <div style="flex-shrink:0;text-align:right">
             <div style="font-size:9px;color:var(--t3)">R:R</div>
-            <div style="font-size:14px;font-weight:800;color:var(--amber)">1:${t.rr}</div>
+            <div style="font-size:14px;font-weight:800;color:var(--amber)" id="oto-rr-${uid}">1:${t.rr}</div>
           </div>
         </div>
 
-        <!-- Prise de trade -->
-        <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:13px;padding:10px" onclick="openNewTrade();el('tm-sym').value='${t.sym}';tm_autofill()">📝 Prendre ce trade</button>
+        <!-- Bouton prendre trade — injecte le prix live exact au clic -->
+        <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:13px;padding:11px"
+          onclick="openNewTrade();el('tm-sym').value='${t.sym}';tm_autofill();">
+          📝 Prendre ce trade — entrée à <span style="font-family:var(--font-mono)" id="oto-entry-btn-${uid}">${t.entry}</span>
+        </button>
       </div>
     </div>`;
   }).join('');
