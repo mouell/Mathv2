@@ -1892,7 +1892,10 @@ function _applyBinanceTick(sym, c, o){
   S.assets[key].p   = c;
   S.assets[key].chg = o>0 ? ((c-o)/o)*100 : 0;
   updateSymbolDOM(key);
-  if(key==='BTCUSDT'||key==='ETHUSDT') updateTopbar();
+  if(key==='BTCUSDT'||key==='ETHUSDT'){
+    updateTopbar();
+    if(S.currentPage==='dashboard') renderStats(); // update main price cards
+  }
   if(S.currentPage==='dashboard') renderHeatmap();
 }
 
@@ -1939,6 +1942,7 @@ async function fetchBinanceREST(){
     if(!r.ok) return;
     const arr = await r.json();
     arr.forEach(d=>_applyBinanceTick(d.symbol, parseFloat(d.lastPrice), parseFloat(d.openPrice)));
+    if(S.currentPage==='dashboard'){ renderStats(); renderWatchlist(); }
     if(!_wsOk) _setLiveIndicator(true,'REST');
   }catch(e){}
 }
