@@ -1410,6 +1410,26 @@ function submitNewTrade(){
   closeTradeModal(); renderTrades();
 }
 
+function quickTakeOTO(sym, hour){
+  const t = OTO_POOL.find(x=>x.sym===sym && String(x.hour)===String(hour));
+  if(!t){ alert('Signal introuvable.'); return; }
+  const c = _otoCalc(t);
+  if(!c.liveP){ alert('Prix live non disponible, réessaie dans quelques secondes.'); return; }
+  const entry = c.liveP;
+  const sl    = parseFloat(c.sl);
+  const tp    = parseFloat(c.tp);
+  const qty   = parseFloat(c.qty);
+  S.trades.unshift({
+    id:'T'+Date.now(), sym, dir:'LONG', entry, sl, tp, qty,
+    posSize: qty*entry, riskUsd: T_RISK_USD,
+    screenshot: null, note: '⚡ OTO — entrée rapide',
+    status: 'OPEN', opened: Date.now(), closed: null,
+    exitPrice: null, pnl: null, pnlPct: null
+  });
+  _showToast(`✅ Trade OTO ouvert — ${sym.replace('USDT','')} LONG @ ${c.entry}`);
+  navigate('trades');
+}
+
 function calcLivePnL(t){
   const cur=S.assets[t.sym]?.p||t.entry;
   const pnl=t.dir==='LONG'?(cur-t.entry)*t.qty:(t.entry-cur)*t.qty;
@@ -2226,11 +2246,17 @@ function renderOTO(){
           </div>
         </div>
 
-        <!-- Bouton — le prix d'entrée est capturé au moment du clic (prix du marché) -->
-        <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:13px;padding:11px"
-          onclick="openNewTrade();el('tm-sym').value='${t.sym}';tm_autofill();">
-          📝 Entrer au prix du marché — <span style="font-family:var(--font-mono)" id="oto-entry-btn-${uid}">${fmt.price(t.liveP)}</span>
-        </button>
+        <!-- Boutons d'action -->
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="flex:1.6;justify-content:center;font-size:13px;padding:11px;gap:6px"
+            onclick="quickTakeOTO('${t.sym}','${t.hour}')">
+            ⚡ Entrée rapide — <span style="font-family:var(--font-mono)" id="oto-entry-btn-${uid}">${fmt.price(t.liveP)}</span>
+          </button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:12px;padding:11px;border:1px solid var(--b1)"
+            onclick="openNewTrade();el('tm-sym').value='${t.sym}';tm_autofill();">
+            📋 Détails
+          </button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -2696,6 +2722,17 @@ function renderAiHistory(){
       <span style="font-size:12px;color:var(--t2);flex:1">${h.label}</span>
       <span style="font-size:10px;color:var(--t3)">${h.ts}</span>
     </div>`).join('');
+}
+
+function _showToast(msg){
+  let t=el('_toast');
+  if(!t){ t=document.createElement('div'); t.id='_toast';
+    t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a2e;border:1px solid rgba(0,212,177,.5);color:var(--bull);padding:12px 20px;border-radius:14px;font-size:13px;font-weight:700;z-index:9999;opacity:0;transition:all .3s ease;pointer-events:none;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.5)';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg; t.style.opacity='1'; t.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(t._tid);
+  t._tid=setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(20px)'; },3000);
 }
 
 // ═══════════════════════════════════════════════════════════
