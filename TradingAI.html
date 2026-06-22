@@ -2093,12 +2093,15 @@ function _otoSignals(){
 function _renderOTOLive(){
   OTO_POOL.forEach(t=>{
     const c=_otoCalc(t);
-    const peEl=el('oto-entry-'+t.sym+t.hour); if(peEl) peEl.textContent=c.entry;
-    const slEl=el('oto-sl-'+t.sym+t.hour);    if(slEl) slEl.textContent=c.sl;
-    const tpEl=el('oto-tp-'+t.sym+t.hour);    if(tpEl) tpEl.textContent=c.tp;
-    const gEl=el('oto-gain-'+t.sym+t.hour);   if(gEl)  gEl.textContent='+'+c.gain+'%';
-    const rrEl=el('oto-rr-'+t.sym+t.hour);    if(rrEl) rrEl.textContent='1:'+c.rr;
-    const tsEl=el('oto-ts-'+t.sym+t.hour);    if(tsEl){ tsEl.textContent=fmt.price(c.liveP); tsEl.style.animation='none'; void tsEl.offsetWidth; tsEl.style.animation='oto-flash .4s ease'; }
+    const uid=t.sym+t.hour;
+    const slEl=el('oto-sl-'+uid);         if(slEl) slEl.textContent=c.sl;
+    const tpEl=el('oto-tp-'+uid);         if(tpEl) tpEl.textContent=c.tp;
+    const gEl=el('oto-gain-'+uid);        if(gEl)  gEl.textContent='+'+c.gain+'%';
+    const rrEl=el('oto-rr-'+uid);         if(rrEl) rrEl.textContent='1:'+c.rr;
+    const qEl=el('oto-qty-'+uid);         if(qEl)  qEl.textContent=c.qty;
+    const btnEl=el('oto-entry-btn-'+uid); if(btnEl) btnEl.textContent=fmt.price(c.liveP);
+    const tsEl=el('oto-ts-'+uid);
+    if(tsEl){ tsEl.textContent=fmt.price(c.liveP); tsEl.style.animation='none'; void tsEl.offsetWidth; tsEl.style.animation='oto-flash .4s ease'; }
   });
 }
 
@@ -2174,27 +2177,24 @@ function renderOTO(){
           </div>
         </div>
 
-        <!-- PRIX LIVE BINANCE -->
+        <!-- PRIX D'ENTRÉE MARCHÉ — se met à jour en temps réel -->
         <div style="background:rgba(0,212,177,.07);border:1px solid rgba(0,212,177,.3);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
           <div>
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
               <span style="width:6px;height:6px;border-radius:50%;background:var(--bull);animation:pulse 1.4s infinite;display:inline-block"></span>
-              <span style="font-size:10px;font-weight:700;color:var(--bull)">PRIX LIVE BINANCE</span>
+              <span style="font-size:10px;font-weight:700;color:var(--bull)">PRIX D'ENTRÉE MARCHÉ</span>
             </div>
             <div style="font-size:22px;font-weight:800;font-family:var(--font-mono);color:var(--t1)" id="oto-ts-${uid}">${fmt.price(t.liveP)}</div>
+            <div style="font-size:9px;color:var(--t3);margin-top:2px">= prix si vous entrez maintenant</div>
           </div>
           <div style="text-align:right">
-            <div style="font-size:10px;color:var(--t3)">Date d'entrée</div>
+            <div style="font-size:10px;color:var(--t3)">Signal date</div>
             <div style="font-size:12px;font-weight:700;color:var(--t1)">${_fmtDate(t.dt)}</div>
           </div>
         </div>
 
-        <!-- Grille SL/TP/Qty/Gain — IDs pour mise à jour live -->
+        <!-- Grille SL/TP/Qté/Gain — calculés sur le prix live, IDs pour mise à jour -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px">
-          <div style="background:var(--bg3);border-radius:9px;padding:8px;text-align:center">
-            <div style="font-size:9px;color:var(--t3);margin-bottom:2px">Entrée</div>
-            <div style="font-size:12px;font-weight:700;font-family:var(--font-mono)" id="oto-entry-${uid}">${t.entry}</div>
-          </div>
           <div style="background:rgba(255,77,109,.07);border:1px solid rgba(255,77,109,.25);border-radius:9px;padding:8px;text-align:center">
             <div style="font-size:9px;color:var(--bear);margin-bottom:2px">Stop Loss</div>
             <div style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--bear)" id="oto-sl-${uid}">${t.sl}</div>
@@ -2206,6 +2206,10 @@ function renderOTO(){
           <div style="background:rgba(124,92,252,.07);border:1px solid rgba(124,92,252,.25);border-radius:9px;padding:8px;text-align:center">
             <div style="font-size:9px;color:var(--violet);margin-bottom:2px">Gain prédit</div>
             <div style="font-size:13px;font-weight:800;color:var(--bull)" id="oto-gain-${uid}">+${t.gain}%</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:9px;padding:8px;text-align:center">
+            <div style="font-size:9px;color:var(--t3);margin-bottom:2px">Quantité</div>
+            <div style="font-size:12px;font-weight:700;font-family:var(--font-mono)" id="oto-qty-${uid}">${t.qty}</div>
           </div>
         </div>
 
@@ -2222,10 +2226,10 @@ function renderOTO(){
           </div>
         </div>
 
-        <!-- Bouton prendre trade — injecte le prix live exact au clic -->
+        <!-- Bouton — le prix d'entrée est capturé au moment du clic (prix du marché) -->
         <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:13px;padding:11px"
           onclick="openNewTrade();el('tm-sym').value='${t.sym}';tm_autofill();">
-          📝 Prendre ce trade — entrée à <span style="font-family:var(--font-mono)" id="oto-entry-btn-${uid}">${t.entry}</span>
+          📝 Entrer au prix du marché — <span style="font-family:var(--font-mono)" id="oto-entry-btn-${uid}">${fmt.price(t.liveP)}</span>
         </button>
       </div>
     </div>`;
