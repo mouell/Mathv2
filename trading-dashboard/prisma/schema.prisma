@@ -1,0 +1,223 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// AI Trading Dashboard — Prisma Schema
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  trades    Trade[]
+  settings  UserSettings?
+}
+
+model UserSettings {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  watchlist       String[]
+  riskPerTrade    Float   @default(2.0)
+  maxDailyLoss    Float   @default(5.0)
+  defaultTimeframe String @default("1h")
+  notifications   Boolean @default(true)
+  darkMode        Boolean @default(true)
+}
+
+// ─── Market Data ──────────────────────────────────────────────────────────────
+
+model Asset {
+  id          String     @id @default(cuid())
+  symbol      String     @unique
+  name        String
+  type        AssetType
+  ohlcv       OHLCV[]
+  signals     Signal[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model OHLCV {
+  id        String   @id @default(cuid())
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  timeframe String
+  time      DateTime
+  open      Float
+  high      Float
+  low       Float
+  close     Float
+  volume    Float
+  createdAt DateTime @default(now())
+
+  @@index([assetId, timeframe, time])
+}
+
+// ─── News ─────────────────────────────────────────────────────────────────────
+
+model NewsItem {
+  id             String    @id @default(cuid())
+  title          String
+  summary        String    @db.Text
+  content        String?   @db.Text
+  source         String
+  url            String
+  publishedAt    DateTime
+  sentiment      Sentiment
+  sentimentScore Float
+  impactScore    Float     @default(0)
+  relatedAssets  String[]
+  categories     String[]
+  isBreaking     Boolean   @default(false)
+  aiAnalysis     Json?
+  imageUrl       String?
+  createdAt      DateTime  @default(now())
+
+  @@index([publishedAt])
+  @@index([sentiment])
+}
+
+// ─── Signals ──────────────────────────────────────────────────────────────────
+
+model Signal {
+  id                  String        @id @default(cuid())
+  assetId             String
+  asset               Asset         @relation(fields: [assetId], references: [id])
+  direction           SignalDirection
+  strength            SignalStrength
+  confidence          Float
+  entry               Float
+  stopLoss            Float
+  takeProfit          Float[]
+  timeframe           String
+  reason              String        @db.Text
+  agentScores         Json
+  technicalIndicators Json?
+  newsRefs            String[]
+  status              SignalStatus  @default(ACTIVE)
+  expiresAt           DateTime
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  trades              Trade[]
+
+  @@index([status, createdAt])
+  @@index([assetId])
+}
+
+// ─── Trades ───────────────────────────────────────────────────────────────────
+
+model Trade {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  signalId    String?
+  signal      Signal?     @relation(fields: [signalId], references: [id])
+  symbol      String
+  type        TradeType
+  status      TradeStatus @default(OPEN)
+  entryPrice  Float
+  exitPrice   Float?
+  quantity    Float
+  stopLoss    Float
+  takeProfit  Float
+  pnl         Float?
+  pnlPercent  Float?
+  openedAt    DateTime    @default(now())
+  closedAt    DateTime?
+  notes       String?
+  tags        String[]
+  isPaper     Boolean     @default(true)
+  agentReasoning String?  @db.Text
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId, status])
+  @@index([symbol])
+}
+
+// ─── Agent Performance ────────────────────────────────────────────────────────
+
+model AgentPerformance {
+  id                   String    @id @default(cuid())
+  agentType            AgentType
+  date                 DateTime  @db.Date
+  accuracy             Float
+  signalsGenerated     Int       @default(0)
+  correctPredictions   Int       @default(0)
+  totalTrades          Int       @default(0)
+  winRate              Float     @default(0)
+  parameterAdjustments Json?
+  insights             String[]
+  createdAt            DateTime  @default(now())
+
+  @@unique([agentType, date])
+  @@index([agentType])
+}
+
+model AgentParameters {
+  id         String    @id @default(cuid())
+  agentType  AgentType @unique
+  parameters Json
+  version    Int       @default(1)
+  updatedAt  DateTime  @updatedAt
+  createdAt  DateTime  @default(now())
+}
+
+// ─── Opportunities ────────────────────────────────────────────────────────────
+
+model Opportunity {
+  id           String           @id @default(cuid())
+  symbol       String
+  type         OpportunityType
+  direction    SignalDirection
+  confidence   Float
+  potentialGain Float
+  risk         Float
+  description  String           @db.Text
+  status       OpportunityStatus @default(ACTIVE)
+  detectedAt   DateTime         @default(now())
+  expiresAt    DateTime
+  triggeredAt  DateTime?
+  createdAt    DateTime         @default(now())
+
+  @@index([status, detectedAt])
+}
+
+// ─── Alerts ───────────────────────────────────────────────────────────────────
+
+model Alert {
+  id        String      @id @default(cuid())
+  type      AlertType
+  title     String
+  message   String
+  symbol    String?
+  priority  AlertPriority @default(MEDIUM)
+  read      Boolean     @default(false)
+  createdAt DateTime    @default(now())
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum AssetType { CRYPTO STOCK FOREX COMMODITY }
+enum Sentiment { BULLISH BEARISH NEUTRAL }
+enum SignalDirection { BUY SELL HOLD WATCH }
+enum SignalStrength { STRONG MODERATE WEAK }
+enum SignalStatus { ACTIVE TRIGGERED EXPIRED CANCELLED }
+enum TradeType { LONG SHORT }
+enum TradeStatus { OPEN CLOSED CANCELLED PENDING }
+enum AgentType { NEWS CRYPTO MACRO SENTIMENT TECHNICAL RISK LEARNING }
+enum OpportunityType { BREAKOUT MOMENTUM VOLUME_SPIKE REVERSAL TREND NEWS_CATALYST PATTERN }
+enum OpportunityStatus { ACTIVE TRIGGERED MISSED EXPIRED }
+enum AlertType { SIGNAL NEWS ALERT SYSTEM }
+enum AlertPriority { HIGH MEDIUM LOW }
