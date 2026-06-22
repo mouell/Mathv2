@@ -1417,7 +1417,7 @@ function submitNewTrade(){
   if(!sym||!entry||!sl||!tp){alert('Remplis le symbole, entrée, SL et TP.');return;}
   const slD=Math.abs(entry-sl), qty=slD>0?Math.min(T_RISK_USD/slD,(1000*.3)/entry):0;
   S.trades.unshift({id:'T'+Date.now(),sym,dir:_tmDir,entry,sl,tp,qty,posSize:qty*entry,riskUsd:T_RISK_USD,screenshot:_tmImg||null,note:el('tm-note').value.trim()||null,status:'OPEN',opened:Date.now(),closed:null,exitPrice:null,pnl:null,pnlPct:null});
-  closeTradeModal(); renderTrades();
+  _saveTrades(); closeTradeModal(); renderTrades();
 }
 
 function quickTakeOTO(sym, hour){
@@ -1436,6 +1436,7 @@ function quickTakeOTO(sym, hour){
     status: 'OPEN', opened: Date.now(), closed: null,
     exitPrice: null, pnl: null, pnlPct: null
   });
+  _saveTrades();
   _showToast(`✅ Trade OTO ouvert — ${sym.replace('USDT','')} LONG @ ${c.entry}`);
   navigate('trades');
 }
@@ -1455,6 +1456,7 @@ function quickTakeTP(sym, slPct, tpPct, dir){
     status: 'OPEN', opened: Date.now(), closed: null,
     exitPrice: null, pnl: null, pnlPct: null
   });
+  _saveTrades();
   _showToast(`✅ ${sym.replace('USDT','')} ${dir} ouvert @ ${fmt.price(p)}`);
   navigate('trades');
 }
@@ -1494,10 +1496,10 @@ function confirmCloseTrade(exitPrice){
   t.status='CLOSED'; t.exitPrice=exitPrice; t.closed=Date.now();
   t.pnl=t.dir==='LONG'?(exitPrice-t.entry)*t.qty:(t.entry-exitPrice)*t.qty;
   t.pnlPct=t.posSize>0?(t.pnl/t.posSize)*100:0;
-  el('close-modal').style.display='none'; renderTrades();
+  _saveTrades(); el('close-modal').style.display='none'; renderTrades();
 }
 
-function deleteTrade(id){if(!confirm('Supprimer ce trade ?'))return;S.trades=S.trades.filter(x=>x.id!==id);renderTrades();}
+function deleteTrade(id){if(!confirm('Supprimer ce trade ?'))return;S.trades=S.trades.filter(x=>x.id!==id);_saveTrades();renderTrades();}
 
 // ═══════════════════════════════════════════════════════════
 // RÉSULTAT RAPIDE
@@ -1551,7 +1553,7 @@ function submitQuickResult(){
     opened:Date.now(),
     closed:Date.now()
   });
-  closeQuickResult(); renderTrades();
+  _saveTrades(); closeQuickResult(); renderTrades();
 }
 
 function renderQuickTradeBtns(){
@@ -1598,6 +1600,7 @@ function quickTradeAsset(sym){
     note:'⚡ Entrée rapide', status:'OPEN',
     opened:Date.now(), closed:null, exitPrice:null, pnl:null, pnlPct:null
   });
+  _saveTrades();
   _showToast(`✅ ${sym.replace('USDT','')} LONG ouvert @ ${fmt.price(p)}`);
   renderTrades();
 }
@@ -2825,9 +2828,34 @@ function _showToast(msg){
 }
 
 // ═══════════════════════════════════════════════════════════
+// PERSISTENCE — localStorage save/load
+// ═══════════════════════════════════════════════════════════
+const _STORE_KEY = 'tradingai_v1';
+
+function _saveTrades(){
+  try {
+    const data = { trades: S.trades, savedAt: Date.now() };
+    localStorage.setItem(_STORE_KEY, JSON.stringify(data));
+  } catch(e){ console.warn('Save failed:', e); }
+}
+
+function _loadTrades(){
+  try {
+    const raw = localStorage.getItem(_STORE_KEY);
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    if(Array.isArray(data.trades) && data.trades.length > 0){
+      S.trades = data.trades;
+      console.log(`📂 ${S.trades.length} trade(s) restauré(s) depuis la sauvegarde`);
+    }
+  } catch(e){ console.warn('Load failed:', e); }
+}
+
+// ═══════════════════════════════════════════════════════════
 // INIT — wrapped in DOMContentLoaded for reliability
 // ═══════════════════════════════════════════════════════════
 function boot(){
+  _loadTrades();
   initDashboard();
   initTVTicker();
   updateClock();
