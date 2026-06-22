@@ -463,6 +463,16 @@ canvas.sparkline{width:100%;display:block}
         </div>
       </div>
       <div class="grid-4 mb-12" id="trades-stats"></div>
+
+      <!-- Entrées rapides par actif -->
+      <div class="card mb-12" style="padding:14px 16px">
+        <div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--bull);animation:pulse 1.4s infinite;display:inline-block"></span>
+          ENTRÉE RAPIDE — clic pour ouvrir un trade au prix du marché
+        </div>
+        <div id="quick-trade-btns" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+
       <div id="trades-progress" class="mb-12"></div>
       <div class="mb-12">
         <div style="font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px">
@@ -1525,7 +1535,56 @@ function submitQuickResult(){
   closeQuickResult(); renderTrades();
 }
 
+function renderQuickTradeBtns(){
+  const QUICK=[
+    {sym:'BTCUSDT',icon:'₿',label:'BTC'},
+    {sym:'ETHUSDT',icon:'Ξ',label:'ETH'},
+    {sym:'SOLUSDT',icon:'◎',label:'SOL'},
+    {sym:'BNBUSDT',icon:'⬡',label:'BNB'},
+    {sym:'XRPUSDT',icon:'✕',label:'XRP'},
+    {sym:'AAPL',   icon:'',label:'AAPL'},
+    {sym:'NVDA',   icon:'',label:'NVDA'},
+  ];
+  const wrap=el('quick-trade-btns'); if(!wrap)return;
+  wrap.innerHTML=QUICK.map(q=>{
+    const p=S.assets[q.sym]?.p||0;
+    const chg=S.assets[q.sym]?.chg||0;
+    const up=chg>=0;
+    const pStr=p>0?fmt.price(p):'…';
+    const chgStr=(up?'+':'')+chg.toFixed(2)+'%';
+    return `<button onclick="quickTradeAsset('${q.sym}')"
+      style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 14px;
+             background:var(--bg3);border:1px solid var(--b1);border-radius:12px;cursor:pointer;
+             transition:all .15s;min-width:80px;text-align:left"
+      onmouseover="this.style.borderColor='var(--bull)';this.style.background='rgba(0,212,177,.08)'"
+      onmouseout="this.style.borderColor='var(--b1)';this.style.background='var(--bg3)'">
+      <span style="font-size:11px;font-weight:800;color:var(--t1)">${q.label}</span>
+      <span style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:var(--t1)">${pStr}</span>
+      <span style="font-size:10px;font-weight:600;color:${up?'var(--bull)':'var(--bear)'}">${chgStr}</span>
+    </button>`;
+  }).join('');
+}
+
+function quickTradeAsset(sym){
+  const p=S.assets[sym]?.p||0;
+  if(!p){ _showToast('⏳ Prix non disponible, réessaie dans 2s'); return; }
+  const d=p<1?5:p<10?4:p<1000?2:0;
+  const sl=parseFloat((p*0.98).toFixed(d));
+  const tp=parseFloat((p*1.05).toFixed(d));
+  const slD=p-sl;
+  const qty=slD>0?Math.min(T_RISK_USD/slD,(1000*.3)/p):0;
+  S.trades.unshift({
+    id:'T'+Date.now(), sym, dir:'LONG', entry:p, sl, tp, qty,
+    posSize:qty*p, riskUsd:T_RISK_USD, screenshot:null,
+    note:'⚡ Entrée rapide', status:'OPEN',
+    opened:Date.now(), closed:null, exitPrice:null, pnl:null, pnlPct:null
+  });
+  _showToast(`✅ ${sym.replace('USDT','')} LONG ouvert @ ${fmt.price(p)}`);
+  renderTrades();
+}
+
 function renderTrades(){
+  renderQuickTradeBtns();
   const open=S.trades.filter(t=>t.status==='OPEN');
   const closed=S.trades.filter(t=>t.status==='CLOSED');
   const wins=closed.filter(t=>(t.pnl||0)>0);
