@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathV2 — CAD/CAM IA</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  :root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--surface3:#222233;--border:#1e1e2e;--border2:#2a2a3e;--primary:#0066ff;--cyan:#00d4ff;--green:#00ff88;--orange:#ff6b00;--red:#ff3366;--yellow:#ffd700;--text:#e8e8f0;--muted:#9898b0;--dim:#5a5a78}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;-webkit-font-smoothing:antialiased}
+  ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:5px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);cursor:pointer;font-size:12px;transition:.15s}
+  .btn:hover{border-color:var(--primary);background:rgba(0,102,255,.1)}
+  .btn-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+  .btn-primary:hover{background:#0052cc;border-color:#0052cc}
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:500}
+  .tab{padding:6px 14px;border-radius:4px 4px 0 0;cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);border:1px solid transparent;border-bottom:none;transition:.15s}
+  .tab.active{color:var(--text);background:var(--surface);border-color:var(--border);position:relative}
+  .tab.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--primary),var(--cyan))}
+  .panel{background:var(--surface);border:1px solid var(--border)}
+  .dim-card{padding:8px 10px;border-radius:4px;border:1px solid var(--border);background:var(--surface);margin-bottom:6px;cursor:pointer;transition:.15s}
+  .dim-card:hover{border-color:var(--primary);background:rgba(0,102,255,.05)}
+  .dim-card.active{border-color:var(--primary);background:rgba(0,102,255,.1)}
+  .op-card{padding:10px;border-radius:4px;border:1px solid var(--border);background:var(--surface);margin-bottom:6px;transition:.15s}
+  .op-card:hover{border-color:var(--border2)}
+  .progress-bar{height:3px;border-radius:2px;background:var(--border2);overflow:hidden}
+  .progress-fill{height:100%;border-radius:2px;transition:.3s}
+  input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--border2);border-radius:2px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--primary);cursor:pointer}
+  .gcode-line{display:flex;gap:8px;line-height:1.7}
+  .gcode-ln{color:var(--dim);min-width:30px;text-align:right;user-select:none}
+  .g-blue{color:#60a5fa}.g-orange{color:#fb923c}.g-green{color:#4ade80}.g-yellow{color:#facc15}.g-gray{color:var(--dim)}
+  .step-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+  .step-row:last-child{border-bottom:none}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .animate-pulse{animation:pulse 2s infinite}
+  .animate-spin{animation:spin 1s linear infinite}
+  #canvas3d{display:block}
+  .overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(10,10,15,.9);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:10}
+  .tooltip{position:absolute;background:rgba(18,18,26,.95);border:1px solid var(--cyan);border-radius:6px;padding:8px 12px;pointer-events:none;font-size:12px;min-width:160px;box-shadow:0 0 20px rgba(0,212,255,.15)}
+  select{background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:4px 8px;font-size:12px;outline:none;cursor:pointer}
+  select:focus{border-color:var(--primary)}
+  .drop-zone{border:1.5px dashed var(--border2);border-radius:6px;padding:20px;text-align:center;cursor:pointer;transition:.15s}
+  .drop-zone:hover,.drop-zone.over{border-color:var(--primary);background:rgba(0,102,255,.05)}
+  .sim-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:4px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;transition:.15s;font-size:14px}
+  .sim-btn:hover{border-color:var(--primary);background:rgba(0,102,255,.1)}
+  .sim-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ APP LAYOUT -->
+<div style="display:flex;flex-direction:column;height:100vh;width:100vw;overflow:hidden">
+
+  <!-- TOP BAR -->
+  <div style="display:flex;align-items:center;gap:0;height:44px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;padding:0 16px;gap:16px">
+    <!-- Logo -->
+    <div style="display:flex;align-items:center;gap:8px;padding-right:16px;border-right:1px solid var(--border)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#0066ff" stroke-width="1.5" fill="rgba(0,102,255,.15)"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="#00d4ff" stroke-width="1.5"/></svg>
+      <span style="font-weight:700;font-size:15px;letter-spacing:.04em">Math<span style="color:var(--primary)">V2</span></span>
+      <span style="background:rgba(0,102,255,.15);color:var(--primary);border:1px solid rgba(0,102,255,.3);padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600">CAD/CAM IA</span>
+    </div>
+
+    <!-- Project name -->
+    <div style="flex:1;display:flex;align-items:center;gap:8px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span style="color:var(--muted)" id="projectName">Aucun fichier chargé</span>
+    </div>
+
+    <!-- Status badge -->
+    <div id="statusBadge" class="badge" style="background:rgba(90,90,120,.15);border:1px solid rgba(90,90,120,.3);color:var(--dim)">
+      <span class="dot" style="background:var(--dim)"></span> En attente
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;align-items:flex-end;border-bottom:1px solid transparent;gap:2px">
+      <div class="tab active" onclick="setTab('viewer')" id="tab-viewer">
+        <span>⬡</span> Visionneuse 3D
+      </div>
+      <div class="tab" onclick="setTab('gcode')" id="tab-gcode">
+        <span>⌨</span> G-Code
+      </div>
+      <div class="tab" onclick="setTab('sim')" id="tab-sim">
+        <span>▶</span> Simulation
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;gap:6px;padding-left:12px;border-left:1px solid var(--border)">
+      <button class="btn" onclick="loadDemo()">⚡ Demo</button>
+      <select id="controllerSelect" style="width:110px" onchange="updateController()">
+        <option value="fanuc">Fanuc 0i-MF</option>
+        <option value="siemens">Siemens 840D</option>
+        <option value="heidenhain">Heidenhain</option>
+        <option value="iso">ISO 6983</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div style="display:flex;flex:1;overflow:hidden">
+
+    <!-- ═══ LEFT SIDEBAR ═══════════════════════════════════════════════════ -->
+    <div style="width:268px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+
+      <!-- Import zone -->
+      <div style="padding:12px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:8px">Import fichier</div>
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event)">
+          <input type="file" id="fileInput" style="display:none" accept=".pdf,.dxf,.dwg,.jpg,.jpeg,.png,.tiff" onchange="handleFile(this.files[0])">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--dim)" stroke-width="1.5" style="margin:0 auto 8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div style="color:var(--muted);font-size:12px;margin-bottom:4px">Déposer un plan industriel</div>
+          <div style="color:var(--dim);font-size:10px">PDF · DXF · DWG · JPG · PNG</div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding:12px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:8px">Matériau</div>
+        <select id="materialSelect" style="width:100%" onchange="updateMaterial()">
+          <option>Aluminium 6061-T6</option>
+          <option>Acier 1045</option>
+          <option>Inox 316L</option>
+          <option>Titane Ti6Al4V</option>
+          <option>Laiton C360</option>
+          <option>Plastique POM</option>
+          <option>Fonte GG25</option>
+        </select>
+      </div>
+
+      <!-- Recent projects -->
+      <div style="flex:1;overflow-y:auto;padding:12px;border-top:1px solid var(--border)">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:8px">Projets récents</div>
+        <div id="recentProjects"></div>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding:10px 12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <span style="color:var(--dim);font-size:10px" class="mono">v1.0.0</span>
+        <span style="color:var(--dim);font-size:10px">Pipeline 100% local</span>
+      </div>
+    </div>
+
+    <!-- ═══ CENTER PANEL ═══════════════════════════════════════════════════ -->
+    <div style="flex:1;position:relative;overflow:hidden;background:#080810">
+
+      <!-- 3D VIEWER -->
+      <div id="panel-viewer" style="position:absolute;inset:0">
+        <canvas id="canvas3d" style="width:100%;height:100%"></canvas>
+
+        <!-- Annotation tooltip -->
+        <div class="tooltip" id="tooltip3d" style="display:none">
+          <div id="tooltipContent"></div>
+        </div>
+
+        <!-- Viewer controls -->
+        <div style="position:absolute;bottom:12px;right:12px;display:flex;flex-direction:column;gap:4px">
+          <button class="btn" onclick="resetCamera()" title="Réinitialiser caméra">⊙</button>
+          <button class="btn" id="btnGrid" onclick="toggleGrid()" title="Grille">⊞</button>
+          <button class="btn" id="btnWire" onclick="toggleWire()" title="Filaire">⬡</button>
+        </div>
+
+        <!-- Corner info -->
+        <div style="position:absolute;top:12px;left:12px;background:rgba(10,10,15,.7);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-size:11px">
+          <div style="color:var(--dim)">Pièce de démonstration</div>
+          <div style="color:var(--cyan)" class="mono">120×80×40 mm</div>
+          <div style="color:var(--dim);margin-top:2px">Survol → annotation</div>
+        </div>
+
+        <!-- Analysis overlay -->
+        <div class="overlay" id="analysisOverlay" style="display:none">
+          <div style="max-width:400px;width:90%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px">
+            <div style="text-align:center;margin-bottom:20px">
+              <div style="font-size:16px;font-weight:600;margin-bottom:4px">Analyse en cours…</div>
+              <div style="color:var(--muted);font-size:12px" id="analysisFile"></div>
+            </div>
+            <div id="pipelineSteps"></div>
+            <div style="margin-top:16px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px">
+                <span style="color:var(--muted)" id="analysisStepLabel">Initialisation…</span>
+                <span style="color:var(--primary)" id="analysisPct">0%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="analysisBar" style="width:0%;background:linear-gradient(90deg,var(--primary),var(--cyan))"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- G-CODE EDITOR -->
+      <div id="panel-gcode" style="position:absolute;inset:0;display:none;flex-direction:column">
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
+          <span class="badge" style="background:rgba(0,102,255,.15);border:1px solid rgba(0,102,255,.3);color:var(--primary)" id="controllerBadge">FANUC 0i-MF</span>
+          <span style="color:var(--dim);font-size:11px" id="gcodeStats">970 lignes · 6 outils · ~24 min</span>
+          <div style="flex:1"></div>
+          <button class="btn" onclick="copyGcode()">📋 Copier</button>
+          <button class="btn btn-primary" onclick="downloadGcode()">⬇ Télécharger .nc</button>
+        </div>
+        <!-- Validation panel -->
+        <div style="padding:6px 14px;background:rgba(0,255,136,.05);border-bottom:1px solid rgba(0,255,136,.15);font-size:11px;display:flex;gap:16px">
+          <span style="color:var(--green)">✓ 0 erreur</span>
+          <span style="color:var(--yellow)">⚠ 2 avertissements</span>
+          <span style="color:var(--dim)">ℹ 3 infos</span>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:12px 14px" class="mono" id="gcodeDisplay"></div>
+      </div>
+
+      <!-- SIMULATION -->
+      <div id="panel-sim" style="position:absolute;inset:0;display:none;flex-direction:column">
+        <canvas id="simCanvas" style="flex:1;display:block;width:100%"></canvas>
+        <div style="background:var(--surface);border-top:1px solid var(--border);padding:10px 16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <button class="sim-btn active" id="btnPlay" onclick="simPlay()">▶</button>
+            <button class="sim-btn" id="btnPause" onclick="simPause()">⏸</button>
+            <button class="sim-btn" id="btnStop" onclick="simStop()">⏹</button>
+            <div style="flex:1;margin:0 8px">
+              <div class="progress-bar" style="height:6px;cursor:pointer" onclick="seekSim(event)">
+                <div class="progress-fill" id="simBar" style="width:0%;background:linear-gradient(90deg,var(--primary),var(--cyan))"></div>
+              </div>
+            </div>
+            <span style="color:var(--muted);font-size:11px" id="simTime">0:00 / 24:30</span>
+            <!-- Speed -->
+            <div style="display:flex;gap:4px">
+              <button class="sim-btn active" id="spd1" onclick="setSpeed(1)"><span style="font-size:10px">x1</span></button>
+              <button class="sim-btn" id="spd2" onclick="setSpeed(2)"><span style="font-size:10px">x2</span></button>
+              <button class="sim-btn" id="spd5" onclick="setSpeed(5)"><span style="font-size:10px">x5</span></button>
+              <button class="sim-btn" id="spd10" onclick="setSpeed(10)"><span style="font-size:10px">x10</span></button>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--muted)" id="currentOp">Cliquer ▶ pour démarrer la simulation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ RIGHT PANEL ══════════════════════════════════════════════════ -->
+    <div style="width:320px;flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+
+      <!-- Panel tabs -->
+      <div style="display:flex;border-bottom:1px solid var(--border);background:var(--surface)">
+        <div class="tab active" onclick="setRPanel('analyse')" id="rp-analyse" style="flex:1;text-align:center;border-radius:0">📊 Analyse</div>
+        <div class="tab" onclick="setRPanel('ops')" id="rp-ops" style="flex:1;text-align:center;border-radius:0">🔧 Opérations</div>
+        <div class="tab" onclick="setRPanel('mat')" id="rp-mat" style="flex:1;text-align:center;border-radius:0">⬡ Matériau</div>
+      </div>
+
+      <!-- ANALYSE TAB -->
+      <div id="rpanel-analyse" style="flex:1;overflow-y:auto;padding:10px">
+        <!-- Summary -->
+        <div style="background:rgba(0,102,255,.08);border:1px solid rgba(0,102,255,.2);border-radius:6px;padding:10px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:11px;color:var(--muted)">Features détectées</span>
+            <span style="font-weight:600;color:var(--cyan)" id="dimCount">10</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:11px;color:var(--muted)">Confiance globale IA</span>
+            <span style="font-weight:600;color:var(--green)">94%</span>
+          </div>
+          <div class="progress-bar" style="margin-top:4px">
+            <div class="progress-fill" style="width:94%;background:linear-gradient(90deg,var(--green),var(--cyan))"></div>
+          </div>
+        </div>
+        <div id="dimensionList"></div>
+      </div>
+
+      <!-- OPERATIONS TAB -->
+      <div id="rpanel-ops" style="flex:1;overflow-y:auto;padding:10px;display:none">
+        <div style="background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.15);border-radius:6px;padding:8px 10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:11px;color:var(--muted)">Temps estimé total</div>
+            <div style="font-weight:600;color:var(--cyan)" class="mono">~24 min 30 sec</div>
+          </div>
+          <button class="btn btn-primary" style="font-size:11px">↺ Recalculer</button>
+        </div>
+        <div id="operationList"></div>
+      </div>
+
+      <!-- MATERIAL TAB -->
+      <div id="rpanel-mat" style="flex:1;overflow-y:auto;padding:10px;display:none">
+        <div style="border-radius:6px;overflow:hidden;border:1px solid var(--border);margin-bottom:10px">
+          <div style="background:linear-gradient(135deg,#1a2a4a,#0a1a3a);padding:14px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <div style="width:16px;height:16px;border-radius:50%;background:#c0c8d0;border:2px solid rgba(255,255,255,.2)"></div>
+              <span style="font-weight:600" id="matName">Aluminium 6061-T6</span>
+            </div>
+            <div style="color:var(--muted);font-size:11px" id="matCat">Aluminium · Catégorie A</div>
+          </div>
+        </div>
+        <div id="matProps"></div>
+        <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;color:var(--dim);margin-bottom:8px">Paramètres recommandés</div>
+          <div id="matCutting"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ DATA + LOGIC -->
+<script>
+// ── Mock Data ──────────────────────────────────────────────────────────────────
+const DIMS = [
+  {id:'d1',type:'length',label:'Longueur totale',value:120,unit:'mm',tol:'±0.10',isoCode:'js7',conf:97,color:'#60a5fa',icon:'↔'},
+  {id:'d2',type:'width',label:'Largeur totale',value:80,unit:'mm',tol:'±0.10',isoCode:'js7',conf:96,color:'#60a5fa',icon:'↕'},
+  {id:'d3',type:'height',label:'Hauteur totale',value:40,unit:'mm',tol:'±0.05',isoCode:'',conf:98,color:'#60a5fa',icon:'↨'},
+  {id:'d4',type:'diameter',label:'Alésage Ø1 (TL)',value:12,unit:'mm',tol:'+0.018/0',isoCode:'H7',conf:94,color:'#22d3ee',icon:'⊙'},
+  {id:'d5',type:'diameter',label:'Alésage Ø2 (TR)',value:12,unit:'mm',tol:'+0.018/0',isoCode:'H7',conf:94,color:'#22d3ee',icon:'⊙'},
+  {id:'d6',type:'diameter',label:'Alésage Ø3 (BL)',value:12,unit:'mm',tol:'+0.018/0',isoCode:'H7',conf:95,color:'#22d3ee',icon:'⊙'},
+  {id:'d7',type:'diameter',label:'Alésage Ø4 (BR)',value:12,unit:'mm',tol:'+0.018/0',isoCode:'H7',conf:95,color:'#22d3ee',icon:'⊙'},
+  {id:'d8',type:'depth',label:'Profondeur poche',value:15,unit:'mm',tol:'±0.05',isoCode:'',conf:91,color:'#a78bfa',icon:'⊼'},
+  {id:'d9',type:'chamfer',label:'Chanfrein 2×45°',value:2,unit:'mm',tol:'±0.20',isoCode:'',conf:88,color:'#fb923c',icon:'◸'},
+  {id:'d10',type:'thread',label:'Filetage M16×2',value:16,unit:'mm',tol:'-0.10/0',isoCode:'6g',conf:89,color:'#4ade80',icon:'⌻'},
+];
+
+const OPS = [
+  {id:'op1',seq:1,type:'Surfaçage',label:'Surfaçage face sup.',tool:'Fraise à plaquettes Ø63',spindle:2500,feed:800,depth:1.5,time:'0:45',conf:97,color:'#0066ff'},
+  {id:'op2',seq:2,type:'Poche',label:'Fraisage poche centrale',tool:'Fraise carbure Ø16 4T',spindle:6000,feed:1200,depth:15,time:'3:00',conf:93,color:'#00d4ff'},
+  {id:'op3',seq:3,type:'Perçage',label:'Perçage Ø11.8 × 4',tool:'Foret carbure Ø11.8',spindle:3200,feed:320,depth:40,time:'1:00',conf:95,color:'#22d3ee'},
+  {id:'op4',seq:4,type:'Alésage',label:'Alésage Ø12 H7 × 4',tool:'Alésoir Ø12 H7',spindle:4800,feed:96,depth:40,time:'2:00',conf:94,color:'#818cf8'},
+  {id:'op5',seq:5,type:'Chanfrein',label:'Chanfreinage arêtes',tool:'Fraise chanfrein Ø10',spindle:5000,feed:500,depth:2,time:'0:30',conf:88,color:'#fb923c'},
+  {id:'op6',seq:6,type:'Contour',label:'Contournage extérieur',tool:'Fraise carbure Ø20 4T',spindle:4000,feed:1600,depth:40,time:'4:00',conf:96,color:'#4ade80'},
+];
+
+const MAT = {
+  name:'Aluminium 6061-T6',cat:'Aluminium · Catégorie A',color:'#c0c8d0',
+  props:[
+    {k:'Densité',v:'2.70 g/cm³'},{k:'Dureté',v:'95 HB'},
+    {k:'Résistance traction',v:'310 MPa'},{k:'Limite élastique',v:'276 MPa'},
+    {k:'Allongement',v:'12 %'},{k:'Usinabilité',v:'90 / 100'},
+  ],
+  cutting:[
+    {k:'Vitesse de coupe Vc',v:'200–400 m/min'},
+    {k:'Avance par dent fz',v:'0.05–0.15 mm/z'},
+    {k:'Profondeur axiale ap',v:'≤ 1× Ø outil'},
+    {k:'Lubrification',v:'Émulsion + air comprimé'},
+  ]
+};
+
+const RECENT = [
+  {name:'Bride_Moteur_V3.pdf',mat:'Al 6061',ops:8,status:'complete',ago:'2h'},
+  {name:'Arbre_Transmission.dxf',mat:'Acier 1045',ops:6,status:'complete',ago:'1j'},
+  {name:'Carter_Pompe.dwg',mat:'Inox 316L',ops:12,status:'complete',ago:'3j'},
+  {name:'Engrenage_Reducteur.pdf',mat:'Acier 4140',ops:0,status:'error',ago:'5j'},
+];
+
+const GCODE_FANUC = `%
+O0001 (MATHV2 - PIECE_001)
+(DATE: 2024-01-15  HEURE: 14:32)
+(MATIERE: ALUMINIUM 6061-T6)
+(CONTROLEUR: FANUC 0i-MF)
+(BRUT: 120.0 X 80.0 X 40.0 MM)
+(OPERATIONS: 6  TEMPS EST.: 24 MIN 30 SEC)
+(==========================================)
+
+N10 G21 G17 G40 G49 G80 G90
+N20 G28 G91 Z0.
+N30 G90
+
+(--- OP 1: SURFACAGE ---)
+N40 T01 M06   (FRAISE A PLAQUETTES D63)
+N50 G43 H01
+N60 G54 S2500 M03
+N70 M08
+N80 G00 X-63.000 Y-63.000
+N90 Z5.000
+N100 G01 Z-0.500 F500
+N110 G01 X183.000 F800
+N120 G01 Y-18.900
+N130 G01 X-63.000
+N140 G01 Y25.900
+N150 G01 X183.000
+N160 G01 Y70.700
+N170 G01 X-63.000
+N180 G00 Z100.000
+N190 M09
+N200 M05
+N210 G00 Z100.000
+
+(--- OP 2: FRAISAGE POCHE CENTRALE ---)
+N220 T02 M06   (FRAISE CARBURE D16 4T)
+N230 G43 H02
+N240 G54 S6000 M03
+N250 M08
+N260 G00 X60.000 Y40.000
+N270 Z5.000
+N280 G01 Z-3.000 F360
+N290 G02 X60.000 Y40.000 I10.400 J0. F1200
+N300 G02 X60.000 Y40.000 I20.800 J0.
+N310 G01 Z-6.000 F360
+N320 G02 X60.000 Y40.000 I10.400 J0. F1200
+N330 G02 X60.000 Y40.000 I20.800 J0.
+N340 G01 Z-9.000 F360
+N350 G02 X60.000 Y40.000 I10.400 J0. F1200
+N360 G02 X60.000 Y40.000 I20.800 J0.
+N370 G01 Z-12.000 F360
+N380 G02 X60.000 Y40.000 I10.400 J0. F1200
+N390 G02 X60.000 Y40.000 I20.800 J0.
+N400 G01 Z-15.000 F360
+N410 G02 X60.000 Y40.000 I10.400 J0. F1200
+N420 G02 X60.000 Y40.000 I20.800 J0.
+N430 G00 Z100.000
+N440 M09
+N450 M05
+N460 G00 Z100.000
+
+(--- OP 3: PERCAGE D11.8 x4 ---)
+N470 T03 M06   (FORET CARBURE D11.8)
+N480 G43 H03
+N490 G54 S3200 M03
+N500 M08
+N510 G99 G83 Z-42.000 R5.000 Q3.000 F320
+N520 X30.000 Y20.000
+N530 X90.000 Y20.000
+N540 X30.000 Y60.000
+N550 X90.000 Y60.000
+N560 G80
+N570 G00 Z100.000
+N580 M09
+N590 M05
+N600 G00 Z100.000
+
+(--- OP 4: ALESAGE D12 H7 x4 ---)
+N610 T04 M06   (ALESOIR D12 H7)
+N620 G43 H04
+N630 G54 S4800 M03
+N640 M08
+N650 G99 G85 Z-40.000 R5.000 F96
+N660 X30.000 Y20.000
+N670 X90.000 Y20.000
+N680 X30.000 Y60.000
+N690 X90.000 Y60.000
+N700 G80
+N710 G00 Z100.000
+N720 M09
+N730 M05
+N740 G00 Z100.000
+
+(--- OP 5: CHANFREINAGE ---)
+N750 T05 M06   (FRAISE CHANFREIN D10)
+N760 G43 H05
+N770 G54 S5000 M03
+N780 M08
+N790 G00 X-6.000 Y-6.000
+N800 Z5.000
+N810 G01 Z-2.000 F250
+N820 G01 X126.000 F500
+N830 G01 Y86.000
+N840 G01 X-6.000
+N850 G01 Y-6.000
+N860 G00 Z100.000
+N870 M09
+N880 M05
+N890 G00 Z100.000
+
+(--- OP 6: CONTOURNAGE ---)
+N900 T06 M06   (FRAISE CARBURE D20 4T)
+N910 G43 H06
+N920 G54 S4000 M03
+N930 M08
+N940 G00 X-11.000 Y-11.000
+N950 Z5.000
+N960 G01 Z-5.000 F480
+N970 G41 D01 G01 X0. F1600
+N980 G01 X120.000
+N990 G01 Y80.000
+N1000 G01 X0.
+N1010 G01 Y0.
+N1020 G40
+N1030 G01 Z-10.000 F480
+N1040 G41 D01 G01 X0. F1600
+N1050 G01 X120.000
+N1060 G01 Y80.000
+N1070 G01 X0.
+N1080 G01 Y0.
+N1090 G40
+N1100 G00 Z100.000
+N1110 M09
+N1120 M05
+N1130 G00 Z100.000
+
+(--- FIN PROGRAMME ---)
+N1140 G28 G91 Z0.
+N1150 G28 X0. Y0.
+N1160 M30
+%`;
+
+// ── Three.js Setup ─────────────────────────────────────────────────────────────
+let scene, camera, renderer, controls, partGroup, gridHelper, wireMode=false;
+let tooltip = document.getElementById('tooltip3d');
+let tooltipContent = document.getElementById('tooltipContent');
+let raycaster, mouse, hoveredObj = null;
+let animId;
+
+function initThree(){
+  const canvas = document.getElementById('canvas3d');
+  const container = canvas.parentElement;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x080810);
+
+  const w = container.clientWidth, h = container.clientHeight;
+  camera = new THREE.PerspectiveCamera(45, w/h, 0.001, 100);
+  camera.position.set(0.25, 0.2, 0.28);
+  camera.lookAt(0,0,0);
+
+  renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(w, h);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  // Lights
+  const amb = new THREE.AmbientLight(0x1a1a2e, 2);
+  scene.add(amb);
+  const dir1 = new THREE.DirectionalLight(0xffffff, 2.5);
+  dir1.position.set(0.5,1,0.5); dir1.castShadow=true; scene.add(dir1);
+  const dir2 = new THREE.DirectionalLight(0x0066ff, 0.8);
+  dir2.position.set(-1,0.5,-0.5); scene.add(dir2);
+  const dir3 = new THREE.DirectionalLight(0x00d4ff, 0.4);
+  dir3.position.set(0,-0.5,1); scene.add(dir3);
+
+  // Grid
+  gridHelper = new THREE.GridHelper(0.4, 20, 0x1e1e2e, 0x1e1e2e);
+  gridHelper.position.y = -0.02;
+  scene.add(gridHelper);
+
+  // Axes
+  const axes = new THREE.AxesHelper(0.08);
+  axes.position.set(-0.08, -0.02, 0.08);
+  scene.add(axes);
+
+  buildPart();
+
+  // Raycaster
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2();
+
+  // Orbit controls (manual)
+  let isDown=false, lastX, lastY, theta=0.6, phi=0.4, radius=0.4;
+  canvas.addEventListener('mousedown', e=>{isDown=true;lastX=e.clientX;lastY=e.clientY});
+  canvas.addEventListener('mouseup', ()=>isDown=false);
+  canvas.addEventListener('mousemove', e=>{
+    if(isDown){
+      theta -= (e.clientX-lastX)*0.005;
+      phi = Math.max(0.1, Math.min(1.4, phi-(e.clientY-lastY)*0.005));
+      lastX=e.clientX; lastY=e.clientY;
+      camera.position.x = radius*Math.sin(theta)*Math.cos(phi);
+      camera.position.y = radius*Math.sin(phi);
+      camera.position.z = radius*Math.cos(theta)*Math.cos(phi);
+      camera.lookAt(0,0,0);
+    }
+    // Hover
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX-rect.left)/rect.width)*2-1;
+    mouse.y = -((e.clientY-rect.top)/rect.height)*2+1;
+    checkHover(e);
+  });
+  canvas.addEventListener('wheel', e=>{
+    radius = Math.max(0.08, Math.min(0.8, radius+e.deltaY*0.0003));
+    camera.position.x = radius*Math.sin(theta)*Math.cos(phi);
+    camera.position.y = radius*Math.sin(phi);
+    camera.position.z = radius*Math.cos(theta)*Math.cos(phi);
+    camera.lookAt(0,0,0);
+    e.preventDefault();
+  }, {passive:false});
+
+  window.addEventListener('resize', ()=>{
+    const w2=container.clientWidth, h2=container.clientHeight;
+    camera.aspect=w2/h2; camera.updateProjectionMatrix();
+    renderer.setSize(w2,h2);
+  });
+
+  animate();
+}
+
+function buildPart(){
+  if(partGroup){scene.remove(partGroup);}
+  partGroup = new THREE.Group();
+
+  const mat = new THREE.MeshStandardMaterial({color:0x8899bb,metalness:.85,roughness:.25,envMapIntensity:1});
+  const matHover = new THREE.MeshStandardMaterial({color:0x00d4ff,metalness:.9,roughness:.15,emissive:0x003355,emissiveIntensity:.4});
+  const matHole = new THREE.MeshStandardMaterial({color:0x0a0a15,metalness:.95,roughness:.2,side:THREE.BackSide});
+
+  // Main block (120×40×80 → scaled /1000)
+  const blockGeo = new THREE.BoxGeometry(0.12, 0.04, 0.08);
+  const block = new THREE.Mesh(blockGeo, mat.clone());
+  block.castShadow = true;
+  block.receiveShadow = true;
+  block.userData = {dim: DIMS[0], origMat: mat.clone()};
+  partGroup.add(block);
+
+  // Corner holes
+  const holePositions = [[-0.045,-0.03],[0.045,-0.03],[-0.045,0.03],[0.045,0.03]];
+  holePositions.forEach((p,i) => {
+    const geo = new THREE.CylinderGeometry(0.006, 0.006, 0.042, 32);
+    const hole = new THREE.Mesh(geo, matHole.clone());
+    hole.position.set(p[0], 0, p[1]);
+    hole.userData = {dim: DIMS[3+i], origMat: matHole.clone(), isHole:true};
+    partGroup.add(hole);
+  });
+
+  // Center pocket (box cutout effect using a darker box)
+  const pocketGeo = new THREE.BoxGeometry(0.036, 0.015, 0.024);
+  const pocket = new THREE.Mesh(pocketGeo, new THREE.MeshStandardMaterial({color:0x0a0f1a,metalness:.9,roughness:.3}));
+  pocket.position.set(0, 0.0125, 0);
+  pocket.userData = {dim: DIMS[7], origMat: pocket.material.clone()};
+  partGroup.add(pocket);
+
+  // Chamfer indicators (thin strips)
+  const chamferGeo = new THREE.BoxGeometry(0.122, 0.003, 0.003);
+  const chamferMat = new THREE.MeshStandardMaterial({color:0xffa040,metalness:.8,roughness:.2,emissive:0x441100,emissiveIntensity:.3});
+  const cham1 = new THREE.Mesh(chamferGeo, chamferMat);
+  cham1.position.set(0, 0.021, -0.041);
+  cham1.userData = {dim: DIMS[8], origMat: chamferMat.clone()};
+  partGroup.add(cham1);
+
+  scene.add(partGroup);
+}
+
+function checkHover(e){
+  if(!raycaster||!partGroup) return;
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(partGroup.children);
+  if(hits.length>0){
+    const obj = hits[0].object;
+    if(obj !== hoveredObj){
+      if(hoveredObj && hoveredObj.userData.origMat){
+        hoveredObj.material = hoveredObj.userData.origMat.clone();
+      }
+      hoveredObj = obj;
+      obj.material = new THREE.MeshStandardMaterial({color:0x00d4ff,metalness:.9,roughness:.15,emissive:0x003355,emissiveIntensity:.5});
+      if(obj.userData.dim){
+        const d = obj.userData.dim;
+        const prefix = d.type==='diameter'?'⌀':d.type==='radius'?'R':d.type==='chamfer'?'C':'';
+        tooltipContent.innerHTML = `
+          <div style="font-weight:600;color:#00d4ff;margin-bottom:4px">${d.label}</div>
+          <div class="mono" style="font-size:13px;color:#e8e8f0;margin-bottom:2px">${prefix}${d.value} ${d.unit}</div>
+          ${d.isoCode?`<div style="color:#ffd700;font-size:11px">Tolérance: ${d.tol} <span style="color:#a0a0ff">${d.isoCode}</span></div>`:`<div style="color:#ffd700;font-size:11px">Tolérance: ${d.tol}</div>`}
+          <div style="margin-top:4px;display:flex;align-items:center;gap:6px">
+            <div style="flex:1;height:3px;background:rgba(255,255,255,.1);border-radius:2px"><div style="width:${d.conf}%;height:100%;background:${d.conf>90?'#00ff88':d.conf>70?'#ffd700':'#ff3366'};border-radius:2px"></div></div>
+            <span style="color:var(--muted);font-size:10px">${d.conf}%</span>
+          </div>
+        `;
+        tooltip.style.display='block';
+        tooltip.style.left=(e.clientX-tooltip.offsetParent?.getBoundingClientRect()?.left+16)+'px';
+        tooltip.style.top=(e.clientY-tooltip.offsetParent?.getBoundingClientRect()?.top-20)+'px';
+      }
+    } else {
+      tooltip.style.left=(e.clientX-tooltip.offsetParent?.getBoundingClientRect()?.left+16)+'px';
+      tooltip.style.top=(e.clientY-tooltip.offsetParent?.getBoundingClientRect()?.top-20)+'px';
+    }
+  } else {
+    if(hoveredObj && hoveredObj.userData.origMat){
+      hoveredObj.material = hoveredObj.userData.origMat.clone();
+      hoveredObj = null;
+    }
+    tooltip.style.display='none';
+  }
+}
+
+function animate(){
+  animId = requestAnimationFrame(animate);
+  renderer.render(scene,camera);
+}
+
+function resetCamera(){
+  camera.position.set(0.25, 0.2, 0.28);
+  camera.lookAt(0,0,0);
+}
+
+function toggleGrid(){
+  gridHelper.visible=!gridHelper.visible;
+  document.getElementById('btnGrid').style.borderColor = gridHelper.visible ? 'var(--primary)' : 'var(--border2)';
+}
+
+function toggleWire(){
+  wireMode=!wireMode;
+  partGroup?.children.forEach(c=>{c.material.wireframe=wireMode});
+  document.getElementById('btnWire').style.borderColor = wireMode ? 'var(--cyan)' : 'var(--border2)';
+}
+
+// ── Simulation Setup ───────────────────────────────────────────────────────────
+let simScene, simCamera, simRenderer, simTool, simPath, simProgress=0, simPlaying=false, simSpeed=1, simAnimId;
+const SIM_TOTAL = 1470; // seconds
+
+function initSim(){
+  const canvas = document.getElementById('simCanvas');
+  simScene = new THREE.Scene();
+  simScene.background = new THREE.Color(0x060608);
+  simCamera = new THREE.PerspectiveCamera(45, canvas.clientWidth/canvas.clientHeight, 0.001, 100);
+  simCamera.position.set(0.25, 0.2, 0.25);
+  simCamera.lookAt(0,0,0);
+  simRenderer = new THREE.WebGLRenderer({canvas, antialias:true});
+  simRenderer.setPixelRatio(window.devicePixelRatio);
+  simRenderer.setSize(canvas.clientWidth, canvas.clientHeight);
+
+  const amb = new THREE.AmbientLight(0x1a1a2e, 2);
+  simScene.add(amb);
+  const dir = new THREE.DirectionalLight(0xffffff,2);
+  dir.position.set(1,2,1); simScene.add(dir);
+  const grid = new THREE.GridHelper(0.4,20,0x1e1e2e,0x1e1e2e);
+  grid.position.y=-0.02; simScene.add(grid);
+
+  // Stock (brut)
+  const stockGeo = new THREE.BoxGeometry(0.124,0.044,0.084);
+  const stock = new THREE.Mesh(stockGeo, new THREE.MeshStandardMaterial({color:0x556688,metalness:.6,roughness:.4,transparent:true,opacity:.35,wireframe:false}));
+  simScene.add(stock);
+
+  // Finished part
+  const partGeo = new THREE.BoxGeometry(0.12,0.04,0.08);
+  const part = new THREE.Mesh(partGeo, new THREE.MeshStandardMaterial({color:0x8899bb,metalness:.85,roughness:.25}));
+  simScene.add(part);
+
+  // Tool (end mill shape)
+  const toolGroup = new THREE.Group();
+  const shank = new THREE.Mesh(new THREE.CylinderGeometry(0.004,0.004,0.04,16), new THREE.MeshStandardMaterial({color:0xcccccc,metalness:.9,roughness:.1}));
+  shank.position.y=0.02;
+  const tip = new THREE.Mesh(new THREE.CylinderGeometry(0,0.004,0.01,16), new THREE.MeshStandardMaterial({color:0xffaa44,metalness:.8,roughness:.2}));
+  tip.position.y=0.005;
+  toolGroup.add(shank,tip);
+  toolGroup.position.set(-0.08, 0.06, -0.05);
+  simScene.add(toolGroup);
+  simTool = toolGroup;
+
+  // Toolpath line
+  const points = generateSimPath();
+  const geo = new THREE.BufferGeometry().setFromPoints(points);
+  simPath = new THREE.Line(geo, new THREE.LineBasicMaterial({color:0x0066ff,opacity:.6,transparent:true}));
+  simScene.add(simPath);
+
+  // Orbit sim camera
+  let isDown2=false,lx2,ly2,th2=0.6,ph2=0.4,r2=0.4;
+  canvas.addEventListener('mousedown',e=>{isDown2=true;lx2=e.clientX;ly2=e.clientY});
+  canvas.addEventListener('mouseup',()=>isDown2=false);
+  canvas.addEventListener('mousemove',e=>{
+    if(!isDown2)return;
+    th2-=(e.clientX-lx2)*0.005; ph2=Math.max(.1,Math.min(1.4,ph2-(e.clientY-ly2)*0.005));
+    lx2=e.clientX;ly2=e.clientY;
+    simCamera.position.set(r2*Math.sin(th2)*Math.cos(ph2),r2*Math.sin(ph2),r2*Math.cos(th2)*Math.cos(ph2));
+    simCamera.lookAt(0,0,0);
+  });
+  canvas.addEventListener('wheel',e=>{r2=Math.max(.1,Math.min(.8,r2+e.deltaY*.0003));simCamera.position.normalize().multiplyScalar(r2);simCamera.lookAt(0,0,0);e.preventDefault();},{passive:false});
+
+  animateSim();
+}
+
+function generateSimPath(){
+  const pts=[];
+  // Face milling zigzag
+  for(let y=-0.04;y<=0.08;y+=0.05){pts.push(new THREE.Vector3(-0.07,0.024,y));pts.push(new THREE.Vector3(0.13,0.024,y));}
+  // Drilling points
+  [[-0.03,-0.03],[0.03,-0.03],[-0.03,0.03],[0.03,0.03]].forEach(([x,z])=>{
+    pts.push(new THREE.Vector3(x,0.024,z)); pts.push(new THREE.Vector3(x,-0.022,z)); pts.push(new THREE.Vector3(x,0.06,z));
+  });
+  // Contour
+  pts.push(new THREE.Vector3(-0.07,-0.05,-0.05),new THREE.Vector3(0.13,-0.05,-0.05),new THREE.Vector3(0.13,-0.05,0.09),new THREE.Vector3(-0.07,-0.05,0.09),new THREE.Vector3(-0.07,-0.05,-0.05));
+  return pts;
+}
+
+let simT=0;
+function animateSim(){
+  simAnimId=requestAnimationFrame(animateSim);
+  if(simPlaying){
+    simT+=simSpeed*0.3;
+    if(simT>=100){simT=100;simPlaying=false;document.getElementById('btnPlay').classList.add('active');document.getElementById('btnPause').classList.remove('active');}
+    simProgress=simT;
+    updateSimUI();
+    // Move tool along a simple circular path for visual
+    const t=simT/100;
+    simTool.position.x=Math.cos(t*Math.PI*4)*0.06;
+    simTool.position.z=Math.sin(t*Math.PI*4)*0.04;
+    simTool.position.y=0.03-t*0.025;
+    simTool.rotation.y+=0.05;
+  }
+  simRenderer.render(simScene,simCamera);
+}
+
+function updateSimUI(){
+  document.getElementById('simBar').style.width=simProgress+'%';
+  const secs=Math.floor(simProgress/100*SIM_TOTAL);
+  const m=Math.floor(secs/60),s=secs%60;
+  document.getElementById('simTime').textContent=`${m}:${s.toString().padStart(2,'0')} / 24:30`;
+  const opIdx=Math.floor(simProgress/100*OPS.length);
+  const op=OPS[Math.min(opIdx,OPS.length-1)];
+  document.getElementById('currentOp').textContent=`▶ OP ${op.seq}: ${op.label} — ${op.tool}`;
+}
+
+function simPlay(){simPlaying=true;document.getElementById('btnPlay').classList.remove('active');document.getElementById('btnPause').classList.add('active');}
+function simPause(){simPlaying=false;document.getElementById('btnPlay').classList.add('active');document.getElementById('btnPause').classList.remove('active');}
+function simStop(){simPlaying=false;simT=0;simProgress=0;updateSimUI();document.getElementById('btnPlay').classList.add('active');document.getElementById('btnPause').classList.remove('active');document.getElementById('currentOp').textContent='Cliquer ▶ pour démarrer la simulation';}
+function seekSim(e){const r=e.currentTarget.getBoundingClientRect();simT=((e.clientX-r.left)/r.width)*100;simProgress=simT;updateSimUI();}
+function setSpeed(s){simSpeed=s;['1','2','5','10'].forEach(v=>document.getElementById('spd'+v).classList.remove('active'));document.getElementById('spd'+s).classList.add('active');}
+
+// ── UI Rendering ───────────────────────────────────────────────────────────────
+let activeTab='viewer', activeRP='analyse';
+
+function setTab(t){
+  activeTab=t;
+  ['viewer','gcode','sim'].forEach(id=>{
+    document.getElementById('panel-'+id).style.display=id===t?'flex':'none';
+    document.getElementById('tab-'+id).className='tab'+(id===t?' active':'');
+  });
+  if(t==='viewer') document.getElementById('panel-viewer').style.display='block';
+  if(t==='sim' && !simRenderer) initSim();
+}
+
+function setRPanel(p){
+  activeRP=p;
+  ['analyse','ops','mat'].forEach(id=>{
+    document.getElementById('rpanel-'+id).style.display=id===p?'flex':'none';
+    if(id===p) document.getElementById('rpanel-'+id).style.display='block';
+    document.getElementById('rp-'+id).className='tab'+(id===p?' active':'');
+  });
+}
+
+function renderDimensions(){
+  const list=document.getElementById('dimensionList');
+  list.innerHTML=DIMS.map(d=>`
+    <div class="dim-card" onclick="selectDim('${d.id}')">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:16px;color:${d.color}">${d.icon}</span>
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--muted)">${d.label}</div>
+          <div class="mono" style="font-size:13px;font-weight:600;color:${d.color}">${d.type==='diameter'?'⌀':d.type==='radius'?'R':d.type==='chamfer'?'C':''}${d.value} ${d.unit}</div>
+        </div>
+        ${d.isoCode?`<span class="badge" style="background:rgba(255,212,0,.1);border:1px solid rgba(255,212,0,.2);color:#ffd700">${d.isoCode}</span>`:''}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+        <span style="font-size:10px;color:var(--dim)">Tol: <span style="color:var(--yellow)" class="mono">${d.tol}</span></span>
+        <div style="flex:1;margin-left:4px">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${d.conf}%;background:${d.conf>90?'var(--green)':d.conf>70?'var(--yellow)':'var(--red)'}"></div>
+          </div>
+        </div>
+        <span style="font-size:10px;color:${d.conf>90?'var(--green)':d.conf>70?'var(--yellow)':'var(--red)'}">${d.conf}%</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectDim(id){
+  document.querySelectorAll('.dim-card').forEach(c=>c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+function renderOperations(){
+  const list=document.getElementById('operationList');
+  list.innerHTML=OPS.map(op=>`
+    <div class="op-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="width:20px;height:20px;border-radius:50%;background:${op.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">${op.seq}</span>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:12px">${op.label}</div>
+          <div style="color:var(--muted);font-size:11px">${op.tool}</div>
+        </div>
+        <span class="badge" style="background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.15);color:var(--green);font-size:10px" class="mono">${op.time}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:10px">
+        <div style="background:var(--surface2);border-radius:3px;padding:4px 6px;border:1px solid var(--border)">
+          <div style="color:var(--dim)">Broche</div>
+          <div class="mono" style="color:var(--cyan);font-weight:600">${op.spindle.toLocaleString()} tr/min</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:3px;padding:4px 6px;border:1px solid var(--border)">
+          <div style="color:var(--dim)">Avance</div>
+          <div class="mono" style="color:var(--cyan);font-weight:600">${op.feed} mm/min</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:3px;padding:4px 6px;border:1px solid var(--border)">
+          <div style="color:var(--dim)">Profondeur</div>
+          <div class="mono" style="color:var(--cyan);font-weight:600">${op.depth} mm</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderMaterial(){
+  document.getElementById('matName').textContent=MAT.name;
+  document.getElementById('matCat').textContent=MAT.cat;
+  document.getElementById('matProps').innerHTML=MAT.props.map(p=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted);font-size:11px">${p.k}</span>
+      <span class="mono" style="font-size:11px;color:var(--text)">${p.v}</span>
+    </div>
+  `).join('');
+  document.getElementById('matCutting').innerHTML=MAT.cutting.map(p=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted);font-size:11px">${p.k}</span>
+      <span class="mono" style="font-size:11px;color:var(--cyan)">${p.v}</span>
+    </div>
+  `).join('');
+}
+
+function renderRecent(){
+  const list=document.getElementById('recentProjects');
+  const icons={'PDF':'📄','DXF':'📐','DWG':'📏','JPG':'🖼','PNG':'🖼'};
+  list.innerHTML=RECENT.map(p=>{
+    const ext=p.name.split('.').pop().toUpperCase();
+    const ok=p.status==='complete';
+    return `
+    <div class="list-item" style="display:flex;align-items:center;gap:8px;padding:7px 6px;border-radius:4px;cursor:pointer;transition:.15s;margin-bottom:2px" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" onclick="loadProject('${p.name}')">
+      <span style="font-size:16px">${icons[ext]||'📄'}</span>
+      <div style="flex:1;overflow:hidden">
+        <div style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+        <div style="font-size:10px;color:var(--dim)">${p.mat} · ${p.ago}</div>
+      </div>
+      <span class="badge" style="background:${ok?'rgba(0,255,136,.08)':'rgba(255,51,102,.08)'};border:1px solid ${ok?'rgba(0,255,136,.2)':'rgba(255,51,102,.2)'};color:${ok?'var(--green)':'var(--red)'};font-size:9px">${ok?'✓':'✗'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── G-Code Rendering ───────────────────────────────────────────────────────────
+function renderGcode(code){
+  const lines=code.split('\n');
+  const display=document.getElementById('gcodeDisplay');
+  display.innerHTML=lines.map((line,i)=>{
+    const n=i+1;
+    let hl=line
+      .replace(/\b(G\d+\.?\d*)\b/g,'<span class="g-blue">$1</span>')
+      .replace(/\b(M\d+)\b/g,'<span class="g-orange">$1</span>')
+      .replace(/\b([XYZIJKF])(-?\d+\.?\d*)/g,'<span class="g-green">$1</span><span class="g-yellow">$2</span>')
+      .replace(/\b([SR])(\d+)/g,'<span class="g-green">$1</span><span class="g-yellow">$2</span>')
+      .replace(/\b([TH])(\d+)/g,'<span class="g-orange">$1$2</span>')
+      .replace(/(\(.*?\))/g,'<span class="g-gray">$1</span>')
+      .replace(/^(;.*)$/,'<span class="g-gray">$1</span>');
+    return `<div class="gcode-line"><span class="gcode-ln g-gray">${n}</span><span>${hl}</span></div>`;
+  }).join('');
+  document.getElementById('gcodeStats').textContent=`${lines.length} lignes · 6 outils · ~24 min`;
+}
+
+// ── Controller / Material updates ──────────────────────────────────────────────
+const CONTROLLER_LABELS={'fanuc':'FANUC 0i-MF','siemens':'SIEMENS 840D','heidenhain':'HEIDENHAIN iTNC','iso':'ISO 6983'};
+function updateController(){
+  const v=document.getElementById('controllerSelect').value;
+  document.getElementById('controllerBadge').textContent=CONTROLLER_LABELS[v];
+}
+function updateMaterial(){
+  const v=document.getElementById('materialSelect').value;
+  document.getElementById('matName').textContent=v;
+}
+
+// ── File handling ──────────────────────────────────────────────────────────────
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('over');
+  const file=e.dataTransfer.files[0];
+  if(file) handleFile(file);
+}
+
+function handleFile(file){
+  if(!file)return;
+  document.getElementById('projectName').textContent=file.name;
+  document.getElementById('analysisFile').textContent=file.name+' ('+Math.round(file.size/1024)+' Ko)';
+  runAnalysisPipeline(file.name);
+}
+
+function loadProject(name){
+  document.getElementById('projectName').textContent=name;
+  runAnalysisPipeline(name, true);
+}
+
+const STEPS=[
+  {id:'s1',label:'Analyse Document',icon:'📄'},
+  {id:'s2',label:'OCR & Extraction',icon:'👁'},
+  {id:'s3',label:'Détection Features',icon:'🎯'},
+  {id:'s4',label:'Reconstruction 3D',icon:'⬡'},
+  {id:'s5',label:'Calcul Opérations',icon:'⚙'},
+  {id:'s6',label:'Trajectoires Outils',icon:'🛤'},
+  {id:'s7',label:'Génération G-Code',icon:'💻'},
+  {id:'s8',label:'Simulation',icon:'▶'},
+];
+
+function runAnalysisPipeline(name, fast=false){
+  document.getElementById('analysisOverlay').style.display='flex';
+  setTab('viewer');
+
+  // Render steps
+  document.getElementById('pipelineSteps').innerHTML=STEPS.map(s=>`
+    <div class="step-row" id="step-${s.id}">
+      <div class="dot" id="dot-${s.id}" style="background:var(--dim)"></div>
+      <span style="font-size:16px">${s.icon}</span>
+      <span style="flex:1;font-size:12px" id="lbl-${s.id}">${s.label}</span>
+      <span style="font-size:11px;color:var(--dim)" id="sts-${s.id}">En attente</span>
+    </div>
+  `).join('');
+
+  const durations=fast?[200,300,350,450,250,300,200,150]:[600,900,1100,1500,700,900,600,400];
+  let i=0;
+  const runStep=()=>{
+    if(i>=STEPS.length){
+      setTimeout(()=>{
+        document.getElementById('analysisOverlay').style.display='none';
+        updateStatusBadge('complete');
+        loadDemo();
+      },300);
+      return;
+    }
+    const s=STEPS[i];
+    document.getElementById('dot-'+s.id).style.background='var(--primary)';
+    document.getElementById('dot-'+s.id).className='dot animate-pulse';
+    document.getElementById('sts-'+s.id).textContent='En cours…';
+    document.getElementById('sts-'+s.id).style.color='var(--primary)';
+    document.getElementById('analysisStepLabel').textContent=s.label+'…';
+
+    let p=parseInt(document.getElementById('analysisPct').textContent)||0;
+    const targetP=Math.round((i+1)/STEPS.length*100);
+    const incr=setInterval(()=>{
+      p=Math.min(p+3,targetP);
+      document.getElementById('analysisPct').textContent=p+'%';
+      document.getElementById('analysisBar').style.width=p+'%';
+    },durations[i]/30);
+
+    setTimeout(()=>{
+      clearInterval(incr);
+      document.getElementById('dot-'+s.id).style.background='var(--green)';
+      document.getElementById('dot-'+s.id).className='dot';
+      document.getElementById('sts-'+s.id).textContent='✓ Terminé';
+      document.getElementById('sts-'+s.id).style.color='var(--green)';
+      i++;
+      setTimeout(runStep,100);
+    },durations[i]);
+  };
+  runStep();
+}
+
+function updateStatusBadge(status){
+  const badge=document.getElementById('statusBadge');
+  if(status==='complete'){
+    badge.style.background='rgba(0,255,136,.08)';
+    badge.style.border='1px solid rgba(0,255,136,.2)';
+    badge.style.color='var(--green)';
+    badge.innerHTML='<span class="dot" style="background:var(--green)"></span> Analysé · 94% confiance';
+  }
+}
+
+function loadDemo(){
+  document.getElementById('projectName').textContent='Bride_Moteur_Demo.pdf';
+  updateStatusBadge('complete');
+  renderDimensions();
+  renderOperations();
+  renderMaterial();
+  renderGcode(GCODE_FANUC);
+  document.getElementById('dimCount').textContent=DIMS.length;
+}
+
+function copyGcode(){
+  navigator.clipboard.writeText(GCODE_FANUC).then(()=>{
+    const btn=event.currentTarget;
+    btn.textContent='✓ Copié !';
+    setTimeout(()=>btn.textContent='📋 Copier',2000);
+  });
+}
+
+function downloadGcode(){
+  const a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(GCODE_FANUC);
+  a.download='PIECE_001.nc';
+  a.click();
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  initThree();
+  renderRecent();
+  loadDemo();
+});
+</script>
+</body>
+</html>
