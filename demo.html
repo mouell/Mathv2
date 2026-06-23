@@ -93,6 +93,11 @@
 
     <!-- Actions -->
     <div style="display:flex;gap:6px;padding-left:12px;border-left:1px solid var(--border)">
+      <!-- Part type toggle -->
+      <div style="display:flex;border:1px solid var(--border2);border-radius:5px;overflow:hidden">
+        <button id="btnFraiseuse" onclick="setPartMode('fraiseuse')" style="padding:4px 10px;font-size:11px;background:var(--primary);border:none;color:#fff;cursor:pointer;font-family:inherit">⬡ Fraisage</button>
+        <button id="btnTournage" onclick="setPartMode('tournage')" style="padding:4px 10px;font-size:11px;background:var(--surface2);border:none;color:var(--muted);cursor:pointer;font-family:inherit">◎ Tournage</button>
+      </div>
       <button class="btn" onclick="loadDemo()">⚡ Demo</button>
       <select id="controllerSelect" style="width:110px" onchange="updateController()">
         <option value="fanuc">Fanuc 0i-MF</option>
@@ -165,11 +170,19 @@
           <button class="btn" id="btnWire" onclick="toggleWire()" title="Filaire">⬡</button>
         </div>
 
-        <!-- Corner info -->
-        <div style="position:absolute;top:12px;left:12px;background:rgba(10,10,15,.7);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-size:11px">
-          <div style="color:var(--dim)">Pièce de démonstration</div>
-          <div style="color:var(--cyan)" class="mono">120×80×40 mm</div>
+        <!-- Corner info — normal state -->
+        <div id="cornerInfo" style="position:absolute;top:12px;left:12px;background:rgba(10,10,15,.7);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-size:11px">
+          <div style="color:var(--dim)" id="cornerLabel">Pièce de démonstration</div>
+          <div style="color:var(--cyan)" class="mono" id="cornerDims">120×80×40 mm</div>
           <div style="color:var(--dim);margin-top:2px">Survol → annotation</div>
+        </div>
+        <!-- Corner info — scanning state -->
+        <div id="scanningInfo" style="display:none;position:absolute;top:12px;left:12px;background:rgba(10,10,15,.85);border:1px solid rgba(0,212,255,.3);border-radius:4px;padding:8px 12px;font-size:11px;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--cyan);animation:pulse 1s infinite"></div>
+          <div>
+            <div style="color:var(--cyan);font-weight:600">Scan en cours…</div>
+            <div style="color:var(--dim);margin-top:1px" id="scanFileName">—</div>
+          </div>
         </div>
 
         <!-- Analysis overlay -->
@@ -488,12 +501,133 @@ N1150 G28 X0. Y0.
 N1160 M30
 %`;
 
+const GCODE_TURNING = `%
+O0200 (ARBRE - FANUC LATHE)
+(PIECE : ARBRE Ø50/35/25 - L=200mm)
+(MATERIAU : ACIER 42CrMo4)
+(DATE : 2024-01-15)
+(OPERATEUR : CAM-AUTO)
+%
+
+(--- INITIALISATION ---)
+N10 G18 G21 G40 G54 G80 G99
+N20 T0101 (OUTIL CHARIOTAGE EBAUCHE - PLAQUETTE TNMG)
+N30 G50 S2500
+N40 G96 S180 M03 (VITESSE COUPE CONSTANTE 180 m/min)
+N50 G00 X55.000 Z5.000
+N60 M08 (ARROSAGE)
+
+(--- DRESSAGE FACE ---)
+N70 G00 X55.000 Z0.500
+N80 G01 X-0.500 F0.15 (DRESSAGE)
+N90 G00 Z2.000
+
+(--- CHARIOTAGE EBAUCHE Ø50 ---)
+N100 G00 X52.000 Z2.000
+N110 G01 Z-60.000 F0.25 (CHARIOTAGE DIAMETRE 52)
+N120 G01 X55.000
+N130 G00 Z2.000
+N140 G00 X50.500
+N150 G01 Z-60.000 F0.25
+N160 G01 X52.000
+N170 G00 Z2.000
+
+(--- CHARIOTAGE EBAUCHE Ø35 ---)
+N180 G00 X37.000 Z-58.000
+N190 G01 Z-140.000 F0.25
+N200 G01 X52.000
+N210 G00 Z-58.000
+N220 G00 X35.500
+N230 G01 Z-140.000 F0.25
+N240 G01 X37.000
+N250 G00 Z2.000
+
+(--- CHARIOTAGE EBAUCHE Ø25 ---)
+N260 G00 X27.000 Z-138.000
+N270 G01 Z-200.000 F0.25
+N280 G01 X37.000
+N290 G00 Z-138.000
+N300 G00 X25.500
+N310 G01 Z-200.000 F0.25
+N320 G01 X27.000
+N330 G00 Z100.000
+
+(--- FINITION DIAMETRE Ø50 f7 ---)
+N340 T0202 (OUTIL FINITION - PLAQUETTE DNMG)
+N350 G50 S3500
+N360 G96 S220 M03
+N370 G00 X50.000 Z2.000
+N380 G01 Z-60.000 F0.08 (FINITION Ra 0.8)
+N390 G01 X52.000
+N400 G00 Z2.000
+N410 G00 X35.000 Z-58.000
+N420 G01 Z-140.000 F0.08
+N430 G01 X52.000
+N440 G00 Z-58.000
+N450 G00 X25.000 Z-138.000
+N460 G01 Z-200.000 F0.08
+N470 G01 X37.000
+N480 G00 Z100.000 M09
+
+(--- GORGE EXTERIEURE 4mm ---)
+N490 T0303 (OUTIL GORGE - LARGEUR 4mm)
+N500 G50 S1500
+N510 G97 S800 M03 (VITESSE CONSTANTE RPM)
+N520 G00 X55.000 Z-60.000 M08
+N530 G01 X29.000 F0.06 (PLONGEE GORGE)
+N540 G04 X1.000 (TEMPORISATION 1s)
+N550 G01 X55.000 F0.15
+N560 G00 Z100.000 M09
+
+(--- CHANFREIN 1.5x45° ---)
+N570 T0202 (RETOUR OUTIL FINITION)
+N580 G96 S220 M03
+N590 G00 X53.000 Z2.000 M08
+N600 G01 X50.000 Z0.500 F0.10 (ENTREE CHANFREIN)
+N610 G01 X47.000 Z-1.000 (CHANFREIN 1.5x45)
+N620 G00 Z100.000 M09
+
+(--- FILETAGE M25x2 6g ---)
+N630 T0404 (OUTIL FILETAGE)
+N640 G97 S600 M03
+N650 G00 X28.000 Z3.000 M08
+N660 G76 P010060 Q100 R0.050
+N670 G76 X23.000 Z-55.000 P1299 Q400 F2.000
+(G76 : CYCLE FILETAGE MULTI-PASSES)
+(P010060 : 1 PASSE FINITION, ANGLE 60 DEG)
+(Q100 : PROFONDEUR MIN 0.1mm)
+(R0.050 : ALLOWANCE FINITION)
+N680 G00 X100.000 Z100.000 M09
+
+(--- ALESAGE CENTRAL Ø12 ---)
+N690 T0505 (FORET Ø10mm PILOTAGE)
+N700 G97 S1200 M03
+N710 G00 X0.000 Z5.000 M08
+N720 G01 Z-30.000 F0.12 (PERÇAGE PILOTE)
+N730 G00 Z5.000
+N740 T0606 (FORET Ø12mm)
+N750 G97 S900 M03
+N760 G00 X0.000 Z5.000
+N770 G83 Z-30.000 R2.000 Q5.000 F0.10
+(G83 : CYCLE PERCAGE PROFOND AVEC DEGAGEMENT)
+N780 G80
+N790 G00 Z100.000 M09
+
+(--- FIN PROGRAMME ---)
+N800 G28 U0.
+N810 G28 W0.
+N820 M30
+%`;
+
 // ── Three.js Setup ─────────────────────────────────────────────────────────────
 let scene, camera, renderer, controls, partGroup, gridHelper, wireMode=false;
 let tooltip = document.getElementById('tooltip3d');
 let tooltipContent = document.getElementById('tooltipContent');
 let raycaster, mouse, hoveredObj = null;
 let animId;
+let scanGroup = null, scanPlane = null, scanT = 0, scanDir = 1;
+let partMode = 'fraiseuse'; // 'fraiseuse' | 'tournage'
+let currentFileName = null;
 
 function initThree(){
   const canvas = document.getElementById('canvas3d');
@@ -621,6 +755,151 @@ function buildPart(){
   scene.add(partGroup);
 }
 
+// ── Turned part (arbre à épaulements) ─────────────────────────────────────────
+const DIMS_TURNING = [
+  {id:'t1',type:'diameter',label:'Ø extérieur principal',value:50,unit:'mm',tol:'-0.025/-0.050',isoCode:'f7',conf:97,color:'#22d3ee',icon:'⊙'},
+  {id:'t2',type:'diameter',label:'Épaulement Ø1',value:35,unit:'mm',tol:'-0.016/-0.034',isoCode:'h6',conf:95,color:'#22d3ee',icon:'⊙'},
+  {id:'t3',type:'diameter',label:'Épaulement Ø2',value:25,unit:'mm',tol:'-0.013/-0.029',isoCode:'h6',conf:96,color:'#22d3ee',icon:'⊙'},
+  {id:'t4',type:'length',label:'Longueur totale',value:200,unit:'mm',tol:'±0.10',isoCode:'',conf:98,color:'#60a5fa',icon:'↔'},
+  {id:'t5',type:'length',label:'Longueur section Ø50',value:60,unit:'mm',tol:'±0.05',isoCode:'',conf:96,color:'#60a5fa',icon:'↔'},
+  {id:'t6',type:'length',label:'Longueur section Ø35',value:80,unit:'mm',tol:'±0.05',isoCode:'',conf:95,color:'#60a5fa',icon:'↔'},
+  {id:'t7',type:'thread',label:'Filetage M25×2',value:25,unit:'mm',tol:'-0.050/0',isoCode:'6g',conf:92,color:'#4ade80',icon:'⌻'},
+  {id:'t8',type:'radius',label:'Congé r1',value:2,unit:'mm',tol:'±0.20',isoCode:'',conf:89,color:'#a78bfa',icon:'R'},
+  {id:'t9',type:'chamfer',label:'Chanfrein 1.5×45°',value:1.5,unit:'mm',tol:'±0.20',isoCode:'',conf:91,color:'#fb923c',icon:'◸'},
+  {id:'t10',type:'depth',label:'Gorge largeur',value:4,unit:'mm',tol:'+0/−0.1',isoCode:'',conf:88,color:'#a78bfa',icon:'⊼'},
+];
+
+const OPS_TURNING = [
+  {id:'to1',seq:1,type:'Dressage',label:'Dressage face',tool:'Plaquette CNMG 120408',spindle:800,feed:200,depth:0.5,time:'0:20',conf:98,color:'#0066ff'},
+  {id:'to2',seq:2,type:'Chariotage',label:'Ébauche Ø50 ext.',tool:'Plaquette DCMT 11T304',spindle:1200,feed:320,depth:3.0,time:'1:45',conf:96,color:'#00d4ff'},
+  {id:'to3',seq:3,type:'Chariotage',label:'Finition Ø50 f7',tool:'Plaquette VCGT 110304',spindle:2000,feed:120,depth:0.3,time:'0:55',conf:95,color:'#22d3ee'},
+  {id:'to4',seq:4,type:'Épaulement',label:'Chariotage Ø35 h6',tool:'Plaquette DCMT 11T304',spindle:1500,feed:200,depth:1.5,time:'1:10',conf:94,color:'#818cf8'},
+  {id:'to5',seq:5,type:'Gorge',label:'Gorge ext. 4mm',tool:'Plaquette gorge L=4mm',spindle:600,feed:50,depth:4.0,time:'0:30',conf:90,color:'#fb923c'},
+  {id:'to6',seq:6,type:'Filetage',label:'Filetage M25×2',tool:'Plaquette filetage 60°',spindle:400,feed:400,depth:0.3,time:'0:45',conf:92,color:'#4ade80'},
+];
+
+function buildTurningPart(){
+  if(partGroup){scene.remove(partGroup);}
+  partGroup = new THREE.Group();
+
+  const matSteel = new THREE.MeshStandardMaterial({color:0x99aabb,metalness:.92,roughness:.2});
+  const matDark  = new THREE.MeshStandardMaterial({color:0x0a0f18,metalness:.95,roughness:.15,side:THREE.BackSide});
+  const matGroove= new THREE.MeshStandardMaterial({color:0x223344,metalness:.9,roughness:.3});
+  const matThread= new THREE.MeshStandardMaterial({color:0x4a7a44,metalness:.85,roughness:.35,emissive:0x0a1a0a,emissiveIntensity:.3});
+
+  // Sections (L scaled /1000, R scaled /1000)
+  // Total length 200mm → 0.20, centered at 0
+  // Section A: Ø50, L=60 → from -0.10 to -0.04
+  // Section B: Ø35, L=80 → from -0.04 to +0.04
+  // Section C: Ø25, L=60 (with thread) → from +0.04 to +0.10
+
+  const sections = [
+    {r:0.025, len:0.060, x:-0.070, mat:matSteel.clone(), dimIdx:0}, // Ø50
+    {r:0.0175,len:0.080, x: 0.000, mat:matSteel.clone(), dimIdx:1}, // Ø35
+    {r:0.0125,len:0.060, x: 0.070, mat:matThread.clone(), dimIdx:2}, // Ø25 thread
+  ];
+
+  sections.forEach(s=>{
+    const geo = new THREE.CylinderGeometry(s.r, s.r, s.len, 48);
+    const mesh = new THREE.Mesh(geo, s.mat);
+    mesh.rotation.z = Math.PI/2;
+    mesh.position.x = s.x;
+    mesh.userData = {dim:DIMS_TURNING[s.dimIdx], origMat:s.mat.clone()};
+    mesh.castShadow=true;
+    partGroup.add(mesh);
+  });
+
+  // Groove (gorge)
+  const grooveGeo = new THREE.CylinderGeometry(0.014,0.014,0.004,48);
+  const groove = new THREE.Mesh(grooveGeo, matGroove.clone());
+  groove.rotation.z=Math.PI/2;
+  groove.position.x=0.042;
+  groove.userData={dim:DIMS_TURNING[9], origMat:matGroove.clone()};
+  partGroup.add(groove);
+
+  // Thread visual (helix approximation with torus knot)
+  const threadGeo = new THREE.TorusGeometry(0.013,0.001,8,60);
+  for(let i=0;i<8;i++){
+    const t = new THREE.Mesh(threadGeo, matThread.clone());
+    t.rotation.z=Math.PI/2;
+    t.position.x=0.055+i*0.004;
+    partGroup.add(t);
+  }
+
+  // Chamfer (left end)
+  const chamGeo = new THREE.CylinderGeometry(0.0245,0.025,0.003,48);
+  const cham = new THREE.Mesh(chamGeo, new THREE.MeshStandardMaterial({color:0xffa040,metalness:.8,roughness:.2,emissive:0x441100,emissiveIntensity:.3}));
+  cham.rotation.z=Math.PI/2;
+  cham.position.x=-0.099;
+  cham.userData={dim:DIMS_TURNING[8], origMat:cham.material.clone()};
+  partGroup.add(cham);
+
+  // Center bore (hollow ends)
+  const boreGeo = new THREE.CylinderGeometry(0.003,0.003,0.008,16);
+  [-0.101,0.101].forEach(x=>{
+    const b=new THREE.Mesh(boreGeo, matDark.clone());
+    b.rotation.z=Math.PI/2; b.position.x=x;
+    partGroup.add(b);
+  });
+
+  scene.add(partGroup);
+}
+
+// ── Scan animation (played while scene is empty / analyzing) ──────────────────
+function startScanAnimation(){
+  if(scanGroup){scene.remove(scanGroup); scanGroup=null;}
+  scanGroup = new THREE.Group();
+
+  // Grid of scan points
+  const ptGeo = new THREE.BufferGeometry();
+  const positions=[];
+  for(let i=0;i<300;i++){
+    positions.push((Math.random()-.5)*.3, (Math.random()-.5)*.12, (Math.random()-.5)*.2);
+  }
+  ptGeo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  const pts=new THREE.Points(ptGeo,new THREE.PointsMaterial({color:0x00d4ff,size:0.003,transparent:true,opacity:.5}));
+  scanGroup.add(pts);
+
+  // Horizontal scan plane
+  const planeGeo = new THREE.PlaneGeometry(0.32,0.22);
+  scanPlane = new THREE.Mesh(planeGeo, new THREE.MeshBasicMaterial({color:0x00d4ff,transparent:true,opacity:.06,side:THREE.DoubleSide}));
+  scanPlane.rotation.x=Math.PI/2;
+  scanGroup.add(scanPlane);
+
+  // Scan plane edge line
+  const edgeGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-0.16,0,-0.11), new THREE.Vector3(0.16,0,-0.11),
+    new THREE.Vector3(0.16,0, 0.11), new THREE.Vector3(-0.16,0, 0.11),
+    new THREE.Vector3(-0.16,0,-0.11),
+  ]);
+  const edge=new THREE.Line(edgeGeo,new THREE.LineBasicMaterial({color:0x00d4ff,opacity:.8,transparent:true}));
+  scanGroup.add(edge);
+  // Store edge ref so we can move it with the plane
+  scanPlane.userData.edge=edge;
+
+  scene.add(scanGroup);
+  scanT=0; scanDir=1;
+  document.getElementById('scanFileName').textContent=currentFileName||'—';
+}
+
+function stopScanAnimation(){
+  if(scanGroup){scene.remove(scanGroup); scanGroup=null; scanPlane=null;}
+  document.getElementById('scanningInfo').style.display='none';
+  document.getElementById('cornerInfo').style.display='block';
+}
+
+// Update scan plane position in the render loop
+function tickScan(){
+  if(!scanPlane||!scanGroup) return;
+  scanT += scanDir * 0.008;
+  if(scanT>0.07){scanDir=-1;}
+  if(scanT<-0.07){scanDir=1;}
+  scanPlane.position.y=scanT;
+  scanPlane.userData.edge.position.y=scanT;
+  // Pulse opacity
+  scanPlane.material.opacity=0.04+0.05*Math.abs(Math.sin(Date.now()*0.003));
+}
+
 function checkHover(e){
   if(!raycaster||!partGroup) return;
   raycaster.setFromCamera(mouse, camera);
@@ -664,6 +943,7 @@ function checkHover(e){
 
 function animate(){
   animId = requestAnimationFrame(animate);
+  tickScan();
   renderer.render(scene,camera);
 }
 
@@ -817,9 +1097,10 @@ function setRPanel(p){
   });
 }
 
-function renderDimensions(){
+function renderDimensions(dims){
+  dims=dims||DIMS;
   const list=document.getElementById('dimensionList');
-  list.innerHTML=DIMS.map(d=>`
+  list.innerHTML=dims.map(d=>`
     <div class="dim-card" onclick="selectDim('${d.id}')">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
         <span style="font-size:16px;color:${d.color}">${d.icon}</span>
@@ -847,9 +1128,10 @@ function selectDim(id){
   event.currentTarget.classList.add('active');
 }
 
-function renderOperations(){
+function renderOperations(ops){
+  ops=ops||OPS;
   const list=document.getElementById('operationList');
-  list.innerHTML=OPS.map(op=>`
+  list.innerHTML=ops.map(op=>`
     <div class="op-card">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
         <span style="width:20px;height:20px;border-radius:50%;background:${op.color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">${op.seq}</span>
@@ -950,15 +1232,39 @@ function handleDrop(e){
   if(file) handleFile(file);
 }
 
+function clearScene(){
+  if(partGroup){
+    partGroup.children.forEach(c=>{
+      c.geometry?.dispose();
+      if(Array.isArray(c.material)) c.material.forEach(m=>m.dispose());
+      else c.material?.dispose();
+    });
+    scene.remove(partGroup);
+    partGroup=null;
+  }
+  hoveredObj=null;
+  document.getElementById('tooltip3d').style.display='none';
+  // Update corner info
+  document.getElementById('cornerInfo').style.display='none';
+  document.getElementById('scanningInfo').style.display='flex';
+}
+
 function handleFile(file){
   if(!file)return;
+  currentFileName=file.name;
   document.getElementById('projectName').textContent=file.name;
   document.getElementById('analysisFile').textContent=file.name+' ('+Math.round(file.size/1024)+' Ko)';
-  runAnalysisPipeline(file.name);
+  clearScene();
+  startScanAnimation();
+  runAnalysisPipeline(file.name, false);
 }
 
 function loadProject(name){
+  currentFileName=name;
   document.getElementById('projectName').textContent=name;
+  document.getElementById('analysisFile').textContent=name;
+  clearScene();
+  startScanAnimation();
   runAnalysisPipeline(name, true);
 }
 
@@ -993,8 +1299,14 @@ function runAnalysisPipeline(name, fast=false){
     if(i>=STEPS.length){
       setTimeout(()=>{
         document.getElementById('analysisOverlay').style.display='none';
+        stopScanAnimation();
         updateStatusBadge('complete');
-        loadDemo();
+        // Rebuild only the piece from the uploaded file
+        const fname = currentFileName || '';
+        const isTurning = partMode==='tournage';
+        if(isTurning){ buildTurningPart(); applyTurningData(); }
+        else          { buildPart();        applyMillingData(); }
+        updateCornerInfo();
       },300);
       return;
     }
@@ -1036,14 +1348,51 @@ function updateStatusBadge(status){
   }
 }
 
-function loadDemo(){
-  document.getElementById('projectName').textContent='Bride_Moteur_Demo.pdf';
-  updateStatusBadge('complete');
-  renderDimensions();
-  renderOperations();
+function applyMillingData(){
+  renderDimensions(DIMS);
+  renderOperations(OPS);
   renderMaterial();
   renderGcode(GCODE_FANUC);
   document.getElementById('dimCount').textContent=DIMS.length;
+}
+
+function applyTurningData(){
+  renderDimensions(DIMS_TURNING);
+  renderOperations(OPS_TURNING);
+  renderMaterial();
+  renderGcode(GCODE_TURNING);
+  document.getElementById('dimCount').textContent=DIMS_TURNING.length;
+}
+
+function updateCornerInfo(){
+  if(partMode==='tournage'){
+    document.getElementById('cornerLabel').textContent=currentFileName||'Arbre demo';
+    document.getElementById('cornerDims').textContent='Ø50×200 mm';
+  } else {
+    document.getElementById('cornerLabel').textContent=currentFileName||'Pièce de démonstration';
+    document.getElementById('cornerDims').textContent='120×80×40 mm';
+  }
+}
+
+function setPartMode(mode){
+  partMode=mode;
+  document.getElementById('btnFraiseuse').style.background= mode==='fraiseuse'?'var(--primary)':'var(--surface2)';
+  document.getElementById('btnFraiseuse').style.color=      mode==='fraiseuse'?'#fff':'var(--muted)';
+  document.getElementById('btnTournage').style.background=  mode==='tournage'?'var(--primary)':'var(--surface2)';
+  document.getElementById('btnTournage').style.color=       mode==='tournage'?'#fff':'var(--muted)';
+  if(mode==='tournage'){ buildTurningPart(); applyTurningData(); }
+  else                 { buildPart();        applyMillingData(); }
+  updateCornerInfo();
+}
+
+function loadDemo(){
+  currentFileName=null;
+  stopScanAnimation();
+  updateStatusBadge('complete');
+  if(partMode==='tournage'){ buildTurningPart(); applyTurningData(); }
+  else                     { buildPart();        applyMillingData(); }
+  updateCornerInfo();
+  document.getElementById('projectName').textContent=partMode==='tournage'?'Arbre_Demo.dxf':'Bride_Moteur_Demo.pdf';
 }
 
 function copyGcode(){
