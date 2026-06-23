@@ -1418,36 +1418,88 @@ function detectMaterial(src){
 
 function extractFeatures(text, filename){
   const src=(text+' '+(filename||'')).replace(/\r?\n/g,' ');
-  const f={diameters:[],lengths:[],threads:[],radii:[],chamfers:[],
-    material:detectMaterial(src),partType:'fraiseuse',raw:text.slice(0,3000)};
+  const f={
+    diameters:[],lengths:[],threads:[],radii:[],chamfers:[],
+    grooves:[],slots:[],tolerances:[],surfaceFinish:[],
+    tapers:[],counterbores:[],countersinks:[],holeCounts:[],
+    material:detectMaterial(src),partType:'fraiseuse',raw:text.slice(0,3000)
+  };
   let m;
   // Diameters: Ø / Phi / D notation
-  const reD=/[ØΦφ°⌀]\s*(\d{1,3}(?:[.,]\d{1,2})?)/g;
+  const reD=/[ØΦφ⌀]\s*(\d{1,3}(?:[.,]\d{1,2})?)/g;
   while((m=reD.exec(src))!==null){const v=parseFloat(m[1].replace(',','.'));if(v>=1&&v<=400)f.diameters.push(v);}
   const reD2=/\bD(\d{1,3})\b/g;
   while((m=reD2.exec(src))!==null){const v=parseInt(m[1]);if(v>=3&&v<=400)f.diameters.push(v);}
-  // Lengths with mm
+  // Lengths
   const reL=/(\d{1,4}(?:[.,]\d{1,2})?)\s*(?:mm|MM)/g;
   while((m=reL.exec(src))!==null){const v=parseFloat(m[1].replace(',','.'));if(v>=1&&v<=3000)f.lengths.push(v);}
-  // NxN or NxNxN patterns
   const reBox=/(\d{1,4})\s*[×xX]\s*(\d{1,4})(?:\s*[×xX]\s*(\d{1,4}))?/g;
   while((m=reBox.exec(src))!==null){[m[1],m[2],m[3]].filter(Boolean).forEach(v=>{const n=parseInt(v);if(n>=5&&n<=2000)f.lengths.push(n);});}
-  // Threads M×pitch
+  // Threads
   const reT=/\bM(\d{1,2})\s*[×xX]\s*(\d+(?:[.,]\d+)?)/gi;
   while((m=reT.exec(src))!==null)f.threads.push({d:parseInt(m[1]),pitch:parseFloat(m[2].replace(',','.'))});
-  // Bare M threads
   const reT2=/\bM(\d{1,2})\b(?![,\d])/g;
   while((m=reT2.exec(src))!==null){const d=parseInt(m[1]);if(d>=3&&d<=80&&!f.threads.find(t=>t.d===d))f.threads.push({d,pitch:d<=8?1.25:d<=16?2:2.5});}
-  // Radii
-  const reR=/\bR\s*(\d{1,3}(?:[.,]\d{1,2})?)/g;
+  // Radii / Congés
+  const reR=/\b(?:R|congé|rayon)\s*(\d{1,3}(?:[.,]\d{1,2})?)/gi;
   while((m=reR.exec(src))!==null){const v=parseFloat(m[1].replace(',','.'));if(v>=0.1&&v<=200)f.radii.push(v);}
-  // Chamfers
+  // Chamfers: NxN°, Nx45, C notation (C2, C0.5), keyword
   const reCh=/(\d+(?:[.,]\d+)?)\s*[×xX]\s*45/g;
   while((m=reCh.exec(src))!==null)f.chamfers.push(parseFloat(m[1].replace(',','.')));
+  const reChA=/(\d+(?:[.,]\d+)?)\s*[×xX]\s*(\d{2,3})\s*°/g;
+  while((m=reChA.exec(src))!==null){const v=parseFloat(m[1].replace(',','.'));const a=parseInt(m[2]);if(v>=0.2&&v<=20&&a>=30&&a<=89)f.chamfers.push(v);}
+  const reChC=/\bC\s*(\d+(?:[.,]\d)?)\b/g;
+  while((m=reChC.exec(src))!==null){const v=parseFloat(m[1].replace(',','.'));if(v>=0.2&&v<=25)f.chamfers.push(v);}
+  if(/chanfrein|chamfer/i.test(src)&&f.chamfers.length===0)f.chamfers.push(1);
+  // Gorges / Undercuts: "gorge 4x3", "gorge L=4 P=3"
+  const reGo=/(?:gorge|groove|dégagement|undercut)[^\d]{0,10}(\d+(?:[.,]\d+)?)\s*[×xX]\s*(\d+(?:[.,]\d+)?)/gi;
+  while((m=reGo.exec(src))!==null)f.grooves.push({width:parseFloat(m[1].replace(',','.')),depth:parseFloat(m[2].replace(',','.'))});
+  const reGoK=/(?:gorge|dégagement)\s+L\s*=\s*(\d+(?:[.,]\d+)?)[^\d]*(?:P|H|prof)\s*=\s*(\d+(?:[.,]\d+)?)/gi;
+  while((m=reGoK.exec(src))!==null)f.grooves.push({width:parseFloat(m[1].replace(',','.')),depth:parseFloat(m[2].replace(',','.'))});
+  // Rainures / Keyways: "rainure 8x4x40", "clavette 6x6"
+  const reKw=/(?:rainure|clavette|keyway|slot)[^\d]{0,10}(\d+(?:[.,]\d+)?)\s*[×xX]\s*(\d+(?:[.,]\d+)?)(?:\s*[×xX]\s*(\d+(?:[.,]\d+)?))?/gi;
+  while((m=reKw.exec(src))!==null)f.slots.push({width:parseFloat(m[1].replace(',','.')),depth:parseFloat(m[2].replace(',','.')),length:m[3]?parseFloat(m[3].replace(',','.')):null});
+  // ISO tolerance fits: H7, f6, g6, h6, js5, k6, n6, p6 …
+  const reIso=/\b([A-NP-Za-np-z][Ss]?\d)\b/g;
+  while((m=reIso.exec(src))!==null){const fit=m[1];if(!f.tolerances.includes(fit))f.tolerances.push(fit);}
+  // Plus/minus tolerances: +0.02/-0.01
+  const reTol=/[+−\-]\s*(\d+(?:[.,]\d+)?)\s*\/\s*[+−\-]\s*(\d+(?:[.,]\d+)?)/g;
+  while((m=reTol.exec(src))!==null){const t=`+${m[1]}/${m[2]}`;if(!f.tolerances.includes(t))f.tolerances.push(t);}
+  // Surface finish Ra / Rz / N-class
+  const reRa=/\b(Ra|Rz)\s*(\d+(?:[.,]\d+)?)/gi;
+  while((m=reRa.exec(src))!==null){const v=parseFloat(m[2].replace(',','.'));if(v>=0.025&&v<=50)f.surfaceFinish.push({type:m[1].toUpperCase(),value:v});}
+  const reNcl=/\bN([4-9]|1[0-2])\b/g;
+  while((m=reNcl.exec(src))!==null){const ra=[0.05,0.1,0.2,0.4,0.8,1.6,3.2,6.3,12.5,25,50][parseInt(m[1])-2];if(ra&&!f.surfaceFinish.find(s=>s.value===ra))f.surfaceFinish.push({type:'Ra',value:ra});}
+  // Tapers / Cônes: "1:20", "cône 1:10", "Morse 3", "CM2", "MK4"
+  const reTap=/(?:1\s*[:/]\s*(\d{1,3}))/g;
+  while((m=reTap.exec(src))!==null)f.tapers.push({ratio:parseInt(m[1]),type:'conique'});
+  const reMorse=/(?:morse|CM|Mk)\s*([1-6])\b/gi;
+  while((m=reMorse.exec(src))!==null)f.tapers.push({morse:parseInt(m[1]),type:'morse',ratio:[19.212,20.047,20.020,19.992,19.254,19.002][parseInt(m[1])-1]||20});
+  // Counterbores / Lamages: "lamage Ø25 prof 8", "lamage 25x8"
+  const reCB=/(?:lamage|fraisure\s+plate|counterbore)[^\d]{0,12}[ØΦ]?\s*(\d{1,3}(?:[.,]\d+)?)[^\d]{0,6}(\d{1,3}(?:[.,]\d+)?)/gi;
+  while((m=reCB.exec(src))!==null)f.counterbores.push({d:parseFloat(m[1].replace(',','.')),depth:parseFloat(m[2].replace(',','.'))});
+  // Countersinks / Fraisures: "fraisure Ø10 90°", "CSK Ø8"
+  const reCS=/(?:fraisure|fraisurage|countersink|CSK)[^\d]{0,10}[ØΦ]?\s*(\d{1,3}(?:[.,]\d+)?)/gi;
+  while((m=reCS.exec(src))!==null){const d=parseFloat(m[1].replace(',','.'));if(!f.counterbores.find(c=>c.d===d))f.countersinks.push({d,angle:90});}
+  // Multiple holes: "4× Ø8", "6 trous Ø5", "4x Ø12"
+  const reHC=/(\d+)\s*[×x]\s*[ØΦ]?\s*(\d{1,3}(?:[.,]\d{1,2})?)/g;
+  while((m=reHC.exec(src))!==null){const cnt=parseInt(m[1]),d=parseFloat(m[2].replace(',','.'));if(cnt>=2&&cnt<=24&&d>=1&&d<=100)f.holeCounts.push({count:cnt,d});}
+  const reHC2=/(\d+)\s+(?:trous|perçages|holes)[^\d]{0,8}[ØΦ]?\s*(\d{1,3}(?:[.,]\d{1,2})?)/gi;
+  while((m=reHC2.exec(src))!==null){const cnt=parseInt(m[1]),d=parseFloat(m[2].replace(',','.'));if(cnt>=2&&cnt<=24&&d>=1&&d<=100&&!f.holeCounts.find(h=>h.d===d))f.holeCounts.push({count:cnt,d});}
   // De-dup
   f.diameters=[...new Set(f.diameters.map(v=>Math.round(v*10)/10))].sort((a,b)=>b-a).slice(0,5);
   f.lengths=[...new Set(f.lengths.map(v=>Math.round(v*10)/10))].sort((a,b)=>b-a).slice(0,6);
   f.threads=f.threads.filter((t,i,a)=>a.findIndex(x=>x.d===t.d)===i).slice(0,3);
+  f.chamfers=[...new Set(f.chamfers.map(v=>Math.round(v*10)/10))].slice(0,4);
+  f.radii=[...new Set(f.radii.map(v=>Math.round(v*10)/10))].slice(0,4);
+  f.grooves=f.grooves.filter((g,i,a)=>a.findIndex(x=>x.width===g.width&&x.depth===g.depth)===i).slice(0,3);
+  f.slots=f.slots.slice(0,2);
+  f.tolerances=f.tolerances.filter((t,i,a)=>a.indexOf(t)===i).slice(0,6);
+  f.surfaceFinish=f.surfaceFinish.filter((s,i,a)=>a.findIndex(x=>x.value===s.value&&x.type===s.type)===i).sort((a,b)=>a.value-b.value).slice(0,4);
+  f.tapers=f.tapers.filter((t,i,a)=>a.findIndex(x=>x.ratio===t.ratio&&x.morse===t.morse)===i).slice(0,2);
+  f.counterbores=f.counterbores.slice(0,3);
+  f.countersinks=f.countersinks.slice(0,3);
+  f.holeCounts=f.holeCounts.filter((h,i,a)=>a.findIndex(x=>x.d===h.d)===i).slice(0,3);
   // Part type detection
   const isTurning=/arbre|shaft|axe|tournage|chariotage|lathe|turning|broche|pivot/i.test(src)||f.diameters.length>=2||/\btour\b/i.test(filename||'');
   const isMilling=/fraisage|milling|poche|pocket|bride|carter|boitier/i.test(src);
@@ -1612,10 +1664,41 @@ function generateGCodeFromFeatures(f){
         `${n()} G76 P020060 Q100 R0.050`,
         `${n()} G76 X${minD} Z-${(L*0.28).toFixed(3)} P${Math.round(th.pitch*1.3*500)} Q350 F${th.pitch.toFixed(3)}`,
         `${n()} G00 X100.000 Z100.000 M09`,'');}
-    lines.push('(--- CHANFREIN ENTREE ---)',`${n()} T0202`,`${n()} G96 S${Math.round(vc*1.2)} M03`,
+    // Gorge avec dimensions réelles si détectées
+    if(f.grooves&&f.grooves.length>1){
+      f.grooves.slice(1).forEach(gr=>{
+        lines.push(`(--- GORGE ${gr.width}x${gr.depth} ---)`,`${n()} T0303`,
+          `${n()} G97 S${Math.round(800*D1/D2)} M03`,
+          `${n()} G00 X${(D1+3).toFixed(3)} Z-${(L*0.40).toFixed(3)} M08`,
+          `${n()} G01 X${(D2-gr.depth*2).toFixed(3)} F0.05`,`${n()} G04 X0.500`,
+          `${n()} G01 X${(D1+3).toFixed(3)} F0.15`,`${n()} G00 Z100.000 M09`,'');});
+    }
+    // Cône / Taper si détecté
+    if(f.tapers&&f.tapers.length>0){
+      const tp=f.tapers[0];
+      const ratio=tp.ratio||20;
+      const dX=(L*.25/ratio*2).toFixed(3);
+      lines.push(`(--- CÔNE 1:${ratio} ---)`,`${n()} T0202 (PLAQUETTE FINITION)`,
+        `${n()} G96 S${Math.round(vc*1.1)} M03`,
+        `${n()} G00 X${(D1+2).toFixed(3)} Z2.000 M08`,
+        `${n()} G01 X${D1.toFixed(3)} Z0.000 F0.10`,
+        `${n()} G01 X${(D1-parseFloat(dX)).toFixed(3)} Z-${(L*.25).toFixed(3)} F0.12 (CONIQUE 1:${ratio})`,
+        `${n()} G00 Z100.000 M09`,'');
+    }
+    // Rainure de clavette si détectée
+    if(f.slots&&f.slots.length>0){
+      const sl=f.slots[0];
+      lines.push(`(--- RAINURE CLAVETTE ${sl.width}x${sl.depth} ---)`,
+        `(OPERATION TRANSFERT FRAISAGE)`,
+        `${n()} (FRAISE 2T Ø${sl.width} - N=${Math.round(vc*1000/Math.PI/sl.width)} tr/min)`,
+        `${n()} (PROFONDEUR: -${sl.depth}mm  LONGUEUR: ${sl.length||Math.round(D1*.8)}mm)`,'');
+    }
+    // Chanfrein
+    const ch0=f.chamfers&&f.chamfers[0]||1.5;
+    lines.push(`(--- CHANFREIN ENTREE ${ch0}x45 ---)`,`${n()} T0202`,`${n()} G96 S${Math.round(vc*1.2)} M03`,
       `${n()} G00 X${(D1+2).toFixed(3)} Z2.000 M08`,
       `${n()} G01 X${D1.toFixed(3)} Z0.000 F0.08`,
-      `${n()} G01 X${(D1-3).toFixed(3)} Z-1.500 (CHANFREIN 1.5x45)`,
+      `${n()} G01 X${(D1-ch0*2).toFixed(3)} Z-${ch0.toFixed(3)} (CHANFREIN ${ch0}x45)`,
       `${n()} G00 Z100.000 M09`,'',
       '(--- FIN PROGRAMME ---)',`${n()} G28 U0.`,`${n()} G28 W0.`,`${n()} M30`,'%');
     return lines.join('\n');
@@ -1676,8 +1759,41 @@ function generateGCodeFromFeatures(f){
     `${n()} G01 X0.000 Y0.000 F${fc}`,`${n()} G01 X${L.toFixed(3)}`,
     `${n()} G01 Y${W.toFixed(3)}`,`${n()} G01 X0.000`,`${n()} G01 Y0.000`,`${n()} G40`,
     `${n()} G00 Z100.000`,`${n()} M09 M05`,'');
+  // Lamage (counterbore) cycles
+  (f.counterbores||[]).forEach((cb,ci)=>{
+    const tNum=6+ci,scb=Math.round(vc*1000/Math.PI/cb.d),fcb=Math.round(scb*.12);
+    lines.push(`(--- LAMAGE Ø${cb.d} PROF ${cb.depth} ---)`,
+      `${n()} T0${tNum} M06   (FRAISE A LAMER Ø${cb.d})`,`${n()} G43 H0${tNum}`,
+      `${n()} G54 S${scb} M03`,`${n()} M08`,
+      `${n()} G00 X${hx1} Y${hy1}`,`${n()} Z2.000`,
+      `${n()} G82 Z-${cb.depth.toFixed(3)} R2.000 P300 F${fcb} (LAMAGE AVEC TEMPORISATION)`,
+      `${n()} X${hx2} Y${hy1}`,`${n()} X${hx1} Y${hy2}`,`${n()} X${hx2} Y${hy2}`,
+      `${n()} G80`,`${n()} G00 Z100.000`,`${n()} M09 M05`,'');});
+  // Fraisure (countersink) cycles
+  (f.countersinks||[]).forEach((cs,ci)=>{
+    const tNum=8+ci,scs=Math.round(vc*700/Math.PI/cs.d),fcs=Math.round(scs*.1);
+    const csdepth=(cs.d/2/Math.tan((cs.angle/2)*Math.PI/180)).toFixed(3);
+    lines.push(`(--- FRAISURE Ø${cs.d} ${cs.angle}DEG ---)`,
+      `${n()} T0${tNum} M06   (FRAISE CONIQUE ${cs.angle}DEG Ø${cs.d})`,`${n()} G43 H0${tNum}`,
+      `${n()} G54 S${scs} M03`,`${n()} M08`,
+      `${n()} G00 X${hx1} Y${hy1}`,`${n()} Z2.000`,
+      `${n()} G82 Z-${csdepth} R2.000 P200 F${fcs} (FRAISURE ${cs.angle}DEG)`,
+      `${n()} X${hx2} Y${hy1}`,`${n()} X${hx1} Y${hy2}`,`${n()} X${hx2} Y${hy2}`,
+      `${n()} G80`,`${n()} G00 Z100.000`,`${n()} M09 M05`,'');});
+  // Rainure / Keyway slot
+  (f.slots||[]).forEach((sl,si)=>{
+    const tNum=10+si,ssl=Math.round(vc*1000/Math.PI/sl.width),fsl=Math.round(ssl*.15);
+    const slLen=sl.length||(L*.6);
+    lines.push(`(--- RAINURE CLAVETTE ${sl.width}x${sl.depth} ---)`,
+      `${n()} T${tNum} M06   (FRAISE 2T Ø${sl.width})`,`${n()} G43 H${tNum}`,
+      `${n()} G54 S${ssl} M03`,`${n()} M08`,
+      `${n()} G00 X${(L*.2).toFixed(3)} Y${(W/2).toFixed(3)}`,`${n()} Z2.000`,
+      `${n()} G01 Z0.000 F500`,
+      `${n()} G01 Z-${sl.depth.toFixed(3)} F${Math.round(fsl*.3)} (PLONGEE)`,
+      `${n()} G01 X${(L*.2+slLen*.8).toFixed(3)} F${fsl} (AVANCE RAINURE)`,
+      `${n()} G00 Z100.000`,`${n()} M09 M05`,'');});
   if(th){
-    lines.push(`(--- OP 6: TARAUDAGE M${th.d}×${th.pitch} ---)`,
+    lines.push(`(--- TARAUDAGE M${th.d}x${th.pitch} ---)`,
       `${n()} T06 M06   (TARAUD M${th.d})`,`${n()} G43 H06`,
       `${n()} G54 S300 M03`,`${n()} M08`,
       `${n()} G00 X${(L/2).toFixed(3)} Y${(W/2).toFixed(3)}`,`${n()} Z5.000`,
@@ -1690,49 +1806,78 @@ function generateGCodeFromFeatures(f){
 // ── Convert features → dim/op arrays ──────────────────────────────────────────
 function featuresToDims(f){
   const dims=[];let id=1;
+  const g=f.grooves||[],sl=f.slots||[],sf=f.surfaceFinish||[],tp=f.tapers||[];
+  const cb=f.counterbores||[],cs=f.countersinks||[],hc=f.holeCounts||[];
   if(f.partType==='tournage'){
-    f.diameters.slice(0,5).forEach((d,i)=>dims.push({id:`d${id++}`,type:'diameter',label:`Ø${d} Section ${i+1}`,value:d,unit:'mm',tol:i===0?'-0.025/-0.050':'±0.020',isoCode:i===0?'f7':'h6',conf:97-i*2,color:'#22d3ee',icon:'⊙'}));
+    f.diameters.slice(0,5).forEach((d,i)=>{
+      const iso=f.tolerances.find(t=>/^[fghjk]\d$/.test(t))||( i===0?'f7':'h6');
+      dims.push({id:`d${id++}`,type:'diameter',label:`Ø${d} Section ${i+1}`,value:d,unit:'mm',tol:i===0?'-0.025/-0.050':'±0.020',isoCode:iso,conf:97-i*2,color:'#22d3ee',icon:'⊙'});
+    });
     if(f.lengths[0]) dims.push({id:`d${id++}`,type:'length',label:'Longueur totale',value:f.lengths[0],unit:'mm',tol:'±0.10',isoCode:'',conf:97,color:'#60a5fa',icon:'↔'});
     f.threads.forEach(t=>dims.push({id:`d${id++}`,type:'thread',label:`Filetage M${t.d}×${t.pitch}`,value:t.d,unit:'mm',tol:'6g',isoCode:'6g',conf:91,color:'#4ade80',icon:'⌻'}));
-    if(f.radii[0]) dims.push({id:`d${id++}`,type:'radius',label:`Congé R${f.radii[0]}`,value:f.radii[0],unit:'mm',tol:'±0.20',isoCode:'',conf:87,color:'#a78bfa',icon:'R'});
     if(f.chamfers[0]) dims.push({id:`d${id++}`,type:'chamfer',label:`Chanfrein ${f.chamfers[0]}×45°`,value:f.chamfers[0],unit:'mm',tol:'±0.20',isoCode:'',conf:89,color:'#fb923c',icon:'◸'});
+    if(f.chamfers[1]) dims.push({id:`d${id++}`,type:'chamfer',label:`Chanfrein ${f.chamfers[1]}×45°`,value:f.chamfers[1],unit:'mm',tol:'±0.20',isoCode:'',conf:87,color:'#fb923c',icon:'◸'});
+    if(f.radii[0]) dims.push({id:`d${id++}`,type:'radius',label:`Congé R${f.radii[0]}`,value:f.radii[0],unit:'mm',tol:'±0.20',isoCode:'',conf:87,color:'#a78bfa',icon:'R'});
+    g.forEach(gr=>dims.push({id:`d${id++}`,type:'groove',label:`Gorge ${gr.width}×${gr.depth}`,value:gr.width,unit:'mm',tol:'±0.05',isoCode:'',conf:90,color:'#f59e0b',icon:'⊠'}));
+    sl.forEach(s=>dims.push({id:`d${id++}`,type:'slot',label:`Clavette ${s.width}×${s.depth}${s.length?'×'+s.length:''}`,value:s.width,unit:'mm',tol:'P9',isoCode:'P9',conf:88,color:'#e879f9',icon:'▭'}));
+    tp.forEach(t=>dims.push({id:`d${id++}`,type:'taper',label:t.type==='morse'?`Cône Morse CM${t.morse}`:`Cône 1:${t.ratio}`,value:t.morse||t.ratio,unit:'',tol:'AT4',isoCode:'',conf:86,color:'#f97316',icon:'▷'}));
+    sf.forEach(s=>dims.push({id:`d${id++}`,type:'surface',label:`${s.type} ${s.value}`,value:s.value,unit:'µm',tol:'',isoCode:'',conf:85,color:'#94a3b8',icon:'√'}));
   } else {
     const ls=f.lengths.filter(v=>!f.diameters.includes(v));
     if(ls[0]) dims.push({id:`d${id++}`,type:'length',label:'Longueur',value:ls[0],unit:'mm',tol:'±0.10',isoCode:'',conf:97,color:'#60a5fa',icon:'↔'});
     if(ls[1]) dims.push({id:`d${id++}`,type:'width',label:'Largeur',value:ls[1],unit:'mm',tol:'±0.10',isoCode:'',conf:96,color:'#60a5fa',icon:'↕'});
     if(ls[2]) dims.push({id:`d${id++}`,type:'height',label:'Hauteur',value:ls[2],unit:'mm',tol:'±0.05',isoCode:'',conf:98,color:'#60a5fa',icon:'↨'});
-    f.diameters.slice(0,4).forEach(d=>dims.push({id:`d${id++}`,type:'diameter',label:`Alésage Ø${d} H7`,value:d,unit:'mm',tol:'+0.018/0',isoCode:'H7',conf:94,color:'#22d3ee',icon:'⊙'}));
-    f.threads.forEach(t=>dims.push({id:`d${id++}`,type:'thread',label:`Filetage M${t.d}`,value:t.d,unit:'mm',tol:'6H',isoCode:'6H',conf:90,color:'#4ade80',icon:'⌻'}));
-    if(f.radii[0]) dims.push({id:`d${id++}`,type:'radius',label:`Rayon R${f.radii[0]}`,value:f.radii[0],unit:'mm',tol:'±0.20',isoCode:'',conf:85,color:'#a78bfa',icon:'R'});
+    f.diameters.slice(0,4).forEach(d=>{
+      const iso=f.tolerances.find(t=>/^[HJ]\d$/.test(t))||'H7';
+      dims.push({id:`d${id++}`,type:'diameter',label:`Alésage Ø${d} ${iso}`,value:d,unit:'mm',tol:'+0.018/0',isoCode:iso,conf:94,color:'#22d3ee',icon:'⊙'});
+    });
+    hc.forEach(h=>dims.push({id:`d${id++}`,type:'holecount',label:`${h.count}× Perçage Ø${h.d}`,value:h.d,unit:'mm',tol:'±0.10',isoCode:'',conf:92,color:'#22d3ee',icon:'⊕'}));
+    f.threads.forEach(t=>dims.push({id:`d${id++}`,type:'thread',label:`Taraudage M${t.d}`,value:t.d,unit:'mm',tol:'6H',isoCode:'6H',conf:90,color:'#4ade80',icon:'⌻'}));
     if(f.chamfers[0]) dims.push({id:`d${id++}`,type:'chamfer',label:`Chanfrein ${f.chamfers[0]}×45°`,value:f.chamfers[0],unit:'mm',tol:'±0.20',isoCode:'',conf:88,color:'#fb923c',icon:'◸'});
+    if(f.chamfers[1]) dims.push({id:`d${id++}`,type:'chamfer',label:`Chanfrein ${f.chamfers[1]}×45°`,value:f.chamfers[1],unit:'mm',tol:'±0.20',isoCode:'',conf:86,color:'#fb923c',icon:'◸'});
+    if(f.radii[0]) dims.push({id:`d${id++}`,type:'radius',label:`Congé R${f.radii[0]}`,value:f.radii[0],unit:'mm',tol:'±0.20',isoCode:'',conf:85,color:'#a78bfa',icon:'R'});
+    sl.forEach(s=>dims.push({id:`d${id++}`,type:'slot',label:`Rainure ${s.width}×${s.depth}${s.length?'×'+s.length:''}`,value:s.width,unit:'mm',tol:'H9',isoCode:'H9',conf:88,color:'#e879f9',icon:'▭'}));
+    cb.forEach(c=>dims.push({id:`d${id++}`,type:'counterbore',label:`Lamage Ø${c.d} prof.${c.depth}`,value:c.d,unit:'mm',tol:'±0.10',isoCode:'',conf:87,color:'#f59e0b',icon:'⊡'}));
+    cs.forEach(c=>dims.push({id:`d${id++}`,type:'countersink',label:`Fraisure Ø${c.d} ${c.angle}°`,value:c.d,unit:'mm',tol:'±0.20',isoCode:'',conf:86,color:'#f97316',icon:'⌵'}));
+    sf.forEach(s=>dims.push({id:`d${id++}`,type:'surface',label:`${s.type} ${s.value}`,value:s.value,unit:'µm',tol:'',isoCode:'',conf:85,color:'#94a3b8',icon:'√'}));
   }
   return dims.length>0?dims:(f.partType==='tournage'?DIMS_TURNING:DIMS);
 }
 
 function featuresToOps(f){
   const vc=f.material.includes('Inox')?120:f.material.includes('Alum')?300:f.material.includes('Titan')?80:180;
+  const g=f.grooves||[],sl=f.slots||[],tp=f.tapers||[];
+  const cb=f.counterbores||[],cs=f.countersinks||[],hc=f.holeCounts||[];
   if(f.partType==='tournage'){
     const D1=f.diameters[0]||50,D2=f.diameters[1]||35;
     const ops=[
       {id:'op1',seq:1,type:'Dressage',label:'Dressage face',tool:'Plaquette CNMG 120408',spindle:Math.round(vc*1000/Math.PI/D1),feed:200,depth:0.5,time:'0:20',conf:98,color:'#0066ff'},
       {id:'op2',seq:2,type:'Ébauche',label:`Chariotage ébauche Ø${D1}`,tool:'Plaquette DCMT 11T304',spindle:Math.round(vc*1000/Math.PI/D1),feed:300,depth:3.0,time:'1:30',conf:96,color:'#00d4ff'},
     ];
-    if(D2<D1-2) ops.push({id:'op3',seq:3,type:'Épaulement',label:`Chariotage Ø${D2}`,tool:'Plaquette DCMT 11T304',spindle:Math.round(vc*1000/Math.PI/D2),feed:250,depth:2.0,time:'1:00',conf:94,color:'#22d3ee'});
+    if(D2<D1-2) ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Épaulement',label:`Chariotage Ø${D2}`,tool:'Plaquette DCMT 11T304',spindle:Math.round(vc*1000/Math.PI/D2),feed:250,depth:2.0,time:'1:00',conf:94,color:'#22d3ee'});
+    if(f.diameters[2]&&f.diameters[2]<D2-2) ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Épaulement',label:`Chariotage Ø${f.diameters[2]}`,tool:'Plaquette DCMT 11T304',spindle:Math.round(vc*1000/Math.PI/f.diameters[2]),feed:220,depth:2.0,time:'0:45',conf:92,color:'#22d3ee'});
+    tp.forEach(t=>ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Cône',label:t.type==='morse'?`Tournage cône Morse CM${t.morse}`:`Tournage conique 1:${t.ratio}`,tool:'Plaquette DCMT 11T304',spindle:Math.round(vc*1000/Math.PI/D1),feed:150,depth:1.5,time:'0:45',conf:88,color:'#f97316'}));
     ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Finition',label:'Finition diamètres',tool:'Plaquette VCGT 110304',spindle:Math.round(vc*1.2*1000/Math.PI/D1),feed:70,depth:0.3,time:'0:55',conf:95,color:'#818cf8'});
-    if(f.threads.length){
-      ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Gorge',label:'Gorge extérieure',tool:'Plaquette gorge L=4mm',spindle:600,feed:50,depth:4,time:'0:30',conf:90,color:'#fb923c'});
-      ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Filetage',label:`Filetage M${f.threads[0].d}×${f.threads[0].pitch}`,tool:'Plaquette filetage 60°',spindle:Math.round(500*25/f.threads[0].d),feed:f.threads[0].pitch*500,depth:0.3,time:'0:45',conf:91,color:'#4ade80'});}
+    if(g.length) g.forEach(gr=>ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Gorge',label:`Gorge ${gr.width}×${gr.depth}`,tool:`Plaquette gorge L=${gr.width}mm`,spindle:600,feed:50,depth:gr.depth,time:'0:30',conf:90,color:'#fb923c'}));
+    else if(f.threads.length) ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Gorge',label:'Gorge de dégagement',tool:'Plaquette gorge L=4mm',spindle:600,feed:50,depth:4,time:'0:25',conf:88,color:'#fb923c'});
+    if(sl.length) sl.forEach(s=>ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Rainure',label:`Rainure clavette ${s.width}×${s.depth}`,tool:`Fraise 2T Ø${s.width}`,spindle:Math.round(vc*1000/Math.PI/s.width),feed:80,depth:s.depth,time:'0:40',conf:88,color:'#e879f9'}));
+    if(f.threads.length) ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Filetage',label:`Filetage M${f.threads[0].d}×${f.threads[0].pitch}`,tool:'Plaquette filetage 60°',spindle:Math.round(500*25/f.threads[0].d),feed:f.threads[0].pitch*500,depth:0.3,time:'0:45',conf:91,color:'#4ade80'});
     return ops;
   }
-  const L=f.lengths[0]||120,W=f.lengths[1]||80,H=f.lengths[2]||40,d1=f.diameters[0]||12;
+  const L=f.lengths[0]||120,W=f.lengths[1]||80,H=f.lengths[2]||40;
+  const d1=hc[0]?hc[0].d:f.diameters[0]||12;
+  const hCount=hc[0]?hc[0].count:4;
   const ops=[
     {id:'op1',seq:1,type:'Surfaçage',label:'Surfaçage face supérieure',tool:'Fraise à plaquettes Ø63',spindle:Math.round(vc*1000/Math.PI/63),feed:Math.round(vc*1000/Math.PI/63*.3),depth:1.5,time:'0:45',conf:97,color:'#0066ff'},
-    {id:'op2',seq:2,type:'Perçage',label:`Perçage Ø${(d1-.2).toFixed(1)}`,tool:`Foret carbure Ø${(d1-.2).toFixed(1)}`,spindle:Math.round(vc*1000/Math.PI/d1),feed:Math.round(vc*1000/Math.PI/d1*.08),depth:H,time:'1:00',conf:95,color:'#22d3ee'},
+    {id:'op2',seq:2,type:'Perçage',label:`${hCount}× Perçage Ø${(d1-.2).toFixed(1)}`,tool:`Foret carbure Ø${(d1-.2).toFixed(1)}`,spindle:Math.round(vc*1000/Math.PI/d1),feed:Math.round(vc*1000/Math.PI/d1*.08),depth:H,time:'1:00',conf:95,color:'#22d3ee'},
     {id:'op3',seq:3,type:'Alésage',label:`Alésage Ø${d1} H7`,tool:`Alésoir Ø${d1} H7`,spindle:Math.round(vc*800/Math.PI/d1),feed:Math.round(vc*800/Math.PI/d1*.04),depth:H,time:'2:00',conf:94,color:'#818cf8'},
     {id:'op4',seq:4,type:'Poche',label:'Fraisage poche centrale',tool:'Fraise carbure Ø16 4T',spindle:Math.round(vc*1000/Math.PI/16),feed:Math.round(vc*1000/Math.PI/16*.4),depth:H*.4,time:'2:30',conf:92,color:'#a78bfa'},
     {id:'op5',seq:5,type:'Contour',label:'Contournage extérieur',tool:'Fraise carbure Ø20 4T',spindle:Math.round(vc*1000/Math.PI/20),feed:Math.round(vc*1000/Math.PI/20*.4),depth:H,time:'3:30',conf:96,color:'#4ade80'},
   ];
-  if(f.threads.length) ops.push({id:'op6',seq:6,type:'Taraudage',label:`Taraudage M${f.threads[0].d}`,tool:`Taraud M${f.threads[0].d}`,spindle:300,feed:300*f.threads[0].pitch,depth:H*.8,time:'0:30',conf:89,color:'#fb923c'});
+  cb.forEach(c=>ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Lamage',label:`Lamage Ø${c.d} prof.${c.depth}`,tool:`Fraise à lamer Ø${c.d}`,spindle:Math.round(vc*1000/Math.PI/c.d),feed:Math.round(vc*1000/Math.PI/c.d*.12),depth:c.depth,time:'0:30',conf:90,color:'#f59e0b'}));
+  cs.forEach(c=>ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Fraisure',label:`Fraisure Ø${c.d} ${c.angle}°`,tool:`Fraise conique ${c.angle}° Ø${c.d}`,spindle:Math.round(vc*800/Math.PI/c.d),feed:Math.round(vc*800/Math.PI/c.d*.1),depth:c.d/2,time:'0:20',conf:88,color:'#f97316'}));
+  sl.forEach(s=>ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Rainure',label:`Rainure ${s.width}×${s.depth}${s.length?'×'+s.length:''}`,tool:`Fraise 2T Ø${s.width}`,spindle:Math.round(vc*1000/Math.PI/s.width),feed:Math.round(vc*1000/Math.PI/s.width*.15),depth:s.depth,time:'0:45',conf:89,color:'#e879f9'}));
+  if(f.threads.length) ops.push({id:`op${ops.length+1}`,seq:ops.length+1,type:'Taraudage',label:`Taraudage M${f.threads[0].d}`,tool:`Taraud M${f.threads[0].d}`,spindle:300,feed:300*f.threads[0].pitch,depth:H*.8,time:'0:30',conf:89,color:'#34d399'});
   return ops;
 }
 
@@ -1771,9 +1916,12 @@ const MACHINES={
   'Surfaçage':'Centre fraisage 3 axes','Perçage':'Centre fraisage 3 axes',
   'Alésage':'Centre fraisage 3 axes','Poche':'Centre fraisage 3 axes',
   'Contour':'Centre fraisage 3 axes','Taraudage':'Centre fraisage 3 axes',
+  'Lamage':'Centre fraisage 3 axes','Fraisure':'Centre fraisage 3 axes',
+  'Rainure':'Centre fraisage 3 axes',
   'Dressage':'Tour CNC 2 axes','Ébauche':'Tour CNC 2 axes','Chariotage':'Tour CNC 2 axes',
   'Épaulement':'Tour CNC 2 axes','Finition':'Tour CNC 2 axes',
   'Gorge':'Tour CNC 2 axes','Filetage':'Tour CNC 2 axes',
+  'Cône':'Tour CNC 2 axes',
 };
 
 function renderGamme(){
@@ -1848,7 +1996,9 @@ function gcodeSnippet(lines, op, idx){
     'Surfaçage':/SURFAC/i,'Perçage':/PERC/i,'Alésage':/ALES/i,'Poche':/POCHE/i,
     'Contour':/CONTOURN/i,'Taraudage':/TARAUD/i,'Dressage':/DRESS/i,
     'Ébauche':/EBAUCH/i,'Chariotage':/CHARIOT/i,'Épaulement':/EPAUL/i,
-    'Gorge':/GORGE/i,'Filetage':/FILET/i,'Finition':/FINIT/i
+    'Gorge':/GORGE/i,'Filetage':/FILET/i,'Finition':/FINIT/i,
+    'Lamage':/LAMAGE/i,'Fraisure':/FRAISURE/i,'Rainure':/RAINURE|CLAVETTE/i,
+    'Cône':/CONE|CONIQ/i
   };
   const re=kw[op.type];
   const si=re?lines.findIndex(l=>re.test(l)):-1;
@@ -1985,6 +2135,61 @@ function drawMillingOp(ctx,W,H,op,f){
       ctx.fillStyle='rgba(80,220,80,.2)';
       ctx.beginPath(); ctx.arc(thx,thy,tr,0,Math.PI*2); ctx.fill();
       break;}
+    case 'Lamage':{
+      // Counterbore: outer large circle (red) + pilot hole (dark)
+      const hpos=[[.3,.3],[.7,.3],[.3,.7],[.7,.7]];
+      const od=(ds[0]||16)/2000*sc, id2=(ds[0]||16)*0.55/2000*sc;
+      hpos.slice(0,2).forEach(([fx,fy])=>{
+        const hx=ox+fx*L*sc,hy=oy+fy*Wi*sc;
+        ctx.fillStyle='rgba(245,158,11,.25)';
+        ctx.beginPath(); ctx.arc(hx,hy,od,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle='rgba(245,158,11,.9)'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.arc(hx,hy,od,0,Math.PI*2); ctx.stroke();
+        ctx.strokeStyle='rgba(245,158,11,.4)'; ctx.lineWidth=1;
+        ctx.setLineDash([2,2]);
+        ctx.beginPath(); ctx.arc(hx,hy,id2,0,Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]);
+        // Depth arrow
+        ctx.strokeStyle='rgba(255,180,40,.7)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(hx+od+3,hy); ctx.lineTo(hx+od+8,hy); ctx.stroke();
+        drawArrow(ctx,hx+od+8,hy,1,0,'rgba(255,180,40,.7)');
+      });
+      break;}
+    case 'Fraisure':{
+      // Countersink: V-shape cross-section view
+      const hpos2=[[.35,.5],[.65,.5]];
+      const od2=(ds[0]||10)/2000*sc;
+      hpos2.forEach(([fx,fy])=>{
+        const hx=ox+fx*L*sc,hy=oy+fy*Wi*sc;
+        ctx.fillStyle='rgba(249,115,22,.22)';
+        ctx.beginPath(); ctx.arc(hx,hy,od2,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle='rgba(249,115,22,.9)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.arc(hx,hy,od2,0,Math.PI*2); ctx.stroke();
+        // V-shape indicator
+        ctx.strokeStyle='rgba(255,140,50,.6)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(hx-od2,hy-od2*.3); ctx.lineTo(hx,hy+od2*.6); ctx.lineTo(hx+od2,hy-od2*.3); ctx.stroke();
+        ctx.strokeStyle='rgba(255,200,80,.5)'; ctx.lineWidth=.8; ctx.setLineDash([1,2]);
+        ctx.beginPath(); ctx.moveTo(hx,hy-od2*.3); ctx.lineTo(hx,hy+od2*.6); ctx.stroke();
+        ctx.setLineDash([]);
+      });
+      break;}
+    case 'Rainure':{
+      // Keyway / slot: rectangular groove in side view
+      const sw=(f.slots&&f.slots[0]?f.slots[0].width:8)/1000*sc*4;
+      const sh=(f.slots&&f.slots[0]?f.slots[0].depth:4)/1000*sc*4;
+      const sl2=L*sc*.55, sx=ox+L*sc*.22, sy=oy;
+      // Slot footprint on top face
+      ctx.fillStyle='rgba(232,121,249,.3)';
+      ctx.fillRect(sx,oy,sl2,(Wi*sc<sh*3?Wi*sc*.2:sh*3));
+      ctx.strokeStyle='rgba(232,121,249,.9)'; ctx.lineWidth=2;
+      ctx.strokeRect(sx,oy,sl2,(Wi*sc<sh*3?Wi*sc*.2:sh*3));
+      // Width dimension arrows
+      ctx.strokeStyle='rgba(255,180,255,.6)'; ctx.lineWidth=1;
+      drawArrow(ctx,sx+sl2*.1,oy-6,-1,0,'rgba(255,180,255,.6)');
+      drawArrow(ctx,sx+sl2*.9,oy-6,1,0,'rgba(255,180,255,.6)');
+      ctx.fillStyle='rgba(232,121,249,.7)'; ctx.font='7px Inter,sans-serif';
+      ctx.fillText(f.slots&&f.slots[0]?`${f.slots[0].width}×${f.slots[0].depth} mm`:'rainure',sx+sl2*.3,oy-8);
+      break;}
   }
   ctx.restore();
 
@@ -2090,6 +2295,37 @@ function drawTurningOp(ctx,W,H,op,f){
       }
       ctx.fillStyle='rgba(80,210,80,.12)';
       ctx.fillRect(x,yC-r*1.12,secW*.7,r*2.24);
+      break;}
+    case 'Cône':{
+      // Taper: show diagonal red zone on one section
+      const tp=f.tapers&&f.tapers[0];
+      const ratio=tp?tp.ratio:20;
+      const r0c=getR(0),r1c=r0c*(1-1/ratio),x0c=getX(0);
+      ctx.beginPath();
+      ctx.moveTo(x0c,yC-r0c); ctx.lineTo(x0c+totalW*.6,yC-r1c);
+      ctx.lineTo(x0c+totalW*.6,yC+r1c); ctx.lineTo(x0c,yC+r0c);
+      ctx.closePath();
+      const grdC=ctx.createLinearGradient(x0c,0,x0c+totalW*.6,0);
+      grdC.addColorStop(0,'rgba(249,115,22,.55)'); grdC.addColorStop(1,'rgba(249,115,22,.1)');
+      ctx.fillStyle=grdC; ctx.fill();
+      ctx.strokeStyle='rgba(249,115,22,.9)'; ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(x0c,yC-r0c); ctx.lineTo(x0c+totalW*.6,yC-r1c); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x0c,yC+r0c); ctx.lineTo(x0c+totalW*.6,yC+r1c); ctx.stroke();
+      ctx.fillStyle='rgba(249,115,22,.7)'; ctx.font='7px Inter,sans-serif';
+      ctx.fillText(`1:${ratio}`,x0c+totalW*.2,yC-r0c-4);
+      break;}
+    case 'Rainure':{
+      // Keyway slot on shaft surface
+      const r=getR(ns>1?1:0),x=getX(ns>1?1:0);
+      const sw=f.slots&&f.slots[0]?Math.min(secW*.4,f.slots[0].width/ds[0]*(H/2-14)*2):secW*.25;
+      const sh=f.slots&&f.slots[0]?f.slots[0].depth/ds[0]*(H/2-14)*2:r*.3;
+      const sx=x+secW*.3;
+      ctx.fillStyle='rgba(232,121,249,.4)';
+      ctx.fillRect(sx,yC-r,sw,sh); ctx.fillRect(sx,yC+r-sh,sw,sh);
+      ctx.strokeStyle='rgba(232,121,249,.9)'; ctx.lineWidth=1.5;
+      ctx.strokeRect(sx,yC-r,sw,sh); ctx.strokeRect(sx,yC+r-sh,sw,sh);
       break;}
     default:{
       ctx.fillStyle='rgba(255,55,15,.3)';
