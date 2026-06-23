@@ -18,7 +18,7 @@ import {
   SkipForward,
   Gauge,
   Clock,
-  Tool,
+  Wrench,
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 
