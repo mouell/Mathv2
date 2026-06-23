@@ -111,10 +111,8 @@ const UploadDropzone: React.FC<DropzoneProps> = ({ onFileUpload }) => {
 
   return (
     <div className="px-3 py-2">
-      <motion.div
+      <div
         {...getRootProps()}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
         className="relative rounded-lg cursor-pointer transition-all duration-200 overflow-hidden"
         style={{
           border: `1px dashed ${isDragging ? '#0066ff' : '#2a2a3e'}`,
@@ -179,7 +177,7 @@ const UploadDropzone: React.FC<DropzoneProps> = ({ onFileUpload }) => {
             />
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 };
