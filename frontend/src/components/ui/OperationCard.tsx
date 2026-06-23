@@ -10,6 +10,7 @@ import {
   Zap,
   ArrowRight,
   Layers,
+  CircleDot,
 } from 'lucide-react';
 import { MachiningOperation, OperationType } from '@/types';
 import { useAppStore } from '@/store/useAppStore';
@@ -72,13 +73,13 @@ const OP_CONFIG: Record<
     label: 'Alésage',
     color: '#33ddff',
     bgColor: 'rgba(51, 221, 255, 0.15)',
-    icon: <Circle size={11} />,
+    icon: <CircleDot size={11} />,
   },
   reaming: {
     label: 'Alésage fin',
     color: '#66ff99',
     bgColor: 'rgba(102, 255, 153, 0.15)',
-    icon: <Circle size={11} />,
+    icon: <CircleDot size={11} />,
   },
   threading: {
     label: 'Filetage',
@@ -87,13 +88,6 @@ const OP_CONFIG: Record<
     icon: <Settings2 size={11} />,
   },
 };
-
-// Simple circle SVG for boring/reaming
-const Circle: React.FC<{ size: number }> = ({ size }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" />
-  </svg>
-);
 
 // ─── Tool Info ────────────────────────────────────────────────────────────────
 

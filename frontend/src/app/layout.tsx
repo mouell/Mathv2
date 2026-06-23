@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -7,7 +7,6 @@ export const metadata: Metadata = {
     'AI-powered CAD drawing analysis and G-Code generation for professional CNC machining. Supports Fanuc, Siemens, Heidenhain controllers.',
   keywords: 'CAD, CAM, CNC, G-Code, machining, AI, automation',
   authors: [{ name: 'MathV2 Team' }],
-  themeColor: '#0a0a0f',
   icons: {
     icon: '/favicon.ico',
   },
@@ -16,6 +15,12 @@ export const metadata: Metadata = {
     description: 'AI-powered technical drawing to G-Code in seconds',
     type: 'website',
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0a0a0f',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({

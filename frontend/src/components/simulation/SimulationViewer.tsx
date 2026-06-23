@@ -375,7 +375,11 @@ const SimulationViewer: React.FC = () => {
   } = useAppStore();
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressRef = useRef(simulationProgress);
   const isPlaying = simulationState === 'playing';
+
+  // Keep ref in sync with state
+  progressRef.current = simulationProgress;
 
   const TOTAL_SECONDS = 675;
   const speedMultipliers = [1, 2, 5, 10];
@@ -400,14 +404,13 @@ const SimulationViewer: React.FC = () => {
     if (isPlaying) {
       const increment = (1 / TOTAL_SECONDS) * (simulationSpeed / 10);
       intervalRef.current = setInterval(() => {
-        setSimulationProgress((prev: number) => {
-          const next = prev + increment;
-          if (next >= 1) {
-            setSimulationState('complete');
-            return 1;
-          }
-          return next;
-        });
+        const next = progressRef.current + increment;
+        if (next >= 1) {
+          setSimulationState('complete');
+          setSimulationProgress(1);
+        } else {
+          setSimulationProgress(next);
+        }
       }, 100);
     } else {
       if (intervalRef.current) {

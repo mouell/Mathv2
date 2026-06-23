@@ -120,7 +120,9 @@ class GCodeGenerator:
             program = self._generate_for_controller(
                 ctrl, operations, toolpaths, tp_map, program_name
             )
-            result[str(ctrl)] = program
+            # Use plain name (e.g. "fanuc") as the dict key, not the full enum repr
+            key = ctrl.value if hasattr(ctrl, "value") else str(ctrl)
+            result[key] = program
 
         return result
 
@@ -181,7 +183,8 @@ class GCodeGenerator:
     ) -> Tuple[str, List[str], float]:
         """Generate Fanuc 0i/16i/30i compatible G-Code."""
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        mat_str = str(self.material).upper().replace("_", " ")
+        _mat = self.material.value if hasattr(self.material, "value") else str(self.material)
+        mat_str = _mat.upper().replace("_", " ")
         lines: List[str] = []
         tools_used: List[str] = []
         total_time = 0.0
@@ -479,7 +482,8 @@ class GCodeGenerator:
     ) -> Tuple[str, List[str], float]:
         """Generate Siemens SINUMERIK 840D sl G-Code."""
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        mat_str = str(self.material).upper().replace("_", " ")
+        _mat = self.material.value if hasattr(self.material, "value") else str(self.material)
+        mat_str = _mat.upper().replace("_", " ")
         lines: List[str] = []
         tools_used: List[str] = []
         total_time = 0.0
@@ -649,7 +653,8 @@ class GCodeGenerator:
     ) -> Tuple[str, List[str], float]:
         """Generate Heidenhain iTNC 530 / TNC 640 conversational G-Code."""
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        mat_str = str(self.material).upper().replace("_", " ")
+        _mat = self.material.value if hasattr(self.material, "value") else str(self.material)
+        mat_str = _mat.upper().replace("_", " ")
         lines: List[str] = []
         tools_used: List[str] = []
         total_time = 0.0
@@ -856,7 +861,8 @@ class GCodeGenerator:
     ) -> Tuple[str, List[str], float]:
         """Generate ISO 6983 compatible G-Code (generic / portable)."""
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        mat_str = str(self.material).upper().replace("_", " ")
+        _mat = self.material.value if hasattr(self.material, "value") else str(self.material)
+        mat_str = _mat.upper().replace("_", " ")
         lines: List[str] = []
         tools_used: List[str] = []
         total_time = 0.0
