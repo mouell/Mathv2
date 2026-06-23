@@ -1,0 +1,301 @@
+// MathV2 CAD/CAM SaaS - Prisma Schema
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  ENGINEER
+  VIEWER
+}
+
+enum ProjectStatus {
+  DRAFT
+  ANALYZING
+  ANALYZED
+  GENERATING_GCODE
+  READY
+  ARCHIVED
+}
+
+enum AnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum FeatureType {
+  HOLE
+  SLOT
+  POCKET
+  BOSS
+  THREAD
+  CHAMFER
+  FILLET
+  SURFACE
+  CONTOUR
+  DIMENSION
+  TOLERANCE
+  NOTE
+  UNKNOWN
+}
+
+enum ToleranceType {
+  LINEAR
+  ANGULAR
+  GEOMETRIC
+  SURFACE_FINISH
+}
+
+enum OperationType {
+  DRILLING
+  MILLING_FACE
+  MILLING_CONTOUR
+  MILLING_POCKET
+  MILLING_SLOT
+  BORING
+  REAMING
+  TAPPING
+  TURNING_OD
+  TURNING_ID
+  TURNING_FACE
+  TURNING_THREAD
+}
+
+enum ToolType {
+  END_MILL
+  FACE_MILL
+  DRILL
+  CENTER_DRILL
+  REAMER
+  TAP
+  BORING_BAR
+  TURNING_INSERT
+  THREAD_MILL
+}
+
+enum ProgramController {
+  FANUC
+  SIEMENS
+  HEIDENHAIN
+  HAAS
+  MITSUBISHI
+  OKUMA
+  MAZAK
+}
+
+enum SimulationStatus {
+  IDLE
+  RUNNING
+  PAUSED
+  COMPLETED
+  ERROR
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String
+  password  String
+  role      UserRole  @default(ENGINEER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  projects  Project[]
+
+  @@map("users")
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  status      ProjectStatus @default(DRAFT)
+  userId      String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plans       Plan[]
+  models      Model3D[]
+  operations  MachiningOperation[]
+  programs    CNCProgram[]
+  simulations Simulation[]
+
+  @@index([userId])
+  @@map("projects")
+}
+
+model Plan {
+  id               String        @id @default(cuid())
+  projectId        String
+  filename         String
+  originalFilename String
+  fileType         String        // pdf, dxf, dwg, png, jpg, svg
+  fileUrl          String
+  fileSizeBytes    Int?
+  analysisStatus   AnalysisStatus @default(PENDING)
+  rawOcrData       Json?         // Raw OCR text output
+  detectedFeatures DetectedFeature[]
+  analysisProgress Int           @default(0) // 0-100
+  analysisError    String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  project          Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  models           Model3D[]
+
+  @@index([projectId])
+  @@map("plans")
+}
+
+model DetectedFeature {
+  id            String       @id @default(cuid())
+  planId        String
+  type          FeatureType
+  value         Float?       // Numeric value (e.g. diameter = 10.5)
+  unit          String?      // mm, inch, deg
+  tolerance     Float?
+  toleranceType ToleranceType?
+  tolerancePlus Float?
+  toleranceMinus Float?
+  confidence    Float        // 0.0 - 1.0 detection confidence
+  position      Json?        // {x, y, width, height} in plan coordinates
+  metadata      Json?        // Extra data (thread pitch, surface finish Ra, etc.)
+  label         String?      // Human-readable label
+  isVerified    Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  plan          Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@index([type])
+  @@map("detected_features")
+}
+
+model Model3D {
+  id           String    @id @default(cuid())
+  projectId    String
+  planId       String?
+  geometryData Json      // BREP / mesh data, or reference to stored geometry
+  boundingBox  Json      // {minX, minY, minZ, maxX, maxY, maxZ}
+  volume       Float?    // mm³
+  surfaceArea  Float?    // mm²
+  units        String    @default("mm")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  plan         Plan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@map("models_3d")
+}
+
+model MachiningOperation {
+  id             String        @id @default(cuid())
+  projectId      String
+  operationType  OperationType
+  toolType       ToolType
+  toolDiameter   Float         // mm
+  toolLength     Float?        // mm
+  depth          Float?        // mm - axial depth of cut
+  width          Float?        // mm - radial width of cut
+  feedRate       Float         // mm/min
+  spindleSpeed   Int           // RPM
+  stepover       Float?        // mm or % of diameter
+  stepdown       Float?        // mm
+  coolant        Boolean       @default(true)
+  sequence       Int           // Execution order
+  estimatedTime  Float?        // seconds
+  status         String        @default("pending") // pending, validated, skipped
+  notes          String?
+  featureId      String?       // Optional link to DetectedFeature
+  materialId     String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  material       Material?     @relation(fields: [materialId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([sequence])
+  @@map("machining_operations")
+}
+
+model CNCProgram {
+  id               String            @id @default(cuid())
+  projectId        String
+  controller       ProgramController @default(FANUC)
+  gcode            String            // Full G-code text
+  gcodeHash        String?           // SHA256 of gcode for change detection
+  validated        Boolean           @default(false)
+  validationErrors Json?             // [{line, code, message}]
+  lineCount        Int?
+  estimatedTime    Float?            // seconds
+  toolCount        Int?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  simulations      Simulation[]
+
+  @@index([projectId])
+  @@map("cnc_programs")
+}
+
+model Simulation {
+  id            String           @id @default(cuid())
+  projectId     String
+  programId     String?
+  status        SimulationStatus @default(IDLE)
+  toolpathData  Json?            // Toolpath segments for 3D visualization
+  collisions    Json?            // Detected collision events
+  materialRemoved Float?         // mm³
+  progress      Int              @default(0) // 0-100
+  errorMessage  String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  program       CNCProgram?      @relation(fields: [programId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@map("simulations")
+}
+
+model Material {
+  id                 String    @id @default(cuid())
+  name               String    @unique
+  category           String?   // metal, plastic, composite, wood
+  density            Float?    // g/cm³
+  hardness           Float?    // HB (Brinell)
+  tensileStrength    Float?    // MPa
+  machinability      Float?    // 0-100 machinability index (100 = free cutting steel)
+  recommendedSpeed   Float?    // m/min surface speed
+  recommendedFeed    Float?    // mm/tooth
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  operations         MachiningOperation[]
+
+  @@map("materials")
+}
