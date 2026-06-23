@@ -23,7 +23,7 @@ echo ""
 if [ ! -f .env ]; then
     cp .env.example .env
     echo "✓ Created .env from .env.example"
-    echo "  ⚠️  Please edit .env with your API keys before starting"
+    echo "  ℹ️  Aucune clé API externe requise — pipeline 100% local"
 fi
 
 if [ ! -f frontend/.env.local ]; then

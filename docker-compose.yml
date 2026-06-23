@@ -51,8 +51,9 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       UPLOAD_PATH: /uploads
+      OCR_LANGUAGES: fra+eng
+      DEFAULT_CONTROLLER: fanuc
     ports:
       - "8001:8001"
     volumes:

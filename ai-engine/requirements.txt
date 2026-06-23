@@ -8,7 +8,6 @@ numpy==1.26.2
 scipy==1.11.4
 ezdxf==1.1.4
 pdf2image==1.16.3
-anthropic==0.7.8
 python-dotenv==1.0.0
 pydantic==2.5.2
 httpx==0.25.2
