@@ -172,8 +172,22 @@ async def run_analysis_pipeline(
         _set_job(job_id, status="gcode_generation", current_step="Generating CNC G-Code")
         logger.info("[%s] Step 6/7 — G-Code generation (controller: %s)", job_id, controller)
 
-        gcode_gen = GCodeGenerator()
-        gcode = gcode_gen.generate(operations, geometry, controller, str(mat_enum))
+        from models.schemas import ControllerType
+        ctrl_map = {
+            "fanuc": ControllerType.FANUC, "haas": ControllerType.FANUC,
+            "mazak": ControllerType.MAZAK, "okuma": ControllerType.OKUMA,
+            "siemens": ControllerType.SIEMENS, "sinumerik": ControllerType.SIEMENS,
+            "heidenhain": ControllerType.HEIDENHAIN, "tnc": ControllerType.HEIDENHAIN,
+            "iso": ControllerType.ISO,
+        }
+        ctrl_enum = ctrl_map.get(controller.lower(), ControllerType.FANUC)
+        part_name = geometry.part_name or geometry.part_id or "PIECE_001"
+
+        gcode_gen = GCodeGenerator(geometry=geometry, material=mat_enum)
+        gcode_program = gcode_gen.generate_for_controller(
+            ctrl_enum, operations, toolpaths_list, part_name
+        )
+        gcode = gcode_program.content
 
         _set_job(job_id, progress=94)
 
@@ -209,6 +223,7 @@ async def run_analysis_pipeline(
                 "operation_count": len(operations),
                 "toolpaths": toolpaths,
                 "gcode": gcode,
+                "gcode_program": gcode_program.dict(),
                 "validation": validation,
                 "estimated_cycle_time_min": round(total_time_min, 2),
                 "tools_used": list({op.tool.name for op in operations}),
@@ -341,20 +356,33 @@ async def generate_gcode(request: GCodeRequest):
     re-running the full OCR pipeline.
     """
     try:
-        generator = GCodeGenerator()
-        gcode = generator.generate(
-            request.operations,
-            request.geometry,
-            request.controller,
-            request.geometry.material,
+        from models.schemas import ControllerType, MaterialType
+        ctrl_map = {
+            "fanuc": ControllerType.FANUC, "haas": ControllerType.FANUC,
+            "mazak": ControllerType.MAZAK, "okuma": ControllerType.OKUMA,
+            "siemens": ControllerType.SIEMENS,
+            "heidenhain": ControllerType.HEIDENHAIN,
+            "iso": ControllerType.ISO,
+        }
+        ctrl_key = str(request.controller).lower().replace("controllertype.", "")
+        ctrl_enum = ctrl_map.get(ctrl_key, ControllerType.FANUC)
+        mat_str = str(request.geometry.material).lower().replace("materialtype.", "")
+        mat_map = {m.value: m for m in MaterialType}
+        mat_enum = mat_map.get(mat_str, MaterialType.ALUMINUM)
+
+        generator = GCodeGenerator(geometry=request.geometry, material=mat_enum)
+        # Generate toolpath stubs (empty) since /gcode does not require toolpaths
+        program = generator.generate_for_controller(
+            ctrl_enum, request.operations, [], request.program_number or "PIECE_001"
         )
+        gcode = program.content
         validator = GCodeValidator()
         validation = validator.validate(gcode)
 
         return {
             "gcode": gcode,
             "validation": validation,
-            "controller": request.controller,
+            "controller": str(ctrl_enum),
             "line_count": gcode.count("\n") + 1,
         }
     except Exception as exc:
