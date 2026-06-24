@@ -2470,182 +2470,345 @@ let interpMatches=[];
 let currentFileRef=null;
 let lastVisionResult=null;
 
-// ── Tier-1: Canvas pixel analysis ─────────────────────────────────────────────
-// Analyzes rendered PDF canvas pixels to detect:
-//   - Multiple views (BFS on dark-pixel connected regions)
-//   - Hatching / vues de coupe (diagonal medium-density cell clusters)
-//   - Dashed lines / arêtes cachées (alternating low-density pixel runs)
-function analyzeCanvasPixels(canvEl){
-  const W=canvEl.width, H=canvEl.height;
-  const ctx=canvEl.getContext('2d');
-  const px=ctx.getImageData(0,0,W,H).data;
-  const COLS=24, ROWS=24;
-  const cw=W/COLS, ch=H/ROWS;
+// ── Tier-1: Line-type recognition via RLE pixel analysis ──────────────────────
+// Per ISO 128: trait fort (solid/thick), trait mixte (dash-dot/axis),
+// trait interrompu (dashed/hidden), trait fin (thin/dimension)
+// Returns {views, hatchCells, dashedLines, centerLines, cartouche}
 
-  // Build density grid: % of dark pixels (R+G+B < 400) per cell
-  const grid=new Float32Array(COLS*ROWS);
-  for(let r=0;r<ROWS;r++){
-    for(let c=0;c<COLS;c++){
-      const x0=Math.floor(c*cw), y0=Math.floor(r*ch);
-      const x1=Math.floor((c+1)*cw), y1=Math.floor((r+1)*ch);
-      let dark=0,total=0;
-      for(let y=y0;y<y1;y++){
-        for(let x=x0;x<x1;x++){
-          const i=(y*W+x)*4;
-          if(px[i]+px[i+1]+px[i+2]<400) dark++;
-          total++;
-        }
-      }
-      grid[r*COLS+c]=total?dark/total:0;
-    }
+const LT={EMPTY:0,SOLID:1,DASHED:2,CENTER:3,THIN:4};
+
+function _px(data,W,x,y){const i=(y*W+x)*4;return data[i]+data[i+1]+data[i+2];}
+function _dark(data,W,x,y){return _px(data,W,x,y)<360;}
+
+// Run-length encode dark pixels along a row
+function _rleRow(data,W,y){
+  const runs=[];let s=-1;
+  for(let x=0;x<W;x++){
+    const d=_dark(data,W,x,y);
+    if(d&&s<0)s=x;
+    else if(!d&&s>=0){runs.push({p:s,l:x-s});s=-1;}
   }
-
-  // BFS to find "view" regions: cells with density > 2%
-  const DARK_THR=0.02;
-  const visited=new Uint8Array(COLS*ROWS);
-  const views=[];
-  for(let start=0;start<COLS*ROWS;start++){
-    if(visited[start]||grid[start]<DARK_THR) continue;
-    const cells=[], queue=[start];
-    visited[start]=1;
-    while(queue.length){
-      const cur=queue.shift();
-      cells.push(cur);
-      const cr=Math.floor(cur/COLS), cc=cur%COLS;
-      [[cr-1,cc],[cr+1,cc],[cr,cc-1],[cr,cc+1]].forEach(([nr,nc])=>{
-        if(nr<0||nr>=ROWS||nc<0||nc>=COLS) return;
-        const ni=nr*COLS+nc;
-        if(!visited[ni]&&grid[ni]>=DARK_THR){visited[ni]=1;queue.push(ni);}
-      });
-    }
-    if(cells.length<4) continue; // ignore tiny noise
-    const rs=cells.map(c=>Math.floor(c/COLS)), cs=cells.map(c=>c%COLS);
-    const minR=Math.min(...rs), maxR=Math.max(...rs);
-    const minC=Math.min(...cs), maxC=Math.max(...cs);
-    views.push({
-      cells,
-      bounds:{
-        x:Math.floor(minC*cw), y:Math.floor(minR*ch),
-        w:Math.ceil((maxC-minC+1)*cw), h:Math.ceil((maxR-minR+1)*ch)
-      }
-    });
+  if(s>=0)runs.push({p:s,l:W-s});
+  return runs;
+}
+// Run-length encode dark pixels along a column
+function _rleCol(data,W,H,x){
+  const runs=[];let s=-1;
+  for(let y=0;y<H;y++){
+    const d=_dark(data,W,x,y);
+    if(d&&s<0)s=y;
+    else if(!d&&s>=0){runs.push({p:s,l:y-s});s=-1;}
   }
-
-  // Detect hatching: cells with 8–40% density AND diagonal neighbours also dense
-  const hatchCells=[];
-  for(let r=1;r<ROWS-1;r++){
-    for(let c=1;c<COLS-1;c++){
-      const d=grid[r*COLS+c];
-      if(d<0.08||d>0.55) continue;
-      const diag=(grid[(r-1)*COLS+(c-1)]+grid[(r+1)*COLS+(c+1)]+
-                  grid[(r-1)*COLS+(c+1)]+grid[(r+1)*COLS+(c-1)])/4;
-      const axis=(grid[(r-1)*COLS+c]+grid[(r+1)*COLS+c]+
-                  grid[r*COLS+(c-1)]+grid[r*COLS+(c+1)])/4;
-      if(diag>0.06&&diag>axis*0.7){
-        hatchCells.push({r,c,x:Math.floor(c*cw),y:Math.floor(r*ch),w:Math.ceil(cw),h:Math.ceil(ch)});
-      }
-    }
-  }
-
-  // Detect dashed lines: rows/cols with alternating high/low density
-  const dashedSegs=[];
-  for(let r=0;r<ROWS;r++){
-    let runs=[], cur=null;
-    for(let c=0;c<COLS;c++){
-      const d=grid[r*COLS+c];
-      const type=d>0.04?'on':'off';
-      if(!cur||cur.type!==type){cur={type,start:c,end:c};runs.push(cur);}
-      else cur.end=c;
-    }
-    // alternating pattern with at least 4 segments
-    if(runs.length>=4){
-      const types=runs.map(x=>x.type);
-      const alt=types.every((t,i)=>i===0||t!==types[i-1]);
-      if(alt){
-        const x0=Math.floor(runs[0].start*cw), x1=Math.ceil((runs[runs.length-1].end+1)*cw);
-        dashedSegs.push({axis:'h',r,x:x0,y:Math.floor(r*ch),w:x1-x0,h:Math.ceil(ch)});
-      }
-    }
-  }
-
-  return {views,hatchCells,dashedSegs,gridW:cw,gridH:ch};
+  if(s>=0)runs.push({p:s,l:H-s});
+  return runs;
 }
 
+// Classify a run sequence into a line type (ISO 128 based)
+function _classify(runs){
+  if(!runs.length)return LT.EMPTY;
+  const tot=runs.reduce((s,r)=>s+r.l,0);
+  if(tot<2)return LT.EMPTY;
+  const n=runs.length, avgL=tot/n;
+  // Single long uninterrupted run → trait fort (solid)
+  if(n===1&&runs[0].l>25)return LT.SOLID;
+  // Gaps between runs
+  const gaps=[];
+  for(let i=1;i<n;i++)gaps.push(runs[i].p-(runs[i-1].p+runs[i-1].l));
+  const avgG=gaps.length?gaps.reduce((s,g)=>s+g,0)/gaps.length:0;
+  // Few long runs, tiny gaps → solid (e.g. piece outline with slight scan noise)
+  if(n<=3&&avgL>18&&avgG<6)return LT.SOLID;
+  // Many short equal runs + equal gaps → trait interrompu (dashed, hidden edges)
+  if(n>=4&&avgL>=3&&avgL<=20&&avgG>=3&&avgG<=22){
+    const gv=gaps.reduce((s,g)=>s+Math.pow(g-avgG,2),0)/(gaps.length||1);
+    if(Math.sqrt(gv)<avgG*0.65)return LT.DASHED;
+  }
+  // Long-short alternation → trait mixte (dash·dot·dash = center/axis line)
+  if(n>=3&&n<=10){
+    const ls=runs.map(r=>r.l);
+    const mx=ls.reduce((a,b)=>Math.max(a,b),0);
+    const mn=ls.reduce((a,b)=>Math.min(a,b),Infinity);
+    if(mx>2.5*mn&&mx>10&&mn>=1&&mn<=5)return LT.CENTER;
+  }
+  // Very sparse → trait fin (thin, likely dimension line)
+  if(tot<12&&n<=3)return LT.THIN;
+  return LT.SOLID;
+}
+
+function analyzeCanvasPixels(canvEl){
+  const W=canvEl.width, H=canvEl.height;
+  const data=canvEl.getContext('2d').getImageData(0,0,W,H).data;
+
+  // ── Classify each row and column (subsample every 2px for speed) ─────────
+  const rowT=new Uint8Array(H), colT=new Uint8Array(W);
+  for(let y=0;y<H;y+=2){
+    const t=_classify(_rleRow(data,W,y));
+    rowT[y]=t; if(y+1<H)rowT[y+1]=t;
+  }
+  for(let x=0;x<W;x+=2){
+    const t=_classify(_rleCol(data,W,H,x));
+    colT[x]=t; if(x+1<W)colT[x+1]=t;
+  }
+
+  // ── Detect cartouche (title block = dense table in bottom portion) ────────
+  // Strategy: find the topmost row of a cluster of ≥3 solid rows in bottom 40%
+  let cartTop=Math.floor(H*0.78);
+  for(let y=Math.floor(H*0.6);y<H-5;y++){
+    if(rowT[y]!==LT.SOLID)continue;
+    let near=0;
+    for(let dy=-12;dy<=4;dy++){const ny=y+dy;if(ny>=0&&ny<H&&rowT[ny]===LT.SOLID)near++;}
+    if(near>=3&&y<cartTop)cartTop=y-6;
+  }
+  cartTop=Math.max(cartTop,Math.floor(H*0.72));
+  const cartouche={x:Math.floor(W*0.32),y:cartTop,w:W-Math.floor(W*0.32),h:H-cartTop};
+
+  // ── Detect hatching per 18×18 cell: diagonal pixel-pair ratio ────────────
+  const HC=18;
+  const hatchCells=[];
+  for(let gy=0;gy*HC<H;gy++)for(let gx=0;gx*HC<W;gx++){
+    const x0=gx*HC,y0=gy*HC,x1=Math.min(x0+HC,W),y1=Math.min(y0+HC,H);
+    if(x0>=cartouche.x&&y0>=cartouche.y)continue;
+    let d45=0,d135=0,horiz=0,vert=0,tot=0;
+    for(let y=y0;y<y1-1;y++)for(let x=x0+1;x<x1-1;x++){
+      if(!_dark(data,W,x,y))continue;
+      tot++;
+      if(_dark(data,W,x+1,y+1))d45++;
+      if(_dark(data,W,x-1,y+1))d135++;
+      if(_dark(data,W,x+1,y))horiz++;
+      if(_dark(data,W,x,y+1))vert++;
+    }
+    if(tot<10)continue;
+    const diagR=(d45+d135)/tot, lineR=(horiz+vert)/tot;
+    // True hatching: diagonal connections clearly dominate horizontal/vertical
+    if(diagR>0.3&&diagR>lineR*0.8&&tot>14){
+      hatchCells.push({x:x0,y:y0,w:x1-x0,h:y1-y0,score:diagR});
+    }
+  }
+
+  // ── Collect dashed segments (trait interrompu = hidden edges) ─────────────
+  // Group consecutive DASHED rows into horizontal bands (each = one hidden edge)
+  const dashedLines=[];
+  let inD=false,dS=0;
+  for(let y=0;y<cartouche.y;y++){
+    if(rowT[y]===LT.DASHED){if(!inD){inD=true;dS=y;}}
+    else{if(inD){
+      const h=y-dS;
+      if(h<=8)dashedLines.push({axis:'h',x:0,y:dS,w:W,h});
+      inD=false;
+    }}
+  }
+  // Vertical dashed columns
+  inD=false;dS=0;
+  for(let x=0;x<cartouche.x;x++){
+    if(colT[x]===LT.DASHED){if(!inD){inD=true;dS=x;}}
+    else{if(inD){
+      const w=x-dS;
+      if(w<=8)dashedLines.push({axis:'v',x:dS,y:0,w,h:cartouche.y});
+      inD=false;
+    }}
+  }
+
+  // ── Collect center/axis lines (trait mixte = dash-dot-dash) ──────────────
+  const centerLines=[];
+  inD=false;dS=0;
+  for(let y=0;y<cartouche.y;y++){
+    if(rowT[y]===LT.CENTER){if(!inD){inD=true;dS=y;}}
+    else{if(inD){centerLines.push({axis:'h',x:0,y:dS,w:W,h:y-dS});inD=false;}}
+  }
+  inD=false;dS=0;
+  for(let x=0;x<cartouche.x;x++){
+    if(colT[x]===LT.CENTER){if(!inD){inD=true;dS=x;}}
+    else{if(inD){centerLines.push({axis:'v',x:dS,y:0,w:x-dS,h:cartouche.y});inD=false;}}
+  }
+
+  // ── Detect views (BFS on downscaled grid, excluding cartouche) ───────────
+  const SC=10;
+  const GW=Math.ceil(W/SC),GH=Math.ceil(H/SC);
+  const dg=new Uint8Array(GW*GH);
+  const cGX=Math.floor(cartouche.x/SC),cGY=Math.floor(cartouche.y/SC);
+  for(let gy=0;gy<GH;gy++)for(let gx=0;gx<GW;gx++){
+    if(gx>=cGX&&gy>=cGY)continue;
+    const x0=gx*SC,y0=gy*SC;
+    let dk=0,tot=0;
+    for(let dy=0;dy<SC&&y0+dy<H;dy+=2)for(let dx=0;dx<SC&&x0+dx<W;dx+=2){
+      if(_dark(data,W,x0+dx,y0+dy))dk++;
+      tot++;
+    }
+    dg[gy*GW+gx]=tot&&dk/tot>0.012?1:0;
+  }
+  const vis=new Uint8Array(GW*GH);
+  const rawViews=[];
+  for(let s=0;s<GW*GH;s++){
+    if(vis[s]||!dg[s])continue;
+    const sR=Math.floor(s/GW),sC=s%GW;
+    if(sR>=cGY&&sC>=cGX)continue;
+    const cells=[],q=[s];vis[s]=1;
+    while(q.length){
+      const c=q.shift();cells.push(c);
+      const cr=Math.floor(c/GW),cc=c%GW;
+      for(const [nr,nc] of [[cr-1,cc],[cr+1,cc],[cr,cc-1],[cr,cc+1]]){
+        if(nr<0||nr>=GH||nc<0||nc>=GW)continue;
+        const ni=nr*GW+nc;
+        if(vis[ni]||!dg[ni])continue;
+        if(nr>=cGY&&nc>=cGX)continue;
+        vis[ni]=1;q.push(ni);
+      }
+    }
+    if(cells.length<12)continue;
+    let mnR=GH,mxR=0,mnC=GW,mxC=0;
+    for(const c of cells){const r=Math.floor(c/GW),col=c%GW;
+      if(r<mnR)mnR=r;if(r>mxR)mxR=r;if(col<mnC)mnC=col;if(col>mxC)mxC=col;}
+    const bw=(mxC-mnC+1)*SC,bh=(mxR-mnR+1)*SC;
+    if(bw<45||bh<45)continue;
+    rawViews.push({bounds:{x:mnC*SC,y:mnR*SC,w:bw,h:bh}});
+  }
+  // Merge touching/overlapping view regions
+  const views=[];
+  for(const v of rawViews){
+    let merged=false;
+    for(const m of views){
+      const a=m.bounds,b=v.bounds;
+      const ox=Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x));
+      const oy=Math.max(0,Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y));
+      if(ox*oy>0||(Math.abs((a.x+a.w/2)-(b.x+b.w/2))<80&&Math.abs((a.y+a.h/2)-(b.y+b.h/2))<80)){
+        const nx=Math.min(a.x,b.x),ny=Math.min(a.y,b.y);
+        m.bounds={x:nx,y:ny,w:Math.max(a.x+a.w,b.x+b.w)-nx,h:Math.max(a.y+a.h,b.y+b.h)-ny};
+        merged=true;break;
+      }
+    }
+    if(!merged)views.push({...v});
+  }
+
+  return{views,hatchCells,dashedLines,centerLines,cartouche};
+}
+
+// ── Draw line-type annotations on overlay canvas ───────────────────────────────
 function drawGeoAnnotations(geo, W, H){
   const ov=document.getElementById('interpretOverlay');
   if(!ov) return;
   const ctx=ov.getContext('2d');
   ctx.clearRect(0,0,W,H);
 
-  // Views — dashed cyan border
-  geo.views.forEach((v,i)=>{
-    const {x,y,w,h}=v.bounds;
-    ctx.strokeStyle='#22d3ee'; ctx.lineWidth=2.5; ctx.setLineDash([8,4]);
-    ctx.strokeRect(x+1,y+1,w-2,h-2); ctx.setLineDash([]);
-    // label
-    ctx.fillStyle='#22d3ee22'; ctx.fillRect(x+1,y+1,w-2,h-2);
-    ctx.fillStyle='#22d3ee'; ctx.font='bold 11px sans-serif';
-    ctx.fillText(`Vue ${i+1}`,x+6,y+16);
-  });
+  // Cartouche border (gray dashed) — mark it as "excluded from views"
+  const c=geo.cartouche;
+  ctx.strokeStyle='#64748b'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+  ctx.strokeRect(c.x,c.y,c.w,c.h); ctx.setLineDash([]);
+  ctx.fillStyle='#64748b'; ctx.font='bold 9px sans-serif';
+  ctx.fillText('Cartouche',c.x+4,c.y-3);
 
-  // Hatching — orange semi-transparent fill
-  geo.hatchCells.forEach(c=>{
-    ctx.fillStyle='#fb923c33';
-    ctx.fillRect(c.x,c.y,c.w,c.h);
-    ctx.strokeStyle='#fb923c88'; ctx.lineWidth=0.5; ctx.setLineDash([]);
-    ctx.strokeRect(c.x,c.y,c.w,c.h);
-  });
+  // Center/axis lines (trait d'axe) — thin blue dash-dot overlay
+  ctx.strokeStyle='#3b82f699'; ctx.lineWidth=1; ctx.setLineDash([10,3,2,3]);
+  for(const l of geo.centerLines){
+    ctx.beginPath();
+    if(l.axis==='h'){ctx.moveTo(l.x,l.y+Math.floor(l.h/2));ctx.lineTo(l.x+l.w,l.y+Math.floor(l.h/2));}
+    else{ctx.moveTo(l.x+Math.floor(l.w/2),l.y);ctx.lineTo(l.x+Math.floor(l.w/2),l.y+l.h);}
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
 
-  // Dashed lines — purple highlight
-  geo.dashedSegs.forEach(s=>{
-    ctx.fillStyle='#a78bfa33';
-    ctx.fillRect(s.x,s.y,s.w,s.h);
-    ctx.strokeStyle='#a78bfa'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
-    ctx.strokeRect(s.x,s.y,s.w,s.h); ctx.setLineDash([]);
-  });
+  // Dashed lines (trait interrompu = arêtes cachées) — purple dashes
+  ctx.strokeStyle='#a78bfa'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+  for(const s of geo.dashedLines){
+    ctx.beginPath();
+    if(s.axis==='h'){ctx.moveTo(s.x,s.y+Math.floor(s.h/2));ctx.lineTo(s.x+s.w,s.y+Math.floor(s.h/2));}
+    else{ctx.moveTo(s.x+Math.floor(s.w/2),s.y);ctx.lineTo(s.x+Math.floor(s.w/2),s.y+s.h);}
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Hatching cells (trait de hachure = section view) — orange fill
+  for(const cell of geo.hatchCells){
+    ctx.fillStyle='#fb923c30';
+    ctx.fillRect(cell.x,cell.y,cell.w,cell.h);
+  }
+  // Draw merged hatch region outlines
+  const hatchMerged=_mergeRects(geo.hatchCells.map(c=>({x:c.x,y:c.y,w:c.w,h:c.h})),HC_MERGE=36);
+  for(const r of hatchMerged){
+    ctx.strokeStyle='#fb923c'; ctx.lineWidth=1.5; ctx.setLineDash([3,2]);
+    ctx.strokeRect(r.x,r.y,r.w,r.h); ctx.setLineDash([]);
+    ctx.fillStyle='#fb923c'; ctx.font='bold 9px sans-serif';
+    ctx.fillText('Hachures',r.x+4,r.y+12);
+  }
+
+  // Views (detected drawing areas) — cyan solid border + label
+  for(let i=0;i<geo.views.length;i++){
+    const {x,y,w,h}=geo.views[i].bounds;
+    ctx.fillStyle='#22d3ee0e'; ctx.fillRect(x,y,w,h);
+    ctx.strokeStyle='#22d3ee'; ctx.lineWidth=2; ctx.setLineDash([]);
+    ctx.strokeRect(x+1,y+1,w-2,h-2);
+    // Label badge
+    ctx.fillStyle='#22d3eecc';
+    ctx.fillRect(x+4,y+4,54,17);
+    ctx.fillStyle='#000'; ctx.font='bold 10px sans-serif';
+    ctx.fillText('Vue '+(i+1),x+8,y+16);
+  }
 }
 
+// Merge nearby small rectangles into larger zones
+function _mergeRects(rects, gap){
+  const merged=[];
+  for(const r of rects){
+    let found=false;
+    for(const m of merged){
+      if(Math.abs(r.x-m.x)<gap*2&&Math.abs(r.y-m.y)<gap*2){
+        const nx=Math.min(m.x,r.x),ny=Math.min(m.y,r.y);
+        m.x=nx;m.y=ny;
+        m.w=Math.max(m.x+m.w,r.x+r.w)-nx;
+        m.h=Math.max(m.y+m.h,r.y+r.h)-ny;
+        found=true;break;
+      }
+    }
+    if(!found)merged.push({...r});
+  }
+  return merged;
+}
+
+// ── Build right-panel list for geometric analysis ─────────────────────────────
 function buildGeoList(geo){
   const list=document.getElementById('interpList');
   if(!list) return;
   const apiKey=localStorage.getItem('claude_api_key')||'';
-  let html=`<div style="font-size:9.5px;color:var(--dim);margin-bottom:8px;line-height:1.8">
-    <b style="color:#22d3ee">${geo.views.length} vue(s)</b> détectée(s) ·
-    <b style="color:#fb923c">${geo.hatchCells.length} cell. hachures</b> ·
-    <b style="color:#a78bfa">${geo.dashedSegs.length} lignes tiretées</b>
-    <br><span style="color:#94a3b8">Analyse basée sur les pixels du rendu</span>
-  </div>`;
+  const nV=geo.views.length, nH=geo.hatchCells.length,
+        nD=geo.dashedLines.length, nC=geo.centerLines.length;
 
-  if(geo.views.length>1){
-    html+=`<div style="background:#22d3ee11;border:1px solid #22d3ee44;border-radius:4px;padding:6px 8px;margin-bottom:8px;font-size:10px;color:#22d3ee">
-      📐 Plan multi-vues détecté · ${geo.views.length} projections
-    </div>`;
-  }
-  if(geo.hatchCells.length>3){
-    html+=`<div style="background:#fb923c11;border:1px solid #fb923c44;border-radius:4px;padding:6px 8px;margin-bottom:8px;font-size:10px;color:#fb923c">
-      🔶 Hachures détectées → Vue de coupe probable
-    </div>`;
-  }
-  if(geo.dashedSegs.length>1){
-    html+=`<div style="background:#a78bfa11;border:1px solid #a78bfa44;border-radius:4px;padding:6px 8px;margin-bottom:8px;font-size:10px;color:#a78bfa">
-      ╌ Arêtes cachées détectées (lignes tiretées)
+  let html=`<div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:8px">Éléments détectés</div>`;
+
+  // Legend rows
+  const legend=[
+    {col:'#22d3ee',icon:'□',label:`${nV} vue(s)`,sub:'projections',show:true},
+    {col:'#fb923c',icon:'▨',label:'Hachures',sub:`vue de coupe (${nH} cellules)`,show:nH>2},
+    {col:'#a78bfa',icon:'╌',label:'Arêtes cachées',sub:`${nD} trait(s) interrompu(s)`,show:nD>0},
+    {col:'#3b82f6',icon:'⊕',label:`Trait${nC>1?'s':''} d\'axe`,sub:`${nC} axe(s) de symétrie`,show:nC>0},
+    {col:'#64748b',icon:'▭',label:'Cartouche',sub:'titre, tolérance, matière',show:true},
+  ];
+  for(const it of legend){
+    if(!it.show)continue;
+    html+=`<div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border)10">
+      <span style="font-size:14px;color:${it.col}">${it.icon}</span>
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:700;color:${it.col}">${it.label}</div>
+        <div style="font-size:9px;color:var(--dim)">${it.sub}</div>
+      </div>
     </div>`;
   }
 
-  html+=`<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px">
-    <div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:6px">🔑 Analyse sémantique (Claude Vision)</div>
-    <div style="font-size:9px;color:var(--muted);line-height:1.6;margin-bottom:8px">
-      Pour lire les cotes, tolérances et formes techniques depuis une image PDF, utilisez l'analyse IA avec une clé API Claude.
-    </div>`;
+  // Info cards
+  html+=`<div style="margin-top:10px">`;
+  if(nV>1)html+=`<div style="background:#22d3ee0d;border:1px solid #22d3ee33;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:#22d3ee">📐 Plan multi-vues · ${nV} projections orthogonales</div>`;
+  if(nH>3)html+=`<div style="background:#fb923c0d;border:1px solid #fb923c33;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:#fb923c">🔶 Vue en coupe détectée (zones hachurées)</div>`;
+  if(nD>0)html+=`<div style="background:#a78bfa0d;border:1px solid #a78bfa33;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:#a78bfa">╌ Arêtes cachées (traits interrompus)</div>`;
+  if(nC>0)html+=`<div style="background:#3b82f60d;border:1px solid #3b82f633;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:#3b82f6">⊕ Axe(s) de symétrie (traits mixtes)</div>`;
+  if(nV===0&&nH===0&&nD===0)html+=`<div style="font-size:9px;color:var(--dim);padding:8px 0">Aucun trait caractéristique détecté.<br>Essayez l'analyse Vision IA ci-dessous.</div>`;
+  html+=`</div>`;
+
+  // Vision IA section
+  html+=`<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px">
+    <div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:5px">🔑 Analyse sémantique IA</div>
+    <div style="font-size:9px;color:var(--muted);line-height:1.5;margin-bottom:8px">Pour extraire les cotes, tolérances et formes depuis un plan image, utilisez Claude Vision.</div>`;
   if(apiKey){
-    html+=`<button onclick="analyzeWithVision()" style="width:100%;padding:8px;background:#6366f1;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;margin-bottom:6px">
-      ✨ Analyser avec Claude Vision
-    </button>
+    html+=`<button onclick="analyzeWithVision()" style="width:100%;padding:8px;background:#6366f1;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;margin-bottom:5px">✨ Analyser avec Claude Vision</button>
     <div style="font-size:8px;color:var(--dim);text-align:center">Clé configurée · <a href="#" onclick="showApiKeyModal();return false" style="color:#6366f1">Modifier</a></div>`;
-  } else {
-    html+=`<button onclick="showApiKeyModal()" style="width:100%;padding:8px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">
-      🔑 Configurer clé API Claude
-    </button>`;
+  }else{
+    html+=`<button onclick="showApiKeyModal()" style="width:100%;padding:8px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔑 Configurer clé API Claude</button>`;
   }
   html+=`</div>`;
   list.innerHTML=html;
