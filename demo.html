@@ -567,121 +567,96 @@ N1160 M30
 %`;
 
 const GCODE_TURNING = `%
-O0200 (ARBRE - FANUC LATHE)
-(PIECE : ARBRE Ø50/35/25 - L=200mm)
-(MATERIAU : ACIER 42CrMo4)
-(DATE : 2024-01-15)
-(OPERATEUR : CAM-AUTO)
+O0010 (BOUCHON - PH10 EBAUCHE);
+G1900 D35. L22. K1.;
+;
+G18 G40 G80 G54;
+T0202 (EB EXTER);
+G96 S250 M03;
+G00 X35. Z2. M08;
+G00 X35. Z1.0;
+G01 X-0.8 F0.10;
+G00 Z2.;
+X35.;
+Z0.4;
+G01 X-0.8 F0.10;
+G00 Z2.;
+X35.;
+G73 U2. R3;
+G73 P10 Q20 U0.2 W0.1 F0.30;
+N10 G01 X8.;
+Z-10.;
+X30.;
+N20 Z-20.;
+G00 X35. Z2. M05 M09;
+G28 U0. W0.;
+M1;
+;
+G18 G40 G80 G54;
+T0606 (GORGES);
+G97 S2653 M03;
+G00 X32. Z2.;
+G01 Z-7.5 F0.10;
+X22.;
+G00 X32.;
+G01 Z-7.8 F0.10;
+X22.;
+G00 X32. M05 M09;
+G28 U0. W0.;
+M1;
+;
+M30;
+;
 %
 
-(--- INITIALISATION ---)
-N10 G18 G21 G40 G54 G80 G99
-N20 T0101 (OUTIL CHARIOTAGE EBAUCHE - PLAQUETTE TNMG)
-N30 G50 S2500
-N40 G96 S180 M03 (VITESSE COUPE CONSTANTE 180 m/min)
-N50 G00 X55.000 Z5.000
-N60 M08 (ARROSAGE)
+( ============================================ )
+( PROGRAMME PH20 - FINITION                   )
+( ============================================ )
 
-(--- DRESSAGE FACE ---)
-N70 G00 X55.000 Z0.500
-N80 G01 X-0.500 F0.15 (DRESSAGE)
-N90 G00 Z2.000
-
-(--- CHARIOTAGE EBAUCHE Ø50 ---)
-N100 G00 X52.000 Z2.000
-N110 G01 Z-60.000 F0.25 (CHARIOTAGE DIAMETRE 52)
-N120 G01 X55.000
-N130 G00 Z2.000
-N140 G00 X50.500
-N150 G01 Z-60.000 F0.25
-N160 G01 X52.000
-N170 G00 Z2.000
-
-(--- CHARIOTAGE EBAUCHE Ø35 ---)
-N180 G00 X37.000 Z-58.000
-N190 G01 Z-140.000 F0.25
-N200 G01 X52.000
-N210 G00 Z-58.000
-N220 G00 X35.500
-N230 G01 Z-140.000 F0.25
-N240 G01 X37.000
-N250 G00 Z2.000
-
-(--- CHARIOTAGE EBAUCHE Ø25 ---)
-N260 G00 X27.000 Z-138.000
-N270 G01 Z-200.000 F0.25
-N280 G01 X37.000
-N290 G00 Z-138.000
-N300 G00 X25.500
-N310 G01 Z-200.000 F0.25
-N320 G01 X27.000
-N330 G00 Z100.000
-
-(--- FINITION DIAMETRE Ø50 f7 ---)
-N340 T0202 (OUTIL FINITION - PLAQUETTE DNMG)
-N350 G50 S3500
-N360 G96 S220 M03
-N370 G00 X50.000 Z2.000
-N380 G01 Z-60.000 F0.08 (FINITION Ra 0.8)
-N390 G01 X52.000
-N400 G00 Z2.000
-N410 G00 X35.000 Z-58.000
-N420 G01 Z-140.000 F0.08
-N430 G01 X52.000
-N440 G00 Z-58.000
-N450 G00 X25.000 Z-138.000
-N460 G01 Z-200.000 F0.08
-N470 G01 X37.000
-N480 G00 Z100.000 M09
-
-(--- GORGE EXTERIEURE 4mm ---)
-N490 T0303 (OUTIL GORGE - LARGEUR 4mm)
-N500 G50 S1500
-N510 G97 S800 M03 (VITESSE CONSTANTE RPM)
-N520 G00 X55.000 Z-60.000 M08
-N530 G01 X29.000 F0.06 (PLONGEE GORGE)
-N540 G04 X1.000 (TEMPORISATION 1s)
-N550 G01 X55.000 F0.15
-N560 G00 Z100.000 M09
-
-(--- CHANFREIN 1.5x45° ---)
-N570 T0202 (RETOUR OUTIL FINITION)
-N580 G96 S220 M03
-N590 G00 X53.000 Z2.000 M08
-N600 G01 X50.000 Z0.500 F0.10 (ENTREE CHANFREIN)
-N610 G01 X47.000 Z-1.000 (CHANFREIN 1.5x45)
-N620 G00 Z100.000 M09
-
-(--- FILETAGE M25x2 6g ---)
-N630 T0404 (OUTIL FILETAGE)
-N640 G97 S600 M03
-N650 G00 X28.000 Z3.000 M08
-N660 G76 P010060 Q100 R0.050
-N670 G76 X23.000 Z-55.000 P1299 Q400 F2.000
-(G76 : CYCLE FILETAGE MULTI-PASSES)
-(P010060 : 1 PASSE FINITION, ANGLE 60 DEG)
-(Q100 : PROFONDEUR MIN 0.1mm)
-(R0.050 : ALLOWANCE FINITION)
-N680 G00 X100.000 Z100.000 M09
-
-(--- ALESAGE CENTRAL Ø12 ---)
-N690 T0505 (FORET Ø10mm PILOTAGE)
-N700 G97 S1200 M03
-N710 G00 X0.000 Z5.000 M08
-N720 G01 Z-30.000 F0.12 (PERÇAGE PILOTE)
-N730 G00 Z5.000
-N740 T0606 (FORET Ø12mm)
-N750 G97 S900 M03
-N760 G00 X0.000 Z5.000
-N770 G83 Z-30.000 R2.000 Q5.000 F0.10
-(G83 : CYCLE PERCAGE PROFOND AVEC DEGAGEMENT)
-N780 G80
-N790 G00 Z100.000 M09
-
-(--- FIN PROGRAMME ---)
-N800 G28 U0.
-N810 G28 W0.
-N820 M30
+%
+O0020 (BOUCHON - PH20 FINITION);
+G1900 D35. L22. K1.;
+;
+G18 G40 G80 G54;
+T0303 (POINTAGE);
+G97 S2387 M03;
+G00 X0.0 Z2.0 M08;
+G01 Z-2.0 F0.08;
+G01 Z2.0 F0.50;
+G00 X35. M09;
+G28 U0. W0.;
+;
+G18 G40 G80 G54;
+T0505 (PERCAGE);
+G97 S7074 M03;
+G00 X0.0 Z5.0 M08;
+G83 Z-25.0 R2.0 Q2000 F0.10;
+G80;
+G00 Z2. M09;
+G28 U0. W0.;
+;
+G18 G40 G80 G54;
+T0404 (FIN EXTER);
+G96 S320 M03;
+G00 X35. Z2.0 M08;
+;
+G00 X32.0 Z0.1;
+G01 Z0. F0.10;
+G01 X3.5;
+G00 Z2.;
+;
+G00 X8. Z2.0;
+G01 Z-10. F0.10;
+X29.5 Z1.0;
+X30. Z-10.5;
+Z-20.;
+G00 X35.;
+G28 U0. W0.;
+;
+M05;
+M09;
+M01;
+M30;
 %`;
 
 // ── Three.js Setup ─────────────────────────────────────────────────────────────
@@ -1660,86 +1635,200 @@ function generateGCodeFromFeatures(f){
   const vc=f.material.includes('Inox')?120:f.material.includes('Alum')?300:f.material.includes('Titan')?80:180;
 
   if(f.partType==='tournage'){
-    const D1=f.diameters[0]||50,D2=f.diameters[1]||35,D3=f.diameters[2]||(f.diameters[1]?f.diameters[1]-10:25);
-    const L=f.lengths[0]||200;const th=f.threads[0];
-    const lines=['%',`O0200 (${fn})`,`(PIECE: ARBRE Ø${D1}/Ø${D2}/Ø${D3} - L=${L}mm)`,
-      `(MATERIAU: ${mat})`,`(DATE: ${dt})`,`(CONTROLEUR: FANUC 0i-T)`,`(VC=${vc} m/min)`,'%','',
-      '(--- INITIALISATION ---)',
-      `${n()} G18 G21 G40 G54 G80 G99`,`${n()} T0101 (PLAQUETTE CHARIOTAGE TNMG 160408)`,
-      `${n()} G50 S2500`,`${n()} G96 S${vc} M03`,
-      `${n()} G00 X${(D1+5).toFixed(3)} Z5.000`,`${n()} M08`,'',
-      '(--- DRESSAGE FACE ---)',
-      `${n()} G00 X${(D1+6).toFixed(3)} Z0.300`,
-      `${n()} G01 X-0.500 F0.15 (DRESSAGE Ra 3.2)`,`${n()} G00 Z2.000`,'',
-      `(--- EBAUCHE Ø${D1} ---)`];
-    [[D1+1,0.30],[D1+0.4,0.25]].forEach(([d,fd])=>{
-      lines.push(`${n()} G00 X${d.toFixed(3)} Z2.000`,`${n()} G01 Z-${(L/3+5).toFixed(3)} F${fd}`,`${n()} G01 X${(D1+5).toFixed(3)}`,`${n()} G00 Z2.000`);});
-    if(D2<D1-2){
-      lines.push('',`(--- EBAUCHE Ø${D2} ---)`);
-      [[D2+1,0.25],[D2+0.3,0.20]].forEach(([d,fd])=>{
-        lines.push(`${n()} G00 X${d.toFixed(3)} Z-${(L/3-3).toFixed(3)}`,`${n()} G01 Z-${(L*2/3+3).toFixed(3)} F${fd}`,`${n()} G01 X${(D1+5).toFixed(3)}`,`${n()} G00 Z2.000`);});}
-    if(D3<D2-2){
-      lines.push('',`(--- EBAUCHE Ø${D3} ---)`,
-        `${n()} G00 X${(D3+1).toFixed(3)} Z-${(L*2/3-3).toFixed(3)}`,
-        `${n()} G01 Z-${L.toFixed(3)} F0.22`,`${n()} G01 X${(D1+5).toFixed(3)}`);}
-    lines.push(`${n()} G00 Z100.000 M09`,'',
-      '(--- FINITION DIAMETRES ---)',`${n()} T0202 (PLAQUETTE FINITION VCGT 110304)`,
-      `${n()} G50 S3500`,`${n()} G96 S${Math.round(vc*1.2)} M03`,
-      `${n()} G00 X${D1.toFixed(3)} Z2.000 M08`,
-      `${n()} G01 Z-${(L/3+2).toFixed(3)} F0.07 (FINITION Ø${D1}f7 Ra 0.8)`);
-    if(D2<D1-2){lines.push(`${n()} G00 X${D2.toFixed(3)} Z-${(L/3-2).toFixed(3)}`,`${n()} G01 Z-${(L*2/3+2).toFixed(3)} F0.07 (FINITION Ø${D2}h6)`);}
-    if(D3<D2-2){lines.push(`${n()} G00 X${D3.toFixed(3)} Z-${(L*2/3-2).toFixed(3)}`,`${n()} G01 Z-${L.toFixed(3)} F0.07 (FINITION Ø${D3}h6)`);}
-    lines.push(`${n()} G00 Z100.000 M09`,'',
-      '(--- GORGE EXTERIEURE ---)',`${n()} T0303 (PLAQUETTE GORGE L=4mm)`,
-      `${n()} G97 S${Math.round(800*D1/D2)} M03`,
-      `${n()} G00 X${(D1+3).toFixed(3)} Z-${(L*0.65).toFixed(3)} M08`,
-      `${n()} G01 X${(D2*0.78).toFixed(3)} F0.06`,`${n()} G04 X0.800`,
-      `${n()} G01 X${(D1+3).toFixed(3)} F0.15`,`${n()} G00 Z100.000 M09`,'');
-    if(th){const minD=(th.d-th.pitch*1.3).toFixed(3);
-      lines.push(`(--- FILETAGE M${th.d}×${th.pitch} 6g ---)`,
-        `${n()} T0404 (PLAQUETTE FILETAGE 60°)`,`${n()} G97 S${Math.round(600*25/th.d)} M03`,
-        `${n()} G00 X${(th.d+3).toFixed(3)} Z3.000 M08`,
-        `${n()} G76 P020060 Q100 R0.050`,
-        `${n()} G76 X${minD} Z-${(L*0.28).toFixed(3)} P${Math.round(th.pitch*1.3*500)} Q350 F${th.pitch.toFixed(3)}`,
-        `${n()} G00 X100.000 Z100.000 M09`,'');}
-    // Gorge avec dimensions réelles si détectées
-    if(f.grooves&&f.grooves.length>1){
-      f.grooves.slice(1).forEach(gr=>{
-        lines.push(`(--- GORGE ${gr.width}x${gr.depth} ---)`,`${n()} T0303`,
-          `${n()} G97 S${Math.round(800*D1/D2)} M03`,
-          `${n()} G00 X${(D1+3).toFixed(3)} Z-${(L*0.40).toFixed(3)} M08`,
-          `${n()} G01 X${(D2-gr.depth*2).toFixed(3)} F0.05`,`${n()} G04 X0.500`,
-          `${n()} G01 X${(D1+3).toFixed(3)} F0.15`,`${n()} G00 Z100.000 M09`,'');});
-    }
-    // Cône / Taper si détecté
-    if(f.tapers&&f.tapers.length>0){
-      const tp=f.tapers[0];
-      const ratio=tp.ratio||20;
-      const dX=(L*.25/ratio*2).toFixed(3);
-      lines.push(`(--- CÔNE 1:${ratio} ---)`,`${n()} T0202 (PLAQUETTE FINITION)`,
-        `${n()} G96 S${Math.round(vc*1.1)} M03`,
-        `${n()} G00 X${(D1+2).toFixed(3)} Z2.000 M08`,
-        `${n()} G01 X${D1.toFixed(3)} Z0.000 F0.10`,
-        `${n()} G01 X${(D1-parseFloat(dX)).toFixed(3)} Z-${(L*.25).toFixed(3)} F0.12 (CONIQUE 1:${ratio})`,
-        `${n()} G00 Z100.000 M09`,'');
-    }
-    // Rainure de clavette si détectée
-    if(f.slots&&f.slots.length>0){
-      const sl=f.slots[0];
-      lines.push(`(--- RAINURE CLAVETTE ${sl.width}x${sl.depth} ---)`,
-        `(OPERATION TRANSFERT FRAISAGE)`,
-        `${n()} (FRAISE 2T Ø${sl.width} - N=${Math.round(vc*1000/Math.PI/sl.width)} tr/min)`,
-        `${n()} (PROFONDEUR: -${sl.depth}mm  LONGUEUR: ${sl.length||Math.round(D1*.8)}mm)`,'');
-    }
-    // Chanfrein
+    const D1=f.diameters[0]||30;
+    const D2=f.diameters.length>1&&f.diameters[1]<D1*0.85?f.diameters[1]:null;
+    const L=f.lengths[0]||20;
+    const hasHole=!!D2;
+    const hasGroove=f.grooves&&f.grooves.length>0;
+    const hasTaper=f.tapers&&f.tapers.length>0;
+    const th=f.threads&&f.threads[0];
     const ch0=f.chamfers&&f.chamfers[0]||1.5;
-    lines.push(`(--- CHANFREIN ENTREE ${ch0}x45 ---)`,`${n()} T0202`,`${n()} G96 S${Math.round(vc*1.2)} M03`,
-      `${n()} G00 X${(D1+2).toFixed(3)} Z2.000 M08`,
-      `${n()} G01 X${D1.toFixed(3)} Z0.000 F0.08`,
-      `${n()} G01 X${(D1-ch0*2).toFixed(3)} Z-${ch0.toFixed(3)} (CHANFREIN ${ch0}x45)`,
-      `${n()} G00 Z100.000 M09`,'',
-      '(--- FIN PROGRAMME ---)',`${n()} G28 U0.`,`${n()} G28 W0.`,`${n()} M30`,'%');
-    return lines.join('\n');
+    // Stock: round up to nearest 5mm + 3 clearance
+    const sD=(Math.ceil((D1+3)/5)*5);
+    const sL=(Math.ceil((L+2)/5)*5);
+    // Cutting speeds by material
+    const vcEb=f.material.includes('Inox')?100:f.material.includes('Alum')?200:f.material.includes('Titan')?60:140;
+    const vcFn=f.material.includes('Inox')?130:f.material.includes('Alum')?320:f.material.includes('Titan')?80:220;
+    const vcGo=Math.round(vcEb*0.55);
+    // Helpers
+    const x=(v)=>v.toFixed(1);
+    const p=(s)=>`${s};`;  // Fanuc line terminator
+    const sep=(t)=>`;\nG18 G40 G80 G54;\n${t}`;
+    const grpms=(d)=>Math.round(vcGo*1000/Math.PI/Math.max(d,5));
+
+    // ════════════════════════════════════════════════════
+    //  PROGRAMME PH10 — EBAUCHE + GORGES
+    // ════════════════════════════════════════════════════
+    const ph10=[
+      '%',
+      `O0010 (${fn} - PH10 EBAUCHE)`,
+      p(`G1900 D${sD}. L${sL}. K1`),
+      ';',
+      p('G18 G40 G80 G54'),
+      p('T0202 (EB EXTER)'),
+      p(`G96 S${vcEb} M03`),
+      p(`G00 X${sD}. Z2. M08`),
+      // Two facing passes
+      p(`G00 X${sD}. Z1.0`),
+      p('G01 X-0.8 F0.10'),
+      p('G00 Z2.'),
+      p(`X${sD}.`),
+      p('Z0.4'),
+      p('G01 X-0.8 F0.10'),
+      p('G00 Z2.'),
+      p(`X${sD}.`),
+      // G73 rough cycle
+      p('G73 U2. R3'),
+      p('G73 P10 Q20 U0.2 W0.1 F0.30'),
+    ];
+
+    // Profile geometry between N10 and N20
+    if(hasHole){
+      const bz=x(L*0.48);
+      ph10.push(p(`N10 G01 X${x(D2)}`),p(`Z-${bz}`),p(`X${x(D1)}`),p(`N20 Z-${x(L)}`));
+    } else if(f.diameters.length>1&&f.diameters[1]<D1-2){
+      const d2=f.diameters[1], lz=x(L*0.45);
+      ph10.push(p(`N10 G01 X${x(d2)}`),p(`Z-${lz}`),p(`X${x(D1)}`),p(`N20 Z-${x(L)}`));
+    } else {
+      ph10.push(p(`N10 G01 X${x(D1)}`),p(`N20 Z-${x(L)}`));
+    }
+    ph10.push(p(`G00 X${sD}. Z2. M05 M09`),p('G28 U0. W0.'),'M1;',';');
+
+    // Gorge(s) in PH10
+    if(hasGroove){
+      (f.grooves||[]).forEach((gr,i)=>{
+        const gz=x(L*(0.30+i*0.12));
+        const gx=x(D1-gr.depth*2);
+        const gw=x((gr.width||3)/2);
+        ph10.push(
+          p('G18 G40 G80 G54'),
+          p('T0606 (GORGES)'),
+          p(`G97 S${grpms(D1)} M03`),
+          p(`G00 X${x(D1+2)}. Z2.`),
+          // First pass (one side of groove)
+          p(`G01 Z-${gz} F0.10`),
+          p(`X${gx}`),
+          p(`G00 X${x(D1+2)}.`),
+          // Second pass (other side)
+          p(`G01 Z-${x(parseFloat(gz)+parseFloat(gw))} F0.10`),
+          p(`X${gx}`),
+          p(`G00 X${x(D1+2)}. M05 M09`),
+          p('G28 U0. W0.'),
+          'M1;',';'
+        );
+      });
+    }
+
+    ph10.push('M30;',';','%');
+
+    // ════════════════════════════════════════════════════
+    //  PROGRAMME PH20 — FINITION + PERÇAGE + FILETAGE
+    // ════════════════════════════════════════════════════
+    const ph20=[
+      '','( ============================================ )',
+      '( PROGRAMME PH20 - FINITION                  )','( ============================================ )','',
+      '%',
+      `O0020 (${fn} - PH20 FINITION)`,
+      p(`G1900 D${sD}. L${sL}. K1`),';'
+    ];
+
+    // Centering + peck drilling if bore present
+    if(hasHole){
+      const drD=Math.max(3,Math.round(D2-2));
+      const drRPM=Math.round(vcEb*1000/Math.PI/drD);
+      const ctRPM=Math.round(vcEb*1000/Math.PI/2.5);
+      const drF=(drD<6?0.06:drD<12?0.10:0.15).toFixed(2);
+      const drQ=drD<6?500:drD<10?1000:2000;
+      ph20.push(
+        p('G18 G40 G80 G54'),
+        p('T0303 (POINTAGE)'),
+        p(`G97 S${ctRPM} M03`),
+        p('G00 X0.0 Z2.0 M08'),
+        p('G01 Z-2.0 F0.08'),
+        p('G01 Z2.0 F0.50'),
+        p(`G00 X${sD}. M09`),
+        p('G28 U0. W0.'),';',
+        p('G18 G40 G80 G54'),
+        p(`T0505 (PERCAGE Ø${drD})`),
+        p(`G97 S${drRPM} M03`),
+        p('G00 X0.0 Z5.0 M08'),
+        p(`G83 Z-${x(L+4)} R2.0 Q${drQ} F${drF}`),
+        p('G80'),
+        p('G00 Z2. M09'),
+        p('G28 U0. W0.'),';'
+      );
+    }
+
+    // Threading if present
+    if(th){
+      const tH=Math.round(th.pitch*541);  // thread height µm (0.54127×pitch)
+      const tMinD=(th.d-th.pitch*1.082).toFixed(3);
+      const tRPM=Math.round(500*20/th.d);
+      ph20.push(
+        p('G18 G40 G80 G54'),
+        p(`T0808 (FILETAGE M${th.d}x${th.pitch})`),
+        p(`G97 S${tRPM} M03`),
+        p(`G00 X${x(th.d+3)}. Z3. M08`),
+        p('G76 P020060 Q100 R0.050'),
+        p(`G76 X${tMinD} Z-${x(Math.min(th.d*2,L*0.28))} P${tH} Q350 F${th.pitch.toFixed(3)}`),
+        p(`G00 X${sD}. M05 M09`),
+        p('G28 U0. W0.'),
+        'M1;',';'
+      );
+    }
+
+    // Conical taper if detected
+    if(hasTaper){
+      const tp=f.tapers[0],ratio=tp.ratio||20;
+      const dX=(L*.35/ratio*2).toFixed(2);
+      ph20.push(
+        p('G18 G40 G80 G54'),
+        p('T0202 (EB EXTER)'),
+        p(`G96 S${vcFn} M03`),
+        p(`G00 X${sD}. Z2. M08`),
+        p(`G01 X${x(D1)}. Z0. F0.10`),
+        `G01 X${x(D1-parseFloat(dX))}. Z-${x(L*.35)} F0.12; (CONIQUE 1:${ratio})`,
+        p(`G00 X${sD}. M05 M09`),
+        p('G28 U0. W0.'),
+        'M1;',';'
+      );
+    }
+
+    // Finish pass T0404
+    ph20.push(
+      p('G18 G40 G80 G54'),
+      p('T0404 (FIN EXTER)'),
+      p(`G96 S${vcFn} M03`),
+      p(`G00 X${sD}. Z2.0 M08`),';',
+      // Face finish
+      p(`G00 X${x(D1+2)}. Z0.1`),
+      p('G01 Z0. F0.10'),
+      p('G01 X3.5'),
+      p('G00 Z2.'),';',
+      // Chamfer
+      p(`G00 X${x(D1-ch0*2-0.5)}. Z0.2`),
+      `G01 X${x(D1-ch0*2)}. Z-${x(ch0)} F0.08; (CHANFREIN ${ch0}X45)`,';',
+    );
+
+    // Bore finish if applicable
+    if(hasHole){
+      const bz=x(L*0.48);
+      ph20.push(
+        p(`G00 X${x(D2)}. Z2.`),
+        `G01 Z-${bz} F0.08; (FINITION Ø${x(D2)} Ra 1.6)`,
+        p(`X${x(D1+1)}.`),';'
+      );
+    }
+
+    // Outer diameter finish
+    ph20.push(
+      p(`G00 X${x(D1)}. Z2.`),
+      `G01 Z-${x(L)} F0.08; (FINITION Ø${x(D1)} Ra 1.6)`,
+      p(`G00 X${sD}.`),
+      ';','M05;','M09;','M01;','M30;',';','%'
+    );
+
+    return [...ph10,...ph20].join('\n');
   }
 
   // MILLING
