@@ -278,7 +278,12 @@
           <span style="color:var(--dim);font-size:11px" id="gcodeStats">970 lignes · 6 outils · ~24 min</span>
           <div style="flex:1"></div>
           <button class="btn" onclick="copyGcode()">📋 Copier</button>
-          <button class="btn btn-primary" onclick="downloadGcode()">⬇ Télécharger .nc</button>
+          <div id="gcodeDownloadBtns" style="display:flex;gap:4px">
+            <button class="btn btn-primary" onclick="downloadGcode()" id="btnDlAll">⬇ .nc</button>
+            <button class="btn" onclick="downloadPH10()" id="btnDlPH10" style="display:none;font-size:10px;padding:4px 7px">PH10</button>
+            <button class="btn" onclick="downloadPH20()" id="btnDlPH20" style="display:none;font-size:10px;padding:4px 7px">PH20</button>
+          </div>
+          <button class="btn" onclick="downloadDossier()" style="font-size:11px" title="Télécharger le dossier de fabrication complet (HTML)">📄 Dossier</button>
         </div>
         <!-- Validation panel -->
         <div style="padding:6px 14px;background:rgba(0,255,136,.05);border-bottom:1px solid rgba(0,255,136,.15);font-size:11px;display:flex;gap:16px">
@@ -1252,9 +1257,22 @@ function renderGcode(code){
       .replace(/\b([TH])(\d+)/g,'<span class="g-orange">$1$2</span>')
       .replace(/(\(.*?\))/g,'<span class="g-gray">$1</span>')
       .replace(/^(;.*)$/,'<span class="g-gray">$1</span>');
-    return `<div class="gcode-line"><span class="gcode-ln g-gray">${n}</span><span>${hl}</span></div>`;
+    // Highlight PH20 separator line with a visual break
+    const isSep=/PROGRAMME PH2/.test(line);
+    const style=isSep?'style="margin-top:8px;padding-top:8px;border-top:1px dashed #334155"':'';
+    return `<div class="gcode-line" ${style}><span class="gcode-ln g-gray">${n}</span><span>${hl}</span></div>`;
   }).join('');
-  document.getElementById('gcodeStats').textContent=`${lines.length} lignes · 6 outils · ~24 min`;
+  // Show PH10/PH20 split buttons when code contains both phases
+  const hasPH2=code.includes('PH20')||code.includes('O0020');
+  const btnAll=document.getElementById('btnDlAll');
+  const btnPH10=document.getElementById('btnDlPH10');
+  const btnPH20=document.getElementById('btnDlPH20');
+  if(btnAll) btnAll.style.display=hasPH2?'none':'';
+  if(btnPH10) btnPH10.style.display=hasPH2?'':'none';
+  if(btnPH20) btnPH20.style.display=hasPH2?'':'none';
+  // Count tools from T0xxx occurrences
+  const toolSet=new Set((code.match(/\bT0[1-9]\d+\b/g)||[]));
+  document.getElementById('gcodeStats').textContent=`${lines.length} lignes · ${toolSet.size||6} outils`;
 }
 
 // ── Controller / Material updates ──────────────────────────────────────────────
@@ -1697,9 +1715,10 @@ function generateGCodeFromFeatures(f){
     // Gorge(s) in PH10
     if(hasGroove){
       (f.grooves||[]).forEach((gr,i)=>{
-        const gz=x(L*(0.30+i*0.12));
+        // Use z from vision result if available, else estimate
+        const gz=gr.z&&gr.z>0 ? x(gr.z) : x(L*(0.30+i*0.12));
         const gx=x(D1-gr.depth*2);
-        const gw=x((gr.width||3)/2);
+        const gw=x((gr.w||gr.width||3)/2);
         ph10.push(
           p('G18 G40 G80 G54'),
           p('T0606 (GORGES)'),
@@ -2554,6 +2573,117 @@ function downloadGcode(){
   a.click();
 }
 
+function _splitPhases(code){
+  // Split at the separator between PH10 and PH20 (the blank line before the comment block)
+  const idx=code.indexOf('\n( ===');
+  if(idx<0) return {ph10:code, ph20:''};
+  return {ph10:code.slice(0,idx).trim(), ph20:code.slice(idx).trim()};
+}
+
+function downloadPH10(){
+  const{ph10}=_splitPhases(lastGCode||GCODE_TURNING);
+  if(!ph10){alert('Aucun programme PH10 disponible.');return;}
+  const base=(currentFileName||'PIECE').replace(/\.[^.]+$/,'');
+  const a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(ph10);
+  a.download=base+'_PH10.nc'; a.click();
+}
+
+function downloadPH20(){
+  const{ph20}=_splitPhases(lastGCode||GCODE_TURNING);
+  if(!ph20){alert('Aucun programme PH20 disponible.');return;}
+  const base=(currentFileName||'PIECE').replace(/\.[^.]+$/,'');
+  const a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(ph20);
+  a.download=base+'_PH20.nc'; a.click();
+}
+
+function downloadDossier(){
+  const f=lastExtractedFeatures;
+  const code=lastGCode||GCODE_TURNING;
+  const{ph10,ph20}=_splitPhases(code);
+  const base=(currentFileName||'PIECE_001').replace(/\.[^.]+$/,'');
+  const mat=f?f.material:'?';
+  const ptype=f?f.partType:'tournage';
+  const D=f&&f.diameters[0]?f.diameters[0]:'?';
+  const L=f&&f.lengths[0]?f.lengths[0]:'?';
+  const bore=f&&f.diameters[1]?` · alésage Ø${f.diameters[1]}`:'';
+  const gr=f&&f.grooves&&f.grooves.length?` · ${f.grooves.length} gorge(s)`:'';
+  const today=new Date().toLocaleDateString('fr-FR');
+
+  const escHtml=(s)=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const codeBlock=(c)=>`<pre style="background:#0d1117;color:#c9d1d9;font-family:monospace;font-size:11px;padding:14px;border-radius:4px;overflow-x:auto;white-space:pre-wrap;line-height:1.5">${escHtml(c)}</pre>`;
+
+  const ops=f?featuresToOps(f):[];
+  const gammeRows=ops.map((op,i)=>`
+    <tr style="${i%2===0?'background:#f9fafb':''}">
+      <td style="padding:6px 10px;font-weight:600">${(i+1)*10}</td>
+      <td style="padding:6px 10px">${op.label}</td>
+      <td style="padding:6px 10px">${op.tool}</td>
+      <td style="padding:6px 10px;text-align:center">${op.spindle.toLocaleString()}</td>
+      <td style="padding:6px 10px;text-align:center">${op.feed}</td>
+      <td style="padding:6px 10px;text-align:center">${op.depth}</td>
+      <td style="padding:6px 10px;text-align:center">${op.time}</td>
+    </tr>`).join('');
+
+  const html=`<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<title>Dossier de fabrication — ${base}</title>
+<style>
+  body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:0;padding:24px;max-width:1000px;margin:auto}
+  h1{font-size:20px;margin:0 0 4px}
+  h2{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#1d4ed8;margin:24px 0 10px;border-bottom:2px solid #1d4ed8;padding-bottom:4px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;background:#f0f4ff;border:1px solid #c7d7ff;border-radius:6px;padding:16px;margin-bottom:24px}
+  .header-left h1{color:#1d4ed8}
+  .meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;font-size:11px}
+  .meta-label{color:#555}
+  .meta-value{font-weight:600}
+  table{border-collapse:collapse;width:100%;font-size:11px;margin-bottom:16px}
+  th{background:#1d4ed8;color:#fff;padding:7px 10px;text-align:left;font-weight:600}
+  td{border-bottom:1px solid #e5e7eb}
+  .phase-header{background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:8px 12px;margin:16px 0 8px;font-weight:700;color:#1d4ed8;font-size:13px}
+  @media print{.no-print{display:none}pre{break-inside:avoid}}
+</style></head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <h1>Dossier de fabrication</h1>
+    <div style="font-size:13px;color:#374151;margin-top:4px">${base}</div>
+    <div style="font-size:11px;color:#6b7280;margin-top:2px">Généré par MathV2 CAM · ${today}</div>
+  </div>
+  <div class="meta">
+    <span class="meta-label">Matériau:</span><span class="meta-value">${mat}</span>
+    <span class="meta-label">Procédé:</span><span class="meta-value">${ptype==='tournage'?'Tournage CNC':'Fraisage CNC'}</span>
+    <span class="meta-label">Diamètre ext.:</span><span class="meta-value">Ø${D} mm</span>
+    <span class="meta-label">Longueur:</span><span class="meta-value">L=${L} mm</span>
+    ${f&&f.diameters[1]?`<span class="meta-label">Alésage:</span><span class="meta-value">Ø${f.diameters[1]} mm</span>`:''}
+    ${f&&f.grooves&&f.grooves.length?`<span class="meta-label">Gorges:</span><span class="meta-value">${f.grooves.length}×</span>`:''}
+  </div>
+</div>
+
+<h2>Gamme d'usinage</h2>
+<table>
+  <thead><tr>
+    <th>Opération</th><th>Label</th><th>Outil</th>
+    <th>N (tr/min)</th><th>Av. (mm/min)</th><th>Prof. (mm)</th><th>Durée</th>
+  </tr></thead>
+  <tbody>${gammeRows}</tbody>
+</table>
+
+${ph10?`<h2>Programme PH10 — Ébauche</h2>${codeBlock(ph10)}`:''}
+${ph20?`<h2>Programme PH20 — Finition</h2>${codeBlock(ph20)}`:''}
+
+<div style="margin-top:32px;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:8px">
+  Document généré automatiquement par MathV2 CAM · ${today} · Ne pas utiliser sans vérification par un opérateur qualifié.
+</div>
+</body></html>`;
+
+  const a=document.createElement('a');
+  a.href='data:text/html;charset=utf-8,'+encodeURIComponent(html);
+  a.download=base+'_DOSSIER.html';
+  a.click();
+}
+
 // ── Plan interpretation viewer ─────────────────────────────────────────────────
 let interpMatches=[];
 let currentFileRef=null;
@@ -2953,23 +3083,36 @@ function buildGeoList(geo){
 }
 
 // ── Tier-2: Claude Vision API ──────────────────────────────────────────────────
-const VISION_PROMPT=`Tu es un expert en dessin technique industriel (CAO/FAO). Analyse ce plan technique et retourne UNIQUEMENT un JSON valide (sans texte autour) avec cette structure exacte:
+const VISION_PROMPT=`Tu es un expert CAO/FAO en tournage et fraisage CNC (commande Fanuc).
+Analyse ce plan technique industriel et retourne UNIQUEMENT un JSON valide (sans texte autour) avec cette structure:
 {
-  "views": [{"id":1,"type":"face|profile|coupe|detail","label":"Vue de face","bounds":{"x_pct":0,"y_pct":0,"w_pct":50,"h_pct":100}}],
-  "hatchings": [{"viewId":1,"label":"Vue de coupe XX","bounds":{"x_pct":10,"y_pct":10,"w_pct":30,"h_pct":40}}],
-  "hiddenLines": [{"label":"Alésage intérieur Ø20","bounds":{"x_pct":20,"y_pct":30,"w_pct":10,"h_pct":5}}],
+  "partType": "tournage|fraisage|inconnu",
+  "material": "acier|aluminium|inox|laiton|plastique|inconnu",
+  "summary": "Bouchon acier Ø30 L=20mm, alésage Ø8, gorge Ø24, chanfrein 1×45°",
   "dimensions": [
-    {"type":"diameter|length|radius|angle","value":25,"unit":"mm","label":"Ø25","bounds":{"x_pct":5,"y_pct":5,"w_pct":15,"h_pct":4}},
-    {"type":"thread","value":"M12","label":"M12x1.75","bounds":{"x_pct":30,"y_pct":20,"w_pct":12,"h_pct":3}}
+    {"type":"diameter","value":30,"label":"Ø30","unit":"mm","bounds":{"x_pct":10,"y_pct":10,"w_pct":20,"h_pct":5}},
+    {"type":"bore","value":8,"label":"Ø8 (alésage)","unit":"mm","bounds":{"x_pct":30,"y_pct":20,"w_pct":15,"h_pct":4}},
+    {"type":"length","value":20,"label":"L=20","unit":"mm","bounds":{"x_pct":5,"y_pct":5,"w_pct":15,"h_pct":4}},
+    {"type":"thread","value":"M12","label":"M12x1.75","unit":"mm","bounds":{"x_pct":30,"y_pct":20,"w_pct":12,"h_pct":3}}
   ],
   "features": [
-    {"type":"chamfer|gorge|slot|counterbore|countersink|taper|surface|tolerance","label":"Chanfrein 2×45°","value":"2","bounds":{"x_pct":60,"y_pct":40,"w_pct":20,"h_pct":5}}
+    {"type":"chamfer","value":1,"label":"Chanfrein 1×45°","bounds":{"x_pct":60,"y_pct":40,"w_pct":15,"h_pct":4}},
+    {"type":"gorge","value":3,"label":"Gorge L=3mm","z_pos":3.5,"groove_diam":24,"bounds":{"x_pct":40,"y_pct":30,"w_pct":12,"h_pct":5}},
+    {"type":"surface","value":1.6,"label":"Ra 1.6","bounds":{"x_pct":50,"y_pct":50,"w_pct":10,"h_pct":3}},
+    {"type":"tolerance","value":"H7","label":"Ø12 H7","bounds":{"x_pct":35,"y_pct":25,"w_pct":10,"h_pct":3}}
   ],
-  "material": "acier|aluminium|inox|laiton|plastique|inconnu",
-  "partType": "tournage|fraisage|inconnu",
-  "summary": "Arbre en acier tourné, Ø50 L=120mm, filetage M30, chanfrein 2×45°"
+  "views": [{"id":1,"type":"face|profile|coupe","label":"Vue de face","bounds":{"x_pct":0,"y_pct":0,"w_pct":50,"h_pct":75}}],
+  "hatchings": [{"label":"Vue en coupe","bounds":{"x_pct":0,"y_pct":0,"w_pct":50,"h_pct":75}}]
 }
-Les bounds sont en % de la largeur/hauteur totale de l'image. Réponds UNIQUEMENT avec le JSON.`;
+REGLES IMPORTANTES:
+- Pour une pièce de TOURNAGE: relever le diamètre EXTÉRIEUR (type "diameter", la plus grande valeur Ø),
+  l'alésage ou perçage central (type "bore", la plus petite valeur Ø), la longueur totale (type "length"),
+  la position axiale Z de chaque gorge (z_pos en mm depuis la face), le diamètre au fond de gorge (groove_diam).
+- Pour une pièce de FRAISAGE: longueur, largeur, hauteur (type "length"), diamètres de trous (type "bore").
+- Filetage: inclure diamètre nominal et pas (ex: M12x1.75).
+- Si une tolérance ISO est visible (H7, h6, f7...) l'inclure comme feature "tolerance".
+- Les bounds sont en % de la largeur/hauteur totale de l'image.
+Réponds UNIQUEMENT avec le JSON, sans aucun texte autour.`;
 
 async function analyzeWithVision(){
   const canvEl=document.getElementById('interpretCanvas');
@@ -3185,20 +3328,37 @@ function applyVisionResult(){
     partType:r.partType==='tournage'?'tournage':'fraiseuse',
     raw:r.summary||''
   };
+  // Collect all diameters: external (type "diameter") and bores (type "bore")
+  const extDiams=[], boreDiams=[];
   (r.dimensions||[]).forEach(d=>{
     const v=parseFloat(d.value)||0;
-    if(d.type==='diameter'&&v>0) f.diameters.push(v);
+    if(d.type==='diameter'&&v>0) extDiams.push(v);
+    else if(d.type==='bore'&&v>0) boreDiams.push(v);
     else if(d.type==='length'&&v>0) f.lengths.push(v);
     else if(d.type==='radius'&&v>0) f.radii.push(v);
     else if(d.type==='thread'){
-      const m=(d.value||'').match(/M(\d+)/i);
-      if(m) f.threads.push({d:parseInt(m[1]),pitch:0,label:d.value});
+      const raw=d.value||d.label||'';
+      const m=raw.match(/M(\d+)(?:[xX×](\d+\.?\d*))?/i);
+      if(m) f.threads.push({d:parseInt(m[1]),pitch:m[2]?parseFloat(m[2]):0,label:raw});
     }
   });
+  // Sort: largest external diameter first, then bores smallest-first
+  extDiams.sort((a,b)=>b-a);
+  boreDiams.sort((a,b)=>a-b);
+  // Combine: external diams, then bore diams (bore = second diameter for G-code logic)
+  f.diameters=[...extDiams, ...boreDiams];
+
   (r.features||[]).forEach(ft=>{
     const v=parseFloat(ft.value)||0;
     if(ft.type==='chamfer') f.chamfers.push(v||1.5);
-    else if(ft.type==='gorge') f.grooves.push({w:v||3,depth:v||1.5,label:ft.label});
+    else if(ft.type==='gorge'){
+      // Extract groove details: width (value), z_pos, groove_diam (diameter at bottom)
+      const gw=v||3;
+      const gz=parseFloat(ft.z_pos)||0;
+      const gd=parseFloat(ft.groove_diam)||0;
+      const depth=gd>0?(extDiams[0]||30)/2-gd/2:gw;
+      f.grooves.push({w:gw,depth:Math.max(depth,1),z:gz,label:ft.label});
+    }
     else if(ft.type==='slot') f.slots.push({w:v||8,depth:v||4,length:v||40,label:ft.label});
     else if(ft.type==='counterbore') f.counterbores.push({d:v||16,depth:4,pilotD:8,label:ft.label});
     else if(ft.type==='countersink') f.countersinks.push({d:v||10,angle:90,label:ft.label});
