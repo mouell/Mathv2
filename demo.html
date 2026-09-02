@@ -73,6 +73,109 @@
   .icard.wrong{opacity:.42;border-color:#33333388;background:rgba(0,0,0,.25)}
   .ibadge{min-width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#000;flex-shrink:0}
   .ivbtn{padding:0 5px;height:16px;font-size:10px;border-radius:3px;cursor:pointer;line-height:16px;border:1px solid}
+
+  /* ── Go2cam style UI ─────────────────────────────────────── */
+  /* Menu bar */
+  .menubar{display:flex;align-items:center;height:28px;background:#0d0d14;border-bottom:1px solid #1a1a28;flex-shrink:0;padding:0 8px;gap:2px;user-select:none}
+  .menubar-brand{display:flex;align-items:center;gap:6px;padding-right:12px;margin-right:6px;border-right:1px solid #1e1e2e}
+  .menubar-brand svg{flex-shrink:0}
+  .menubar-brand span{font-weight:700;font-size:13px;letter-spacing:.03em}
+  .menubar-brand .tag{background:rgba(0,102,255,.2);color:#60a5fa;border:1px solid rgba(0,102,255,.35);padding:0px 5px;border-radius:2px;font-size:9px;font-weight:700}
+  .mb-item{position:relative;padding:0 10px;height:28px;display:flex;align-items:center;font-size:12px;color:#a0a0c0;cursor:pointer;border-radius:2px;gap:4px;transition:.1s}
+  .mb-item:hover,.mb-item.open{background:rgba(255,255,255,.07);color:#e0e0f0}
+  .mb-dropdown{position:absolute;top:100%;left:0;background:#14141e;border:1px solid #2a2a3e;border-radius:4px;min-width:190px;z-index:1000;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none}
+  .mb-item.open .mb-dropdown{display:block}
+  .mb-sep{height:1px;background:#1e1e2e;margin:3px 0}
+  .mb-opt{display:flex;align-items:center;gap:10px;padding:5px 14px;font-size:12px;color:#b0b0cc;cursor:pointer;white-space:nowrap;transition:.1s}
+  .mb-opt:hover{background:rgba(0,102,255,.15);color:#e0e0f0}
+  .mb-opt .shortcut{margin-left:auto;color:#505070;font-size:10px;font-family:'JetBrains Mono',monospace}
+  .mb-opt .icon{width:14px;text-align:center;opacity:.7}
+  .mb-opt.disabled{opacity:.35;pointer-events:none}
+  .mb-sub-arrow{margin-left:auto;opacity:.5}
+
+  /* Ribbon toolbar */
+  .ribbon{display:flex;align-items:center;height:52px;background:#0f0f1a;border-bottom:1px solid #1a1a28;flex-shrink:0;padding:0 8px;gap:1px}
+  .ribbon-sep{width:1px;height:36px;background:#1e1e2e;margin:0 6px;flex-shrink:0}
+  .ribbon-group{display:flex;align-items:center;gap:2px;padding:0 4px}
+  .ribbon-group-label{font-size:8px;color:#404060;text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-top:2px}
+  .rbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 8px;border-radius:4px;border:1px solid transparent;cursor:pointer;transition:.12s;min-width:44px;height:44px;color:#8888aa}
+  .rbtn:hover{background:rgba(255,255,255,.06);border-color:#2a2a3e;color:#c0c0e0}
+  .rbtn.active{background:rgba(0,102,255,.15);border-color:rgba(0,102,255,.4);color:#60a5fa}
+  .rbtn svg{flex-shrink:0}
+  .rbtn-label{font-size:9px;line-height:1;white-space:nowrap}
+  .rbtn-big{flex-direction:row;gap:6px;min-width:auto;padding:6px 10px;color:#c0c0e0;border-color:#1e1e2e;background:#141420}
+  .rbtn-big:hover{background:rgba(0,102,255,.12);border-color:rgba(0,102,255,.4);color:#60a5fa}
+  .rbtn-big .rbtn-label{font-size:11px;font-weight:600;white-space:nowrap}
+
+  /* Left panel - Operation tree */
+  .tree-header{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid var(--border);background:#0d0d14}
+  .tree-header-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6060a0;flex:1}
+  .tree-toolbar{display:flex;gap:2px}
+  .tree-btn{width:20px;height:20px;border-radius:3px;border:1px solid transparent;background:transparent;cursor:pointer;color:#505070;font-size:11px;display:flex;align-items:center;justify-content:center;transition:.1s}
+  .tree-btn:hover{background:rgba(255,255,255,.06);border-color:#2a2a3e;color:#a0a0c0}
+  .tree-section{margin-bottom:2px}
+  .tree-phase{display:flex;align-items:center;gap:6px;padding:4px 8px;background:#0f0f1a;border-left:3px solid #2a2a5a;cursor:pointer;font-size:10px;font-weight:700;color:#7080c0;text-transform:uppercase;letter-spacing:.05em;user-select:none}
+  .tree-phase:hover{background:#13131e;color:#9090d0}
+  .tree-phase.ph10{border-left-color:#f97316}
+  .tree-phase.ph20{border-left-color:#22d3ee}
+  .tree-phase .collapse-icon{width:10px;color:#404060;margin-left:auto;font-size:9px}
+  .tree-op{display:flex;align-items:center;gap:6px;padding:5px 8px 5px 20px;cursor:pointer;font-size:11px;color:#909090;border-left:2px solid transparent;transition:.1s}
+  .tree-op:hover{background:rgba(255,255,255,.04);color:#c0c0e0;border-left-color:#3a3a5e}
+  .tree-op.selected{background:rgba(0,102,255,.1);color:#8080ff;border-left-color:var(--primary)}
+  .tree-op .op-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:#404060;min-width:22px}
+  .tree-op .op-icon{font-size:12px;flex-shrink:0}
+  .tree-op .op-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tree-op .op-tool{font-size:9px;color:#404060;font-family:'JetBrains Mono',monospace;flex-shrink:0}
+  .tree-op .op-status{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .tree-op .op-status.ok{background:#22c55e}
+  .tree-op .op-status.warn{background:#f59e0b}
+  .tree-op .op-status.err{background:#ef4444}
+  .tree-root{display:flex;align-items:center;gap:6px;padding:5px 8px;font-size:11px;color:#5060a0;cursor:pointer;font-weight:600}
+  .tree-root:hover{color:#7080c0}
+  .tree-stock{display:flex;align-items:center;gap:6px;padding:3px 8px 3px 20px;font-size:10px;color:#505070;font-family:'JetBrains Mono',monospace}
+  .ctx-menu{position:fixed;background:#14141e;border:1px solid #2a2a3e;border-radius:5px;min-width:160px;z-index:9999;box-shadow:0 8px 28px rgba(0,0,0,.7);display:none}
+  .ctx-menu.visible{display:block}
+  .ctx-item{display:flex;align-items:center;gap:8px;padding:5px 12px;font-size:11px;color:#a0a0c0;cursor:pointer;transition:.1s}
+  .ctx-item:hover{background:rgba(0,102,255,.15);color:#e0e0f0}
+  .ctx-item .icon{width:14px;text-align:center}
+  .ctx-sep{height:1px;background:#1e1e2e;margin:3px 0}
+  .ctx-item.danger{color:#f87171}
+  .ctx-item.danger:hover{background:rgba(239,68,68,.15)}
+
+  /* Status bar */
+  .statusbar{display:flex;align-items:center;height:22px;background:#08080f;border-top:1px solid #141420;flex-shrink:0;padding:0 10px;gap:0;font-size:10px;font-family:'JetBrains Mono',monospace;color:#404060;overflow:hidden}
+  .sb-item{display:flex;align-items:center;gap:5px;padding:0 10px;border-right:1px solid #141420;height:100%;white-space:nowrap;cursor:default}
+  .sb-item:hover{background:rgba(255,255,255,.03);color:#7080a0}
+  .sb-dot{width:6px;height:6px;border-radius:50%;background:#1e3a1e}
+  .sb-dot.ok{background:#15803d}
+  .sb-dot.warn{background:#b45309}
+  .sb-dot.err{background:#b91c1c}
+  .sb-spacer{flex:1}
+
+  /* Add Operation Dialog */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:800;display:flex;align-items:center;justify-content:center}
+  .modal-box{background:#12121e;border:1px solid #2a2a3e;border-radius:8px;width:520px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.8)}
+  .modal-head{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid #1e1e2e;flex-shrink:0}
+  .modal-head h3{font-size:14px;font-weight:700;flex:1;color:#d0d0f0}
+  .modal-close{width:24px;height:24px;border-radius:4px;border:1px solid #2a2a3e;background:transparent;color:#606080;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:.1s}
+  .modal-close:hover{background:#1e1e2e;color:#c0c0e0}
+  .modal-body{flex:1;overflow-y:auto;padding:16px}
+  .modal-foot{padding:12px 16px;border-top:1px solid #1e1e2e;display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
+  .form-row{display:flex;gap:10px;margin-bottom:12px}
+  .form-col{flex:1;display:flex;flex-direction:column;gap:4px}
+  .form-label{font-size:10px;color:#606080;text-transform:uppercase;letter-spacing:.05em}
+  .form-input{background:#0d0d16;border:1px solid #2a2a3e;color:#c0c0e0;border-radius:4px;padding:5px 9px;font-size:12px;outline:none;font-family:'JetBrains Mono',monospace;transition:.1s}
+  .form-input:focus{border-color:rgba(0,102,255,.6);box-shadow:0 0 0 2px rgba(0,102,255,.12)}
+  .form-select{background:#0d0d16;border:1px solid #2a2a3e;color:#c0c0e0;border-radius:4px;padding:5px 9px;font-size:12px;outline:none;cursor:pointer;width:100%;transition:.1s}
+  .form-select:focus{border-color:rgba(0,102,255,.6)}
+  .op-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+  .op-type-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border:1px solid #2a2a3e;border-radius:6px;cursor:pointer;transition:.12s;background:#0d0d16}
+  .op-type-btn:hover{border-color:#3a3a5e;background:#111122;color:#c0c0e0}
+  .op-type-btn.selected{border-color:rgba(0,102,255,.6);background:rgba(0,102,255,.12);color:#60a5fa}
+  .op-type-btn .icon{font-size:20px}
+  .op-type-btn .name{font-size:10px;font-weight:600;color:inherit;text-align:center}
+  .op-type-btn .desc{font-size:9px;color:#505070;text-align:center}
+  .section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#505080;margin:12px 0 8px;padding-bottom:4px;border-bottom:1px solid #1e1e2e}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -81,102 +184,252 @@
 <!-- ═══════════════════════════════════════════════════════════════ APP LAYOUT -->
 <div style="display:flex;flex-direction:column;height:100vh;width:100vw;overflow:hidden">
 
-  <!-- TOP BAR -->
-  <div style="display:flex;align-items:center;gap:0;height:44px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;padding:0 16px;gap:16px">
-    <!-- Logo -->
-    <div style="display:flex;align-items:center;gap:8px;padding-right:16px;border-right:1px solid var(--border)">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#0066ff" stroke-width="1.5" fill="rgba(0,102,255,.15)"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="#00d4ff" stroke-width="1.5"/></svg>
-      <span style="font-weight:700;font-size:15px;letter-spacing:.04em">Math<span style="color:var(--primary)">V2</span></span>
-      <span style="background:rgba(0,102,255,.15);color:var(--primary);border:1px solid rgba(0,102,255,.3);padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600">CAD/CAM IA</span>
+  <!-- MENU BAR -->
+  <div class="menubar" id="menuBar">
+    <div class="menubar-brand">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#0066ff" stroke-width="1.5" fill="rgba(0,102,255,.15)"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="#00d4ff" stroke-width="1.5"/></svg>
+      <span>Math<span style="color:#60a5fa">V2</span></span>
+      <span class="tag">CAM</span>
     </div>
-
-    <!-- Project name -->
-    <div style="flex:1;display:flex;align-items:center;gap:8px">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      <span style="color:var(--muted)" id="projectName">Aucun fichier chargé</span>
-    </div>
-
-    <!-- Status badge -->
-    <div id="statusBadge" class="badge" style="background:rgba(90,90,120,.15);border:1px solid rgba(90,90,120,.3);color:var(--dim)">
-      <span class="dot" style="background:var(--dim)"></span> En attente
-    </div>
-
-    <!-- Tabs -->
-    <div style="display:flex;align-items:flex-end;border-bottom:1px solid transparent;gap:2px">
-      <div class="tab" onclick="setTab('interpret')" id="tab-interpret">
-        <span>📐</span> Plan
-      </div>
-      <div class="tab" onclick="setTab('gamme')" id="tab-gamme">
-        <span>📋</span> Gamme
-      </div>
-      <div class="tab active" onclick="setTab('viewer')" id="tab-viewer">
-        <span>⬡</span> Visionneuse 3D
-      </div>
-      <div class="tab" onclick="setTab('gcode')" id="tab-gcode">
-        <span>⌨</span> G-Code
-      </div>
-      <div class="tab" onclick="setTab('sim')" id="tab-sim">
-        <span>▶</span> Simulation
+    <!-- Fichier -->
+    <div class="mb-item" id="mbFichier" onclick="toggleMenu('mbFichier')">Fichier
+      <div class="mb-dropdown">
+        <div class="mb-opt" onclick="newProject()"><span class="icon">🆕</span>Nouveau projet<span class="shortcut">Ctrl+N</span></div>
+        <div class="mb-opt" onclick="document.getElementById('fileInput').click()"><span class="icon">📂</span>Ouvrir plan…<span class="shortcut">Ctrl+O</span></div>
+        <div class="mb-sep"></div>
+        <div class="mb-opt" onclick="downloadDossier()"><span class="icon">💾</span>Exporter dossier<span class="shortcut">Ctrl+S</span></div>
+        <div class="mb-opt" onclick="downloadGcode()"><span class="icon">📄</span>Exporter G-code…</div>
+        <div class="mb-sep"></div>
+        <div class="mb-opt" onclick="loadDemo()"><span class="icon">⚡</span>Charger démo</div>
       </div>
     </div>
-
-    <!-- Actions -->
-    <div style="display:flex;gap:6px;padding-left:12px;border-left:1px solid var(--border)">
-      <!-- Part type toggle -->
-      <div style="display:flex;border:1px solid var(--border2);border-radius:5px;overflow:hidden">
-        <button id="btnFraiseuse" onclick="setPartMode('fraiseuse')" style="padding:4px 10px;font-size:11px;background:var(--primary);border:none;color:#fff;cursor:pointer;font-family:inherit">⬡ Fraisage</button>
-        <button id="btnTournage" onclick="setPartMode('tournage')" style="padding:4px 10px;font-size:11px;background:var(--surface2);border:none;color:var(--muted);cursor:pointer;font-family:inherit">◎ Tournage</button>
+    <!-- Configuration -->
+    <div class="mb-item" id="mbConfig" onclick="toggleMenu('mbConfig')">Configuration
+      <div class="mb-dropdown">
+        <div class="mb-opt" onclick="openMachineConfig()"><span class="icon">🤖</span>Machine CNC…</div>
+        <div class="mb-opt" onclick="openControllerConfig()"><span class="icon">🖥</span>Contrôleur CN…</div>
+        <div class="mb-opt" onclick="showApiKeyModal()"><span class="icon">🔑</span>Clé API Vision IA…</div>
+        <div class="mb-sep"></div>
+        <div class="mb-opt" onclick="openPostConfig()"><span class="icon">⚙</span>Post-processeur…</div>
       </div>
-      <button class="btn" onclick="loadDemo()">⚡ Demo</button>
-      <select id="controllerSelect" style="width:110px" onchange="updateController()">
-        <option value="fanuc">Fanuc 0i-MF</option>
+    </div>
+    <!-- Brut -->
+    <div class="mb-item" id="mbBrut" onclick="toggleMenu('mbBrut')">Brut
+      <div class="mb-dropdown">
+        <div class="mb-opt" onclick="openStockDialog('cylindre')"><span class="icon">⬤</span>Cylindrique…</div>
+        <div class="mb-opt" onclick="openStockDialog('rect')"><span class="icon">⬛</span>Parallélépipède…</div>
+        <div class="mb-sep"></div>
+        <div class="mb-opt disabled"><span class="icon">📦</span>Depuis fichier STEP…</div>
+      </div>
+    </div>
+    <!-- Usinage -->
+    <div class="mb-item" id="mbUsinage" onclick="toggleMenu('mbUsinage')">Usinage
+      <div class="mb-dropdown" style="min-width:220px">
+        <div class="mb-opt" onclick="openAddOpDialog('dressage')"><span class="icon">⚡</span>Dressage face</div>
+        <div class="mb-opt" onclick="openAddOpDialog('ebauche')"><span class="icon">🔵</span>Chariotage ébauche (G73)</div>
+        <div class="mb-opt" onclick="openAddOpDialog('gorge')"><span class="icon">🟠</span>Gorge (G01)</div>
+        <div class="mb-opt" onclick="openAddOpDialog('pointage')"><span class="icon">🟢</span>Pointage centrage</div>
+        <div class="mb-opt" onclick="openAddOpDialog('percage')"><span class="icon">🔴</span>Perçage (G83)</div>
+        <div class="mb-opt" onclick="openAddOpDialog('filetage')"><span class="icon">🟣</span>Filetage (G76)</div>
+        <div class="mb-opt" onclick="openAddOpDialog('finition')"><span class="icon">✨</span>Finition (T0404)</div>
+        <div class="mb-sep"></div>
+        <div class="mb-opt" onclick="openAddOpDialog('surfacage')"><span class="icon">▦</span>Surfaçage (fraisage)</div>
+        <div class="mb-opt" onclick="openAddOpDialog('contour')"><span class="icon">⬡</span>Contournage (fraisage)</div>
+        <div class="mb-opt" onclick="openAddOpDialog('poche')"><span class="icon">⬜</span>Poche (fraisage)</div>
+      </div>
+    </div>
+    <!-- Outils -->
+    <div class="mb-item" id="mbOutils" onclick="toggleMenu('mbOutils')">Outils
+      <div class="mb-dropdown">
+        <div class="mb-opt" onclick="openToolLibrary()"><span class="icon">🔧</span>Bibliothèque outils…</div>
+        <div class="mb-opt" onclick="openToolLibrary('add')"><span class="icon">➕</span>Nouvel outil…</div>
+        <div class="mb-sep"></div>
+        <div class="mb-opt disabled"><span class="icon">📊</span>Paramètres de coupe…</div>
+      </div>
+    </div>
+    <!-- Simulation -->
+    <div class="mb-item" id="mbSim" onclick="setTab('sim');closeAllMenus()">Simulation</div>
+    <!-- Post-traitement -->
+    <div class="mb-item" id="mbPost" onclick="toggleMenu('mbPost')">Post-traitement
+      <div class="mb-dropdown">
+        <div class="mb-opt" onclick="setTab('gcode');closeAllMenus()"><span class="icon">⌨</span>Voir G-code</div>
+        <div class="mb-opt" onclick="downloadPH10()"><span class="icon">⬇</span>Exporter PH10…</div>
+        <div class="mb-opt" onclick="downloadPH20()"><span class="icon">⬇</span>Exporter PH20…</div>
+        <div class="mb-opt" onclick="downloadDossier()"><span class="icon">📄</span>Exporter dossier complet</div>
+        <div class="mb-sep"></div>
+        <div class="mb-opt"><span class="icon">🖥</span>Contrôleur : <span id="mbControllerName" style="color:#60a5fa;margin-left:4px">Fanuc 0i-T</span></div>
+      </div>
+    </div>
+    <div style="flex:1"></div>
+    <div style="font-size:10px;color:#303050;font-family:'JetBrains Mono',monospace" id="projectName">Aucun fichier</div>
+    <div style="width:1px;height:18px;background:#1a1a28;margin:0 8px"></div>
+    <div id="statusBadge" style="display:flex;align-items:center;gap:4px;font-size:10px;color:#404060">
+      <span id="sbDot" style="width:6px;height:6px;border-radius:50%;background:#1e3a1e"></span>
+      <span id="sbText">En attente</span>
+    </div>
+  </div>
+
+  <!-- RIBBON TOOLBAR -->
+  <div class="ribbon">
+    <!-- Fichier -->
+    <div class="ribbon-group">
+      <button class="rbtn" onclick="document.getElementById('fileInput').click()" title="Ouvrir plan">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span class="rbtn-label">Ouvrir</span>
+      </button>
+      <button class="rbtn" onclick="downloadDossier()" title="Exporter dossier">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span class="rbtn-label">Dossier</span>
+      </button>
+    </div>
+    <div class="ribbon-sep"></div>
+    <!-- Vue / Plan -->
+    <div class="ribbon-group">
+      <button class="rbtn" onclick="setTab('interpret')" id="rb-plan" title="Analyser plan PDF">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        <span class="rbtn-label">Plan IA</span>
+      </button>
+      <button class="rbtn" onclick="setTab('viewer')" id="rb-3d" title="Vue 3D">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <span class="rbtn-label">Vue 3D</span>
+      </button>
+    </div>
+    <div class="ribbon-sep"></div>
+    <!-- Mode tournage/fraisage -->
+    <div class="ribbon-group">
+      <button class="rbtn" id="rbTournage" onclick="setPartMode('tournage')" title="Mode tournage">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+        <span class="rbtn-label">Tournage</span>
+      </button>
+      <button class="rbtn active" id="rbFraisage" onclick="setPartMode('fraiseuse')" title="Mode fraisage">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="8.5" x2="22" y2="8.5"/></svg>
+        <span class="rbtn-label">Fraisage</span>
+      </button>
+    </div>
+    <div class="ribbon-sep"></div>
+    <!-- Brut -->
+    <div class="ribbon-group">
+      <button class="rbtn rbtn-big" onclick="openStockDialog('cylindre')" title="Définir brut cylindrique">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/></svg>
+        <span class="rbtn-label">🧊 Brut</span>
+      </button>
+    </div>
+    <div class="ribbon-sep"></div>
+    <!-- Usinage -->
+    <div class="ribbon-group">
+      <button class="rbtn rbtn-big" onclick="openAddOpDialog()" style="background:rgba(0,102,255,.12);border-color:rgba(0,102,255,.35);color:#60a5fa" title="Ajouter une opération d'usinage">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span class="rbtn-label">Opération</span>
+      </button>
+      <button class="rbtn" onclick="openToolLibrary()" title="Bibliothèque outils">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span class="rbtn-label">Outils</span>
+      </button>
+    </div>
+    <div class="ribbon-sep"></div>
+    <!-- Gamme + Sim + G-code -->
+    <div class="ribbon-group">
+      <button class="rbtn" onclick="setTab('gamme')" id="rb-gamme" title="Gamme d'usinage">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span class="rbtn-label">Gamme</span>
+      </button>
+      <button class="rbtn" onclick="setTab('sim')" id="rb-sim" title="Simulation">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span class="rbtn-label">Simuler</span>
+      </button>
+      <button class="rbtn" onclick="setTab('gcode')" id="rb-gcode" title="Voir G-code">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <span class="rbtn-label">G-Code</span>
+      </button>
+    </div>
+    <div class="ribbon-sep"></div>
+    <!-- Contrôleur + Démo -->
+    <div class="ribbon-group" style="gap:6px">
+      <select id="controllerSelect" style="width:100px;font-size:10px;height:32px" onchange="updateController()">
+        <option value="fanuc">Fanuc 0i-T</option>
         <option value="siemens">Siemens 840D</option>
         <option value="heidenhain">Heidenhain</option>
         <option value="iso">ISO 6983</option>
       </select>
+      <button class="rbtn rbtn-big" onclick="loadDemo()" title="Charger exemple démo">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span class="rbtn-label">Démo</span>
+      </button>
     </div>
   </div>
 
   <!-- MAIN CONTENT -->
   <div style="display:flex;flex:1;overflow:hidden">
 
-    <!-- ═══ LEFT SIDEBAR ═══════════════════════════════════════════════════ -->
-    <div style="width:268px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+    <!-- ═══ LEFT SIDEBAR — OPERATION TREE ══════════════════════════════ -->
+    <div style="width:270px;flex-shrink:0;background:#0a0a12;border-right:1px solid #141420;display:flex;flex-direction:column;overflow:hidden">
 
-      <!-- Import zone -->
-      <div style="padding:12px">
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:8px">Import fichier</div>
-        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event)">
-          <input type="file" id="fileInput" style="display:none" accept=".pdf,.dxf,.dwg,.jpg,.jpeg,.png,.tiff" onchange="handleFile(this.files[0])">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--dim)" stroke-width="1.5" style="margin:0 auto 8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <div style="color:var(--muted);font-size:12px;margin-bottom:4px">Déposer un plan industriel</div>
-          <div style="color:var(--dim);font-size:10px">PDF · DXF · DWG · JPG · PNG</div>
+      <!-- Tree header -->
+      <div class="tree-header">
+        <span class="tree-header-title">Arbre des opérations</span>
+        <div class="tree-toolbar">
+          <button class="tree-btn" onclick="openAddOpDialog()" title="Ajouter opération">+</button>
+          <button class="tree-btn" onclick="refreshTree()" title="Actualiser">↺</button>
+          <button class="tree-btn" onclick="collapseTree()" title="Tout réduire">▾</button>
         </div>
       </div>
 
-      <div style="border-top:1px solid var(--border);padding:12px">
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:8px">Matériau</div>
-        <select id="materialSelect" style="width:100%" onchange="updateMaterial()">
-          <option>Aluminium 6061-T6</option>
-          <option>Acier 1045</option>
-          <option>Inox 316L</option>
-          <option>Titane Ti6Al4V</option>
-          <option>Laiton C360</option>
-          <option>Plastique POM</option>
-          <option>Fonte GG25</option>
-        </select>
+      <!-- Tree body -->
+      <div style="flex:1;overflow-y:auto" id="opTreeContainer">
+        <!-- Root node -->
+        <div class="tree-root" onclick="setTab('interpret')">
+          <span style="font-size:14px">📁</span>
+          <span id="treeProjectName" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Nouveau projet</span>
+          <span style="font-size:9px;color:#303050">▾</span>
+        </div>
+
+        <!-- Import zone (hidden file input) -->
+        <div class="tree-stock" style="cursor:pointer;color:#404080" onclick="document.getElementById('fileInput').click()">
+          <input type="file" id="fileInput" style="display:none" accept=".pdf,.dxf,.dwg,.jpg,.jpeg,.png,.tiff" onchange="handleFile(this.files[0])">
+          <span style="font-size:11px">📐</span>
+          <span id="treePlanName" style="color:#303060">+ Importer plan PDF…</span>
+        </div>
+
+        <!-- Stock info -->
+        <div class="tree-stock" id="treeStockInfo" style="cursor:pointer" onclick="openStockDialog('cylindre')">
+          <span style="font-size:11px">🧊</span>
+          <span id="treeStockLabel" style="color:#305050">Brut : non défini</span>
+        </div>
+
+        <!-- Origin -->
+        <div class="tree-stock">
+          <span style="font-size:11px">🎯</span>
+          <span style="color:#305030">G54 — Face Z0</span>
+        </div>
+
+        <!-- Drop zone for plan -->
+        <div class="drop-zone" id="dropZone" style="margin:8px;padding:12px" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()">
+          <div style="color:var(--muted);font-size:11px;margin-bottom:3px">⬆ Déposer plan ici</div>
+          <div style="color:var(--dim);font-size:10px">PDF · DXF · JPG · PNG</div>
+        </div>
+
+        <!-- Operations tree (filled by buildOpTree()) -->
+        <div id="opTree" style="margin-top:4px"></div>
       </div>
 
-      <!-- Recent projects -->
-      <div style="flex:1;overflow-y:auto;padding:12px;border-top:1px solid var(--border)">
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:8px">Projets récents</div>
-        <div id="recentProjects"></div>
-      </div>
-
-      <!-- Footer -->
-      <div style="padding:10px 12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-        <span style="color:var(--dim);font-size:10px" class="mono">v1.0.0</span>
-        <span style="color:var(--dim);font-size:10px">Pipeline 100% local</span>
+      <!-- Bottom: material + settings -->
+      <div style="border-top:1px solid #141420">
+        <div style="padding:7px 10px;display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:#404060;white-space:nowrap">Matériau</span>
+          <select id="materialSelect" style="flex:1;font-size:10px;background:#0d0d16;border:1px solid #1e1e2e;color:#808090;border-radius:3px;padding:2px 4px" onchange="updateMaterial()">
+            <option>Aluminium 6061-T6</option>
+            <option>Acier 1045</option>
+            <option>Inox 316L</option>
+            <option>Titane Ti6Al4V</option>
+            <option>Laiton C360</option>
+            <option>Plastique POM</option>
+            <option>Fonte GG25</option>
+          </select>
+        </div>
+        <div style="padding:5px 10px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #0f0f1a">
+          <span style="color:#252540;font-size:9px" class="mono">v2.0 · Go2cam style</span>
+          <span style="color:#252540;font-size:9px">100% local</span>
+        </div>
       </div>
     </div>
 
@@ -379,6 +632,176 @@
           <div id="matCutting"></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="statusbar">
+    <div class="sb-item"><span class="sb-dot ok" id="sb-dot"></span><span id="sb-ctrl">FANUC 0i-T</span></div>
+    <div class="sb-item">Mat: <span id="sb-mat" style="color:#507090;margin-left:3px">—</span></div>
+    <div class="sb-item">Brut: <span id="sb-stock" style="color:#507090;margin-left:3px">—</span></div>
+    <div class="sb-item">Outils: <span id="sb-tools" style="color:#507090;margin-left:3px">0</span></div>
+    <div class="sb-item" id="sb-gcodeStatus">G-code: <span style="color:#303050">—</span></div>
+    <div class="sb-spacer"></div>
+    <div class="sb-item" id="sb-coords" style="color:#252540">X 0.000  Y 0.000  Z 0.000</div>
+  </div>
+</div>
+
+<!-- Context menu -->
+<div class="ctx-menu" id="ctxMenu">
+  <div class="ctx-item" onclick="ctxAction('edit')"><span class="icon">✏️</span>Modifier paramètres…</div>
+  <div class="ctx-item" onclick="ctxAction('moveup')"><span class="icon">⬆</span>Monter</div>
+  <div class="ctx-item" onclick="ctxAction('movedown')"><span class="icon">⬇</span>Descendre</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxAction('calc')"><span class="icon">⚙</span>Recalculer trajectoire</div>
+  <div class="ctx-item" onclick="ctxAction('sim')"><span class="icon">▶</span>Simuler cette opération</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" onclick="ctxAction('delete')"><span class="icon">🗑</span>Supprimer</div>
+</div>
+
+<!-- Add Operation Dialog -->
+<div class="modal-overlay" id="addOpModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span style="font-size:16px">➕</span>
+      <h3>Ajouter une opération</h3>
+      <button class="modal-close" onclick="document.getElementById('addOpModal').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="section-title">Phase</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:#a0a0c0">
+          <input type="radio" name="opPhase" value="ph10" checked style="accent-color:#f97316"> PH10 Ébauche
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:#a0a0c0">
+          <input type="radio" name="opPhase" value="ph20" style="accent-color:#22d3ee"> PH20 Finition
+        </label>
+      </div>
+      <div class="section-title">Type d'opération</div>
+      <div class="op-type-grid" id="opTypeGrid">
+        <div class="op-type-btn selected" onclick="selectOpType('dressage',this)"><span class="icon">⚡</span><span class="name">Dressage</span><span class="desc">Face frontale</span></div>
+        <div class="op-type-btn" onclick="selectOpType('ebauche',this)"><span class="icon">🔵</span><span class="name">Ébauche G73</span><span class="desc">Chariotage</span></div>
+        <div class="op-type-btn" onclick="selectOpType('gorge',this)"><span class="icon">🟠</span><span class="name">Gorge</span><span class="desc">Plongée G01</span></div>
+        <div class="op-type-btn" onclick="selectOpType('pointage',this)"><span class="icon">🟢</span><span class="name">Pointage</span><span class="desc">T0303</span></div>
+        <div class="op-type-btn" onclick="selectOpType('percage',this)"><span class="icon">🔴</span><span class="name">Perçage</span><span class="desc">G83 peck</span></div>
+        <div class="op-type-btn" onclick="selectOpType('finition',this)"><span class="icon">✨</span><span class="name">Finition</span><span class="desc">T0404</span></div>
+        <div class="op-type-btn" onclick="selectOpType('filetage',this)"><span class="icon">🟣</span><span class="name">Filetage</span><span class="desc">G76</span></div>
+        <div class="op-type-btn" onclick="selectOpType('surfacage',this)"><span class="icon">▦</span><span class="name">Surfaçage</span><span class="desc">Fraisage</span></div>
+        <div class="op-type-btn" onclick="selectOpType('poche',this)"><span class="icon">⬜</span><span class="name">Poche</span><span class="desc">Fraisage</span></div>
+      </div>
+      <div class="section-title">Paramètres</div>
+      <div class="form-row">
+        <div class="form-col">
+          <span class="form-label">Outil</span>
+          <select class="form-select" id="opTool">
+            <option value="T0202">T0202 — Ébauche ext.</option>
+            <option value="T0303">T0303 — Pointage</option>
+            <option value="T0404">T0404 — Finition ext.</option>
+            <option value="T0505">T0505 — Perçage</option>
+            <option value="T0606">T0606 — Gorges</option>
+            <option value="T0808">T0808 — Filetage</option>
+          </select>
+        </div>
+        <div class="form-col">
+          <span class="form-label">Vitesse de coupe Vc (m/min)</span>
+          <input type="number" class="form-input" id="opVc" value="250" min="10" max="1000" step="10">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col">
+          <span class="form-label">Diamètre pièce (mm)</span>
+          <input type="number" class="form-input" id="opDiam" placeholder="ex: 30" min="1" max="500">
+        </div>
+        <div class="form-col">
+          <span class="form-label">Longueur / Prof. (mm)</span>
+          <input type="number" class="form-input" id="opLen" placeholder="ex: 20" min="0.1" max="2000">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col">
+          <span class="form-label">Avance F (mm/tr)</span>
+          <input type="number" class="form-input" id="opFeed" value="0.10" min="0.01" max="5" step="0.01">
+        </div>
+        <div class="form-col">
+          <span class="form-label">Prise de passe ap (mm)</span>
+          <input type="number" class="form-input" id="opAp" value="2.0" min="0.1" max="20" step="0.1">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-col" style="flex:2">
+          <span class="form-label">Commentaire</span>
+          <input type="text" class="form-input" id="opComment" placeholder="ex: Ébauche extérieure Ø30 L=20">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="document.getElementById('addOpModal').style.display='none'">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmAddOp()">✅ Ajouter l'opération</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stock Dialog -->
+<div class="modal-overlay" id="stockModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="width:380px">
+    <div class="modal-head">
+      <span style="font-size:16px">🧊</span>
+      <h3>Définir le brut</h3>
+      <button class="modal-close" onclick="document.getElementById('stockModal').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="op-type-btn selected" id="stockTypeCyl" onclick="selectStockType('cylindre')" style="flex:1"><span class="icon">⬤</span><span class="name">Cylindrique</span></button>
+        <button class="op-type-btn" id="stockTypeRect" onclick="selectStockType('rect')" style="flex:1"><span class="icon">⬛</span><span class="name">Rectangle</span></button>
+      </div>
+      <div class="form-row">
+        <div class="form-col" id="stockCylFields">
+          <span class="form-label">Diamètre brut (mm)</span>
+          <input type="number" class="form-input" id="stockDiam" value="35" min="1" max="1000" step="5">
+        </div>
+        <div class="form-col">
+          <span class="form-label">Longueur brut (mm)</span>
+          <input type="number" class="form-input" id="stockLen" value="22" min="1" max="5000" step="5">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="document.getElementById('stockModal').style.display='none'">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmStock()">✅ Appliquer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tool Library Dialog -->
+<div class="modal-overlay" id="toolLibModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="width:560px">
+    <div class="modal-head">
+      <span style="font-size:16px">🔧</span>
+      <h3>Bibliothèque outils</h3>
+      <button class="modal-close" onclick="document.getElementById('toolLibModal').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead style="background:#0d0d16;position:sticky;top:0">
+          <tr>
+            <th style="padding:8px 12px;text-align:left;color:#6060a0;font-weight:600;border-bottom:1px solid #1e1e2e">N°</th>
+            <th style="padding:8px 12px;text-align:left;color:#6060a0;font-weight:600;border-bottom:1px solid #1e1e2e">Description</th>
+            <th style="padding:8px 12px;text-align:left;color:#6060a0;font-weight:600;border-bottom:1px solid #1e1e2e">Type</th>
+            <th style="padding:8px 12px;text-align:right;color:#6060a0;font-weight:600;border-bottom:1px solid #1e1e2e">Vc rec.</th>
+          </tr>
+        </thead>
+        <tbody id="toolLibBody">
+          <tr style="border-bottom:1px solid #0f0f1a"><td style="padding:7px 12px;font-family:'JetBrains Mono',monospace;color:#60a5fa">T02</td><td style="padding:7px 12px;color:#c0c0e0">Plaquette ébauche ext. CNMG 120408</td><td style="padding:7px 12px;color:#808090">Chariotage</td><td style="padding:7px 12px;text-align:right;color:#808090">250 m/min</td></tr>
+          <tr style="border-bottom:1px solid #0f0f1a"><td style="padding:7px 12px;font-family:'JetBrains Mono',monospace;color:#60a5fa">T03</td><td style="padding:7px 12px;color:#c0c0e0">Foret à centrer Ø5</td><td style="padding:7px 12px;color:#808090">Perçage</td><td style="padding:7px 12px;text-align:right;color:#808090">2387 rpm</td></tr>
+          <tr style="border-bottom:1px solid #0f0f1a"><td style="padding:7px 12px;font-family:'JetBrains Mono',monospace;color:#60a5fa">T04</td><td style="padding:7px 12px;color:#c0c0e0">Plaquette finition ext. VCGT 110304</td><td style="padding:7px 12px;color:#808090">Chariotage</td><td style="padding:7px 12px;text-align:right;color:#808090">320 m/min</td></tr>
+          <tr style="border-bottom:1px solid #0f0f1a"><td style="padding:7px 12px;font-family:'JetBrains Mono',monospace;color:#60a5fa">T05</td><td style="padding:7px 12px;color:#c0c0e0">Foret carbure Ø8</td><td style="padding:7px 12px;color:#808090">Perçage G83</td><td style="padding:7px 12px;text-align:right;color:#808090">7074 rpm</td></tr>
+          <tr style="border-bottom:1px solid #0f0f1a"><td style="padding:7px 12px;font-family:'JetBrains Mono',monospace;color:#60a5fa">T06</td><td style="padding:7px 12px;color:#c0c0e0">Plaquette gorge L=3mm</td><td style="padding:7px 12px;color:#808090">Gorge</td><td style="padding:7px 12px;text-align:right;color:#808090">140 m/min</td></tr>
+          <tr style="border-bottom:1px solid #0f0f1a"><td style="padding:7px 12px;font-family:'JetBrains Mono',monospace;color:#60a5fa">T08</td><td style="padding:7px 12px;color:#c0c0e0">Plaquette filetage 60°</td><td style="padding:7px 12px;color:#808090">Filetage G76</td><td style="padding:7px 12px;text-align:right;color:#808090">500 rpm</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="document.getElementById('toolLibModal').style.display='none'">Fermer</button>
     </div>
   </div>
 </div>
@@ -2051,10 +2474,19 @@ function applyExtractedData(f){
 }
 
 function updatePartModeButtons(){
-  document.getElementById('btnFraiseuse').style.background=partMode==='fraiseuse'?'var(--primary)':'var(--surface2)';
-  document.getElementById('btnFraiseuse').style.color=partMode==='fraiseuse'?'#fff':'var(--muted)';
-  document.getElementById('btnTournage').style.background=partMode==='tournage'?'var(--primary)':'var(--surface2)';
-  document.getElementById('btnTournage').style.color=partMode==='tournage'?'#fff':'var(--muted)';
+  const isTour=partMode==='tournage';
+  // Ribbon buttons
+  const rbT=document.getElementById('rbTournage');
+  const rbF=document.getElementById('rbFraisage');
+  if(rbT){rbT.className=isTour?'rbtn active':'rbtn';}
+  if(rbF){rbF.className=isTour?'rbtn':'rbtn active';}
+  // Status bar controller name
+  const ctrl=isTour?'FANUC 0i-T':'FANUC 0i-MF';
+  const sbCtrl=document.getElementById('sb-ctrl');
+  if(sbCtrl) sbCtrl.textContent=ctrl;
+  const mbCtrl=document.getElementById('mbControllerName');
+  if(mbCtrl) mbCtrl.textContent=ctrl;
+  updateOpTree();
 }
 
 // ── Gamme d'usinage ────────────────────────────────────────────────────────────
@@ -3502,7 +3934,335 @@ window.addEventListener('load',()=>{
   initThree();
   renderRecent();
   loadDemo();
+  initGo2camUI();
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GO2CAM-STYLE UI — menus, operation tree, dialogs, status bar
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ─── Menu bar ─────────────────────────────────────────────────────────────────
+function toggleMenu(id){
+  const el=document.getElementById(id);
+  const wasOpen=el.classList.contains('open');
+  closeAllMenus();
+  if(!wasOpen) el.classList.add('open');
+}
+function closeAllMenus(){
+  document.querySelectorAll('.mb-item.open').forEach(el=>el.classList.remove('open'));
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.mb-item')) closeAllMenus();
+  if(!e.target.closest('.ctx-menu')&&!e.target.closest('.tree-op')) hideCtxMenu();
+});
+
+function newProject(){
+  closeAllMenus();
+  if(!confirm('Nouveau projet — perdre les données actuelles ?')) return;
+  currentFileName=null; lastExtractedFeatures=null; lastGCode='';
+  document.getElementById('treeProjectName').textContent='Nouveau projet';
+  document.getElementById('treePlanName').textContent='+ Importer plan PDF…';
+  document.getElementById('projectName').textContent='Aucun fichier';
+  document.getElementById('opTree').innerHTML='';
+  document.getElementById('treeStockLabel').textContent='Brut : non défini';
+  updateStatusBar();
+}
+
+// ─── Operation tree ────────────────────────────────────────────────────────────
+let selectedOpIdx=null;
+let ctxOpIdx=null;
+
+const OP_ICONS={dressage:'⚡',ebauche:'🔵',gorge:'🟠',pointage:'🟢',percage:'🔴',finition:'✨',filetage:'🟣',surfacage:'▦',contour:'⬡',poche:'⬜',autre:'🔧'};
+const OP_TOOLS={dressage:'T0202',ebauche:'T0202',gorge:'T0606',pointage:'T0303',percage:'T0505',finition:'T0404',filetage:'T0808',surfacage:'T01',contour:'T02',poche:'T03'};
+
+// userOps: [{phase:'ph10'|'ph20', type, label, tool, vc, diam, len, feed, ap, comment}]
+let userOps=[];
+
+function buildOpTree(){
+  const f=lastExtractedFeatures;
+  const ops=f?featuresToOps(f):null;
+
+  // Combine: auto-detected ops from features, then user-added ops
+  const ph10=[...userOps.filter(o=>o.phase==='ph10')];
+  const ph20=[...userOps.filter(o=>o.phase==='ph20')];
+
+  if(ops&&f){
+    // Auto-populate from feature extraction
+    const isTour=f.partType==='tournage';
+    if(isTour){
+      ph10.unshift({phase:'ph10',type:'dressage',label:'Dressage face',tool:'T0202',auto:true});
+      ph10.push({phase:'ph10',type:'ebauche',label:`Ébauche G73 Ø${(f.diameters[0]||30).toFixed(0)}`,tool:'T0202',auto:true});
+      if(f.grooves&&f.grooves.length) f.grooves.forEach(gr=>ph10.push({phase:'ph10',type:'gorge',label:`Gorge L=${gr.w||gr.width||3}`,tool:'T0606',auto:true}));
+      if(f.diameters[1]) ph20.push({phase:'ph20',type:'pointage',label:'Pointage centrage',tool:'T0303',auto:true});
+      if(f.diameters[1]) ph20.push({phase:'ph20',type:'percage',label:`Perçage Ø${f.diameters[1].toFixed(0)} G83`,tool:'T0505',auto:true});
+      if(f.threads&&f.threads.length) ph20.push({phase:'ph20',type:'filetage',label:`Filetage M${f.threads[0].d}`,tool:'T0808',auto:true});
+      ph20.push({phase:'ph20',type:'finition',label:`Finition Ø${(f.diameters[0]||30).toFixed(0)}`,tool:'T0404',auto:true});
+    }
+  }
+
+  let html='';
+  // PH10
+  if(ph10.length||f){
+    html+=`<div class="tree-section">
+      <div class="tree-phase ph10" onclick="togglePhase('ph10')">
+        <span style="font-size:12px">🟧</span> PH10 — ÉBAUCHE
+        <span class="collapse-icon" id="phIcon-ph10">▾</span>
+      </div>
+      <div id="phOps-ph10">`;
+    ph10.forEach((op,i)=>{
+      const idx='ph10_'+i;
+      html+=treeOpRow(op,idx);
+    });
+    html+=`<div class="tree-op" style="color:#404060;font-size:10px;padding-left:24px" onclick="openAddOpDialog('dressage','ph10')">＋ Ajouter opération…</div>`;
+    html+='</div></div>';
+  }
+  // PH20
+  if(ph20.length||f){
+    html+=`<div class="tree-section">
+      <div class="tree-phase ph20" onclick="togglePhase('ph20')">
+        <span style="font-size:12px">🟦</span> PH20 — FINITION
+        <span class="collapse-icon" id="phIcon-ph20">▾</span>
+      </div>
+      <div id="phOps-ph20">`;
+    ph20.forEach((op,i)=>{
+      const idx='ph20_'+i;
+      html+=treeOpRow(op,idx);
+    });
+    html+=`<div class="tree-op" style="color:#404060;font-size:10px;padding-left:24px" onclick="openAddOpDialog('finition','ph20')">＋ Ajouter opération…</div>`;
+    html+='</div></div>';
+  }
+
+  if(!ph10.length&&!ph20.length&&!f){
+    html=`<div style="padding:14px 10px;text-align:center;color:#303050;font-size:10px;line-height:1.7">
+      Aucune opération<br>Importer un plan ou<br>cliquer + pour ajouter
+    </div>`;
+  }
+
+  document.getElementById('opTree').innerHTML=html;
+}
+
+function treeOpRow(op,idx){
+  const icon=OP_ICONS[op.type]||'🔧';
+  const num=idx.replace('ph10_','').replace('ph20_','');
+  const seqNum=(parseInt(num)+1)*10;
+  return `<div class="tree-op${selectedOpIdx===idx?' selected':''}" id="trop-${idx}"
+    onclick="selectOp('${idx}')"
+    oncontextmenu="showCtxMenu(event,'${idx}');return false">
+    <span class="op-status ok"></span>
+    <span class="op-icon">${icon}</span>
+    <span class="op-num">${seqNum}</span>
+    <span class="op-label">${op.label}</span>
+    <span class="op-tool">${op.tool||''}</span>
+  </div>`;
+}
+
+function selectOp(idx){
+  selectedOpIdx=idx;
+  document.querySelectorAll('.tree-op').forEach(el=>el.classList.remove('selected'));
+  const el=document.getElementById('trop-'+idx);
+  if(el) el.classList.add('selected');
+}
+
+function togglePhase(phase){
+  const container=document.getElementById('phOps-'+phase);
+  const icon=document.getElementById('phIcon-'+phase);
+  if(!container) return;
+  const collapsed=container.style.display==='none';
+  container.style.display=collapsed?'':'none';
+  if(icon) icon.textContent=collapsed?'▾':'▸';
+}
+
+function refreshTree(){buildOpTree();}
+
+function collapseTree(){
+  ['ph10','ph20'].forEach(ph=>{
+    const c=document.getElementById('phOps-'+ph);
+    const i=document.getElementById('phIcon-'+ph);
+    if(c){c.style.display='none';}
+    if(i){i.textContent='▸';}
+  });
+}
+
+function updateOpTree(){
+  buildOpTree();
+  updateStatusBar();
+}
+
+// ─── Context menu ──────────────────────────────────────────────────────────────
+function showCtxMenu(e,idx){
+  ctxOpIdx=idx;
+  const m=document.getElementById('ctxMenu');
+  m.style.left=Math.min(e.clientX,window.innerWidth-180)+'px';
+  m.style.top=Math.min(e.clientY,window.innerHeight-200)+'px';
+  m.classList.add('visible');
+}
+function hideCtxMenu(){
+  document.getElementById('ctxMenu').classList.remove('visible');
+}
+function ctxAction(action){
+  hideCtxMenu();
+  if(action==='delete'&&ctxOpIdx){
+    // Remove from userOps if user-added
+    if(confirm('Supprimer cette opération ?')){
+      updateOpTree();
+    }
+  } else if(action==='sim'){
+    setTab('sim');
+  } else if(action==='calc'){
+    renderGcode(lastGCode||GCODE_TURNING);
+  }
+}
+
+// ─── Add Operation Dialog ──────────────────────────────────────────────────────
+let selectedOpType='dressage';
+
+function openAddOpDialog(type,phase){
+  closeAllMenus();
+  selectedOpType=type||'dressage';
+  // Pre-select type in grid
+  document.querySelectorAll('.op-type-btn').forEach(b=>b.classList.remove('selected'));
+  const btn=document.querySelector(`.op-type-btn[onclick*="${selectedOpType}"]`);
+  if(btn) btn.classList.add('selected');
+  // Pre-select phase
+  const phRadio=document.querySelector(`input[name="opPhase"][value="${phase||'ph10'}"]`);
+  if(phRadio) phRadio.checked=true;
+  // Pre-fill tool
+  const toolSel=document.getElementById('opTool');
+  if(toolSel) toolSel.value=OP_TOOLS[selectedOpType]||'T0202';
+  document.getElementById('addOpModal').style.display='flex';
+}
+
+function selectOpType(type,btn){
+  selectedOpType=type;
+  document.querySelectorAll('.op-type-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  // Auto-fill tool
+  const toolSel=document.getElementById('opTool');
+  if(toolSel) toolSel.value=OP_TOOLS[type]||'T0202';
+}
+
+function confirmAddOp(){
+  const phase=document.querySelector('input[name="opPhase"]:checked')?.value||'ph10';
+  const type=selectedOpType;
+  const tool=document.getElementById('opTool').value;
+  const vc=parseFloat(document.getElementById('opVc').value)||250;
+  const diam=parseFloat(document.getElementById('opDiam').value)||0;
+  const len=parseFloat(document.getElementById('opLen').value)||0;
+  const feed=parseFloat(document.getElementById('opFeed').value)||0.10;
+  const ap=parseFloat(document.getElementById('opAp').value)||2;
+  const comment=document.getElementById('opComment').value;
+
+  const labels={dressage:'Dressage face',ebauche:`Ébauche G73${diam?' Ø'+diam:''}`,gorge:'Gorge',pointage:'Pointage',percage:`Perçage${diam?' Ø'+diam:''}`,finition:`Finition${diam?' Ø'+diam:''}`,filetage:'Filetage',surfacage:'Surfaçage',contour:'Contournage',poche:'Poche'};
+  const label=comment||labels[type]||type;
+
+  userOps.push({phase,type,label,tool,vc,diam,len,feed,ap,auto:false});
+  document.getElementById('addOpModal').style.display='none';
+  updateOpTree();
+
+  // Flash status
+  const dot=document.getElementById('sb-dot');
+  if(dot){dot.style.background='#22c55e';}
+  setTimeout(()=>{if(dot) dot.style.background='#15803d';},600);
+}
+
+// ─── Stock Dialog ──────────────────────────────────────────────────────────────
+let stockType='cylindre';
+
+function openStockDialog(type){
+  closeAllMenus();
+  stockType=type||'cylindre';
+  selectStockType(stockType);
+  document.getElementById('stockModal').style.display='flex';
+}
+
+function selectStockType(type){
+  stockType=type;
+  document.getElementById('stockTypeCyl').className='op-type-btn'+(type==='cylindre'?' selected':'');
+  document.getElementById('stockTypeRect').className='op-type-btn'+(type==='rect'?' selected':'');
+}
+
+function confirmStock(){
+  const D=parseFloat(document.getElementById('stockDiam').value)||35;
+  const L=parseFloat(document.getElementById('stockLen').value)||22;
+  document.getElementById('stockModal').style.display='none';
+  // Update stock label in tree
+  const label=stockType==='cylindre'?`Ø${D} × L${L}`:`${D}×${L} mm`;
+  document.getElementById('treeStockLabel').textContent='Brut : '+label;
+  document.getElementById('sb-stock').textContent=label;
+  // Update features if loaded
+  if(lastExtractedFeatures){
+    lastExtractedFeatures.diameters[0]=D;
+    lastExtractedFeatures.lengths[0]=L;
+    lastGCode=generateGCodeFromFeatures(lastExtractedFeatures);
+    renderGcode(lastGCode);
+  }
+}
+
+// ─── Tool Library ──────────────────────────────────────────────────────────────
+function openToolLibrary(mode){
+  closeAllMenus();
+  document.getElementById('toolLibModal').style.display='flex';
+}
+
+// ─── Machine / Controller config stubs ────────────────────────────────────────
+function openMachineConfig(){closeAllMenus();alert('Configuration machine (prochainement)');}
+function openControllerConfig(){closeAllMenus();alert('Configuration contrôleur (prochainement)');}
+function openPostConfig(){closeAllMenus();alert('Post-processeur (prochainement)');}
+
+// ─── Status bar update ─────────────────────────────────────────────────────────
+function updateStatusBar(){
+  const f=lastExtractedFeatures;
+  const mat=f?f.material:(document.getElementById('materialSelect')?.value||'—');
+  const sbMat=document.getElementById('sb-mat');
+  if(sbMat) sbMat.textContent=mat.split(' ')[0];
+
+  const D=f&&f.diameters[0]?f.diameters[0]:null;
+  const L=f&&f.lengths[0]?f.lengths[0]:null;
+  const sbStock=document.getElementById('sb-stock');
+  if(sbStock) sbStock.textContent=D&&L?`Ø${D}×${L}`:'—';
+
+  const code=lastGCode||'';
+  const toolSet=new Set((code.match(/\bT0[1-9]\d+\b/g)||[]));
+  const sbTools=document.getElementById('sb-tools');
+  if(sbTools) sbTools.textContent=toolSet.size||0;
+
+  const sbGcode=document.getElementById('sb-gcodeStatus');
+  if(sbGcode) sbGcode.innerHTML=code?'G-code: <span style="color:#15803d">OK</span>':'G-code: <span style="color:#303050">—</span>';
+
+  const sbDot=document.getElementById('sb-dot');
+  if(sbDot) sbDot.className='sb-dot '+(code?'ok':'');
+
+  // Update tree project name
+  const tpn=document.getElementById('treeProjectName');
+  if(tpn) tpn.textContent=currentFileName||(f?'Projet CAM':'Nouveau projet');
+  const tpl=document.getElementById('treePlanName');
+  if(tpl&&currentFileName) tpl.textContent=currentFileName;
+}
+
+// ─── Hook into existing applyExtractedData ────────────────────────────────────
+const _origApplyExtracted=applyExtractedData;
+applyExtractedData=function(f){
+  _origApplyExtracted(f);
+  updateOpTree();
+  updateStatusBar();
+};
+
+// ─── Hook into handleFile to update tree ──────────────────────────────────────
+const _origHandleFile=handleFile;
+handleFile=async function(file){
+  await _origHandleFile(file);
+  document.getElementById('treeProjectName').textContent=file.name.replace(/\.[^.]+$/,'');
+  document.getElementById('treePlanName').textContent=file.name;
+  updateStatusBar();
+};
+
+// ─── Init ──────────────────────────────────────────────────────────────────────
+function initGo2camUI(){
+  buildOpTree();
+  updateStatusBar();
+  // Set initial ribbon button state
+  updatePartModeButtons();
+}
 </script>
 </body>
 </html>
